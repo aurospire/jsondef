@@ -1,0 +1,19 @@
+
+{
+    "files.exclude": {
+        "**/.git": false,
+        "**/.svn": false,
+        "**/.hg": false,
+        "**/CVS": false,
+        "**/.DS_Store": false,
+        "**/Thumbs.db": false,
+        "**/.gitignore": false,
+        "**/.npmrc": false,
+        "**/.vscode": false,
+        "**/package-lock.json": false,
+        "**/node_modules": false,
+        "**/LICENSE": false,
+        "**/tsconfig.json": false,
+        "**/jest.config.ts": false
+    }
+}
