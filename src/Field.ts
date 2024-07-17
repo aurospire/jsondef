@@ -1,7 +1,6 @@
-import { OneOrMore } from "./OneOrMore";
+import { OneOrMore } from "./UtilityTypes";
 
-
-export type BaseField<Kind extends string> = { kind: Kind; optional: boolean; };
+export type BaseField<Kind extends string> = { kind: Kind; optional?: boolean; };
 
 export type BoundedField = { min?: number; max?: number; xmin?: number; xmax?: number; };
 
@@ -15,12 +14,14 @@ export type BooleanField = BaseField<'boolean'>;
 
 export type NumericField = BaseField<'integer' | 'number'> & BoundedField;
 
-export type StringFieldPattern = 'date' |
-    'time' |
-    'datetime' |
-    'uuid' |
-    'email' |
-    'base64';
+export type StringFieldPattern =
+    | 'date'
+    | 'time'
+    | 'datetime'
+    | 'uuid'
+    | 'email'
+    | 'base64'
+    ;
 
 export type StringField = BaseField<'string'> & {
     format?: RegExp | StringFieldPattern;
@@ -48,6 +49,10 @@ export type ObjectField = BaseField<'object'> & {
     of: FieldObject;
 };
 
+export type CompositeField = BaseField<'composite'> & {
+    of: (ModelField | ObjectField | RecordField)[];
+};
+
 export type ThisField = BaseField<'this'>;
 
 export type RootField = BaseField<'root'>;
@@ -64,6 +69,7 @@ export type Field =
     | RecordField
     | ModelField
     | ObjectField
+    | CompositeField
     | ThisField
     | RootField
     ;
