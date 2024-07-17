@@ -16,5 +16,7 @@ export type InferField<T extends OneOrMore<Field>, R, S> =
     never;
 
 export type InferObject<T extends FieldObject, R = undefined> = {
-    -readonly [K in keyof T]: InferField<T[K], R extends undefined ? InferObject<T> : R, InferObject<T>>
+    -readonly [K in keyof T as T[K] extends { optional: true; } ? never : K]: InferField<T[K], R extends undefined ? InferObject<T> : R, InferObject<T>>
+} & {
+    -readonly [K in keyof T as T[K] extends { optional: true; } ? K : never]?: InferField<T[K], R extends undefined ? InferObject<T> : R, InferObject<T>>
 } & unknown;
