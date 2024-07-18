@@ -18,7 +18,7 @@ export type InferField<T extends Field, R = undefined, S = undefined> =
     T extends LiteralField ? T['of'] :
     T extends ArrayField ? InferField<T['of'], R, S>[] :
     T extends TupleField ? InferTuple<T['of'], R, S, T['rest']> :
-    T extends RecordField ? { [key: string]: T['value'] extends Field ? InferField<T['value'], R, S> : any; } :
+    T extends RecordField ? { [key: string]: T['of'] extends Field ? InferField<T['of'], R, S> : any; } :
     T extends ModelField ? InferObject<T['of']> :
     T extends ObjectField ? InferObject<T['of'], R> :
     T extends CompositeField ? Combine<{ [K in number]: InferField<T['of'][K], R, S> }, number> :

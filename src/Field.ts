@@ -42,7 +42,7 @@ export type TupleField = BaseField<'tuple'> & {
 
 export type RecordField = BaseField<'record'> & {
     key?: StringField;
-    value?: Field;
+    of?: Field;
 } & BoundedField & SizedField;
 
 export type ModelField = BaseField<'model'> & {
