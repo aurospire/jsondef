@@ -46,6 +46,7 @@ export type RecordField = BaseField<'record'> & {
 } & BoundedField & SizedField;
 
 export type ModelField = BaseField<'model'> & {
+    name?: string;
     of: FieldObject;
 };
 
