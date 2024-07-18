@@ -50,7 +50,7 @@ describe('Infer Types', () => {
         });
 
         it('should infer object type for ModelField and ObjectField', () => {
-            expectType<InferField<{ kind: 'model', of: { prop: StringField; }; }>>().toBe<{ prop: string; }>();
+            expectType<InferField<{ kind: 'model', name: 'Model', of: { prop: StringField; }; }>>().toBe<{ prop: string; }>();
             expectType<InferField<{ kind: 'object', of: { prop: NumberField; }; }>>().toBe<{ prop: number; }>();
         });
 
@@ -58,7 +58,7 @@ describe('Infer Types', () => {
             type TestField = {
                 kind: 'composite';
                 of: [
-                    { kind: 'model', of: { a: StringField; }; },
+                    { kind: 'model', name: 'Model', of: { a: StringField; }; },
                     { kind: 'object', of: { b: NumberField; }; },
                     { kind: 'record'; of: BooleanField; }
                 ];
@@ -80,7 +80,7 @@ describe('Infer Types', () => {
             type ComplexUnion = {
                 kind: 'union',
                 of: [
-                    { kind: 'model', of: { id: IntegerField; }; },
+                    { kind: 'model', name: 'Model', of: { id: IntegerField; }; },
                     { kind: 'object', of: { name: StringField; }; }
                 ];
             };
@@ -156,6 +156,7 @@ describe('Infer Types', () => {
             it('should handle standalone Models with nested references', () => {
                 type UserModel = {
                     kind: 'model';
+                    name: 'User';
                     of: {
                         id: NumberField;
                         name: StringField;
@@ -165,6 +166,7 @@ describe('Infer Types', () => {
 
                 type PostModel = {
                     kind: 'model';
+                    name: 'Post';
                     of: {
                         id: NumberField;
                         title: StringField;
