@@ -12,7 +12,9 @@ export type AnyField = BaseField<'any'>;
 
 export type BooleanField = BaseField<'boolean'>;
 
-export type NumericField = BaseField<'integer' | 'number'> & BoundedField;
+export type IntegerField = BaseField<'integer'> & BoundedField;
+
+export type NumberField = BaseField<'number'> & BoundedField;
 
 export type StringFieldPattern =
     | 'date'
@@ -35,6 +37,10 @@ export type ArrayField = BaseField<'array'> & {
     of: OneOrMore<Field>;
 } & BoundedField & SizedField;
 
+export type TupleField = BaseField<'tuple'> & {
+    of: (Field & { name?: string; })[];
+    rest?: Field & { name?: string; };
+};
 
 export type RecordField = BaseField<'record'> & {
     key?: StringField;
@@ -62,10 +68,12 @@ export type Field =
     | NullField
     | AnyField
     | BooleanField
-    | NumericField
+    | IntegerField
+    | NumberField
     | StringField
     | LiteralField
     | ArrayField
+    | TupleField
     | RecordField
     | ModelField
     | ObjectField
@@ -73,6 +81,5 @@ export type Field =
     | ThisField
     | RootField
     ;
-
 
 export type FieldObject = { [key: string]: OneOrMore<Field>; };
