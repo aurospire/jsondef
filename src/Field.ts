@@ -1,6 +1,6 @@
 import { OneOrMore } from "./UtilityTypes";
 
-export type BaseField<Kind extends string> = { kind: Kind; optional?: boolean; };
+export type BaseField<Kind extends string> = { kind: Kind; optional?: boolean; description?: string; };
 
 export type BoundedField = { min?: number; max?: number; xmin?: number; xmax?: number; };
 

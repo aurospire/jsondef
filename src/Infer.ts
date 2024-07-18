@@ -26,13 +26,13 @@ export type InferField<T extends OneOrMore<Field>, R = undefined, S = undefined>
     T extends RootField ? R :
     never;
 
-type InferObject<T extends FieldObject, R = undefined> = {
+export type InferObject<T extends FieldObject, R = undefined> = {
     -readonly [K in keyof T as T[K] extends { optional: true; } ? never : K]: InferField<T[K], R extends undefined ? InferObject<T> : R, InferObject<T>>
 } & {
     -readonly [K in keyof T as T[K] extends { optional: true; } ? K : never]?: InferField<T[K], R extends undefined ? InferObject<T> : R, InferObject<T>>
 } & unknown;
 
-type InferTuple<T extends Field[], R = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
+export type InferTuple<T extends Field[], R = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
     [K in keyof T]: InferField<T[K], R, S>;
 } extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, R, S>[] : [])] : never : never;
 
