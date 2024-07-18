@@ -1,14 +1,14 @@
+import { Combine } from "./util/Combine";
 import {
     AnyField, ArrayField, BooleanField, CompositeField,
     Field, FieldObject, IntegerField, LiteralField,
     ModelField, NullField, NumberField, ObjectField,
     RecordField, RootField, StringField, ThisField,
     TupleField,
+    UnionField,
 } from "./Field";
-import { Combine, OneOrMore } from "./UtilityTypes";
 
-export type InferField<T extends OneOrMore<Field>, R = undefined, S = undefined> =
-    T extends Field[] ? InferField<T[number], R, S> :
+export type InferField<T extends Field, R = undefined, S = undefined> =
     T extends NullField ? null :
     T extends AnyField ? any :
     T extends BooleanField ? boolean :
@@ -22,6 +22,7 @@ export type InferField<T extends OneOrMore<Field>, R = undefined, S = undefined>
     T extends ModelField ? InferObject<T['of']> :
     T extends ObjectField ? InferObject<T['of'], R> :
     T extends CompositeField ? Combine<{ [K in number]: InferField<T['of'][K], R, S> }, number> :
+    T extends UnionField ? InferField<T['of'][number], R, S> :
     T extends ThisField ? S :
     T extends RootField ? R :
     never;
@@ -35,4 +36,6 @@ export type InferObject<T extends FieldObject, R = undefined> = {
 export type InferTuple<T extends Field[], R = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
     [K in keyof T]: InferField<T[K], R, S>;
 } extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, R, S>[] : [])] : never : never;
+
+
 

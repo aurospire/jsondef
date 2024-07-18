@@ -1,5 +1,3 @@
-import { OneOrMore } from "./UtilityTypes";
-
 export type BaseField<Kind extends string> = { kind: Kind; optional?: boolean; description?: string; };
 
 export type BoundedField = { min?: number; max?: number; xmin?: number; xmax?: number; };
@@ -34,7 +32,7 @@ export type LiteralField = BaseField<'literal'> & {
 };
 
 export type ArrayField = BaseField<'array'> & {
-    of: OneOrMore<Field>;
+    of: Field;
 } & BoundedField & SizedField;
 
 export type TupleField = BaseField<'tuple'> & {
@@ -59,6 +57,8 @@ export type CompositeField = BaseField<'composite'> & {
     of: (ModelField | ObjectField | RecordField)[];
 };
 
+export type UnionField = BaseField<'union'> & { of: [Field, Field, ...Field[]]; };
+
 export type ThisField = BaseField<'this'>;
 
 export type RootField = BaseField<'root'>;
@@ -78,8 +78,9 @@ export type Field =
     | ModelField
     | ObjectField
     | CompositeField
+    | UnionField
     | ThisField
     | RootField
     ;
 
-export type FieldObject = { [key: string]: OneOrMore<Field>; };
+export type FieldObject = { [key: string]: Field; };
