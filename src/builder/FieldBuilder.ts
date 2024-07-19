@@ -1,16 +1,11 @@
 import { BaseAttributes, BaseField, NullField } from "../Field";
 
 
-export abstract class FieldBuilder<
-    Kind extends string,
-    Optional extends boolean,
-    R extends FieldBuilder<Kind, true, R, O>,
-    O extends FieldBuilder<Kind, false, R, O>,
-> implements BaseField<Kind> {
+export abstract class FieldBuilder<Kind extends string, Optional extends boolean> implements BaseField<Kind> {
 
     #attributes: BaseAttributes;
 
-    constructor(builder?: R | O) {
+    constructor(builder?: FieldBuilder<Kind, Optional>) {
         const attributes = builder ? builder.#attributes : {};
 
         this.#attributes = { isOptional: false, ...attributes };
@@ -18,35 +13,35 @@ export abstract class FieldBuilder<
 
     abstract get kind(): Kind;
 
+    abstract clone<NewOptional extends boolean = Optional>(): FieldBuilder<Kind, NewOptional>;
+
+
     get isOptional(): Optional { return this.#attributes.isOptional as Optional; }
 
     get description(): NullField['description'] { return this.#attributes.description; }
 
-    describe(description?: string): Optional extends true ? R : O {
-        const builder = this.isOptional ? this.cloneOptional() : this.cloneRequired();
+    describe(description?: string): FieldBuilder<Kind, Optional> {
+        const builder = this.clone();
 
         builder.#attributes.description = description;
 
-        return builder as Optional extends true ? R : O;
+        return builder;
     }
 
-    optional(): O {
-        const builder = this.cloneOptional();
+    optional(): FieldBuilder<Kind, true> {
+        const builder = this.clone<true>();
 
         builder.#attributes.isOptional = false;
 
         return builder;
 
-    }
-    required(): R {
-        const builder = this.cloneRequired();
+    };
+    required(): FieldBuilder<Kind, false> {
+        const builder = this.clone<false>();
 
         builder.#attributes.isOptional = true;
 
         return builder;
     }
 
-    abstract cloneOptional(): O;
-    
-    abstract cloneRequired(): R;
 }
