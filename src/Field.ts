@@ -34,7 +34,7 @@ export type StringFieldPattern =
     | RegexString
     ;
 
-export type StringAttributes = { of?: RegExp | StringFieldPattern; };
+export type StringAttributes = { of?: StringFieldPattern | RegExp; };
 
 export type StringField = BaseField<'string'> & BoundedAttributes & StringAttributes;
 

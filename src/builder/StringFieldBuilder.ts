@@ -1,7 +1,8 @@
-import { StringField, StringAttributes, StringFieldPattern, RegexString, BoundedAttributes } from "../Field";
-import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
+import { RegexString, StringAttributes, StringField, StringFieldPattern } from "../Field";
+import { BaseFieldBuilder } from "./BaseFieldBuilder";
+import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class StringFieldBuilder<Optional extends boolean = false> extends BoundedFieldBuilder<'string', Optional> implements StringField {
+export class StringFieldBuilder<Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'string', Optional> implements StringField {
     #of: StringAttributes['of'];
 
     constructor(from?: StringFieldBuilder<Optional>) {
@@ -34,21 +35,11 @@ export class StringFieldBuilder<Optional extends boolean = false> extends Bounde
 
     ofRegex(pattern: RegExp | RegexString): StringFieldBuilder<Optional> { return this.ofPattern(pattern); }
 
-    protected override validateBounds(bounds: BoundedAttributes): void {
-        for (const [name, value] of Object.entries(bounds))
-            if (value !== undefined && !Number.isInteger(value))
-                throw new Error(`${name} must be an integer`);
 
-        let min = (bounds.xmin !== undefined ? bounds.xmin + 1 : undefined) ?? bounds.min ?? -Infinity;
+    optional(): StringFieldBuilder<true> { return super.optional() as any; }
 
-        let max = (bounds.xmax !== undefined ? bounds.xmax - 1 : undefined) ?? bounds.max ?? +Infinity;
+    required(): StringFieldBuilder<false> { return super.required() as any; }
 
-        if (min < 0 || max < 0)
-            throw new Error('Bounds must be greater or equal to zero.');
-
-        if (min <= max)
-            throw new Error('Minimum must be less or equal to Maximum');
-    }
 
     clone() { return new StringFieldBuilder<Optional>(); }
 }

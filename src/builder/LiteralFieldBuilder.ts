@@ -16,21 +16,13 @@ export class LiteralFieldBuilder<Of extends LiteralField['of'], Optional extends
         this.#of = from instanceof LiteralFieldBuilder ? from.#of : from;
     }
 
-    override get kind(): "literal" {
-        return 'literal';
-    }
+    override get kind(): "literal" { return 'literal'; }
 
-    override optional(): LiteralFieldBuilder<Of, true> {
-        return super.optional() as LiteralFieldBuilder<Of, true>;
-    }
+    override optional(): LiteralFieldBuilder<Of, true> { return super.optional() as any; }
 
-    override required(): LiteralFieldBuilder<Of, false> {
-        return super.required() as LiteralFieldBuilder<Of, false>;
-    }
+    override required(): LiteralFieldBuilder<Of, false> { return super.required() as any; }
 
     get of() { return this.#of; }
 
-    protected override clone(): LiteralFieldBuilder<Of, Optional> {
-        return new LiteralFieldBuilder<Of, Optional>(this);
-    }
+    protected override clone(): LiteralFieldBuilder<Of, Optional> { return new LiteralFieldBuilder<Of, Optional>(this); }
 }
