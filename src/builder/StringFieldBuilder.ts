@@ -36,10 +36,10 @@ export class StringFieldBuilder<Optional extends boolean = false> extends Positi
     ofRegex(pattern: RegExp | RegexString): StringFieldBuilder<Optional> { return this.ofPattern(pattern); }
 
 
-    optional(): StringFieldBuilder<true> { return super.optional() as any; }
+    override optional(): StringFieldBuilder<true> { return super.optional() as any; }
 
-    required(): StringFieldBuilder<false> { return super.required() as any; }
+    override required(): StringFieldBuilder<false> { return super.required() as any; }
 
 
-    clone() { return new StringFieldBuilder<Optional>(); }
+    protected override clone() { return new StringFieldBuilder<Optional>(); }
 }

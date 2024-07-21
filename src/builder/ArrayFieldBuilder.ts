@@ -13,11 +13,13 @@ export class ArrayFieldBuilder<Of extends Field, Optional extends boolean = fals
 
     override get kind(): "array" { return 'array'; }
 
-    optional(): ArrayFieldBuilder<Of, true> { return super.optional() as any; }
-
-    required(): ArrayFieldBuilder<Of, false> { return super.required() as any; }
-
     get of() { return this.#of; }
 
-    clone() { return new ArrayFieldBuilder<Of, Optional>(this); }
+
+    override optional(): ArrayFieldBuilder<Of, true> { return super.optional() as any; }
+
+    override required(): ArrayFieldBuilder<Of, false> { return super.required() as any; }
+
+
+    protected override clone() { return new ArrayFieldBuilder<Of, Optional>(this); }
 }

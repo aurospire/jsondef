@@ -6,5 +6,11 @@ export class AnyFieldBuilder<Optional extends boolean = false> extends BaseField
 
     get kind(): "any" { return 'any'; }
 
-    clone() { return new AnyFieldBuilder(this); }
+
+    override optional(): AnyFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): AnyFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new AnyFieldBuilder(this); }
 }

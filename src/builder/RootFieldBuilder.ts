@@ -6,5 +6,10 @@ export class RootFieldBuilder<Optional extends boolean=false> extends BaseFieldB
 
     get kind(): "root" { return 'root'; }
 
-    clone() { return new RootFieldBuilder(this); }
+    override optional(): RootFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): RootFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new RootFieldBuilder(this); }
 }

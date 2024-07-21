@@ -6,5 +6,11 @@ export class NullFieldBuilder<Optional extends boolean = false> extends BaseFiel
 
     get kind(): "null" { return 'null'; }
 
-    clone() { return new NullFieldBuilder(this); }
+    
+    override optional(): NullFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): NullFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new NullFieldBuilder(this); }
 }

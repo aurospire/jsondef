@@ -18,11 +18,13 @@ export class LiteralFieldBuilder<Of extends LiteralField['of'], Optional extends
 
     override get kind(): "literal" { return 'literal'; }
 
+    get of() { return this.#of; }
+
+
     override optional(): LiteralFieldBuilder<Of, true> { return super.optional() as any; }
 
     override required(): LiteralFieldBuilder<Of, false> { return super.required() as any; }
 
-    get of() { return this.#of; }
 
     protected override clone(): LiteralFieldBuilder<Of, Optional> { return new LiteralFieldBuilder<Of, Optional>(this); }
 }

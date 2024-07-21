@@ -6,5 +6,10 @@ export class ThisFieldBuilder<Optional extends boolean = false> extends BaseFiel
 
     get kind(): "this" { return 'this'; }
 
-    clone() { return new ThisFieldBuilder(this); }
+    override optional(): ThisFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): ThisFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new ThisFieldBuilder(this); }
 }

@@ -19,5 +19,10 @@ export class NumberFieldBuilder<Optional extends boolean = false> extends Bounde
             throw new Error('Minimum must be less or equal to Maximum');
     }
 
-    clone() { return new NumberFieldBuilder<Optional>(); }
+    override optional(): NumberFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): NumberFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new NumberFieldBuilder<Optional>(); }
 }

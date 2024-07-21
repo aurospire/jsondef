@@ -6,5 +6,10 @@ export class BooleanFieldBuilder<Optional extends boolean = false> extends BaseF
 
     get kind(): "boolean" { return 'boolean'; }
 
-    clone() { return new BooleanFieldBuilder(this); }
+    override optional(): BooleanFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): BooleanFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new BooleanFieldBuilder(this); }
 }

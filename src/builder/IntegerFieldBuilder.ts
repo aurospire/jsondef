@@ -19,5 +19,10 @@ export class IntegerFieldBuilder<Optional extends boolean = false> extends Bound
             throw new Error('Minimum must be less or equal to Maximum');
     }
 
-    clone() { return new IntegerFieldBuilder<Optional>(); }
+    override optional(): IntegerFieldBuilder<true> { return super.optional() as any; }
+
+    override required(): IntegerFieldBuilder<false> { return super.required() as any; }
+
+
+    protected override clone() { return new IntegerFieldBuilder<Optional>(); }
 }
