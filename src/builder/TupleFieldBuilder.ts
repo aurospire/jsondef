@@ -2,7 +2,7 @@ import { Field, TupleField } from "../Field";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class TupleFieldBuilder<Of extends Field[], Rest extends Field | undefined = undefined, Optional extends boolean = false>
+export class TupleFieldBuilder<Of extends TupleField['of'], Rest extends TupleField['rest'] = undefined, Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'tuple', Optional>
     implements TupleField {
 
