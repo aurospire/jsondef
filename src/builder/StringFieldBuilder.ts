@@ -1,7 +1,7 @@
 import { StringField, StringAttributes, StringFieldPattern, RegexString, BoundedAttributes } from "../Field";
 import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 
-export class StringFieldBuilder<Optional extends boolean> extends BoundedFieldBuilder<'string', Optional> implements StringField {
+export class StringFieldBuilder<Optional extends boolean = false> extends BoundedFieldBuilder<'string', Optional> implements StringField {
     #of: StringAttributes['of'];
 
     constructor(from?: StringFieldBuilder<Optional>) {

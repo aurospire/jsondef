@@ -1,7 +1,7 @@
 import { IntegerField, BoundedAttributes } from "../Field";
 import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 
-export class IntegerFieldBuilder<Optional extends boolean> extends BoundedFieldBuilder<'integer', Optional> implements IntegerField {
+export class IntegerFieldBuilder<Optional extends boolean = false> extends BoundedFieldBuilder<'integer', Optional> implements IntegerField {
     constructor(from?: IntegerFieldBuilder<Optional>) { super(from); }
 
     override get kind(): "integer" { return 'integer'; }

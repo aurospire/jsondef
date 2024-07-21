@@ -1,7 +1,7 @@
 import { NumberField, BoundedAttributes } from "../Field";
 import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 
-export class NumberFieldBuilder<Optional extends boolean> extends BoundedFieldBuilder<'number', Optional> implements NumberField {
+export class NumberFieldBuilder<Optional extends boolean = false> extends BoundedFieldBuilder<'number', Optional> implements NumberField {
     constructor(from?: NumberFieldBuilder<Optional>) { super(from); }
 
     override get kind(): "number" { return 'number'; }

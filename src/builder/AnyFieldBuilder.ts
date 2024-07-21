@@ -1,7 +1,7 @@
 import { AnyField } from "../Field";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
-export class AnyFieldBuilder<Optional extends boolean> extends BaseFieldBuilder<'any', Optional> implements AnyField {
+export class AnyFieldBuilder<Optional extends boolean = false> extends BaseFieldBuilder<'any', Optional> implements AnyField {
     constructor(from?: AnyFieldBuilder<Optional>) { super(from); }
 
     get kind(): "any" { return 'any'; }
