@@ -1,4 +1,5 @@
 import { BooleanField } from "../Field";
+import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class BooleanFieldBuilder<Optional extends boolean = false> extends BaseFieldBuilder<'boolean', Optional> implements BooleanField {
@@ -12,4 +13,9 @@ export class BooleanFieldBuilder<Optional extends boolean = false> extends BaseF
 
 
     protected override clone() { return new BooleanFieldBuilder(this); }
+
+
+    get infer(): InferField<{ kind: 'boolean', isOptional: Optional; }> {
+        throw new Error('Type helper method');
+    }
 }

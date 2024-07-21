@@ -7,7 +7,7 @@ export * from './BoundedFieldBuilder';
 export * from './NumberFieldBuilder';
 export * from './IntegerFieldBuilder';
 
-export * from './PositiveBoundedFieldBuilder'
+export * from './PositiveBoundedFieldBuilder';
 export * from './StringFieldBuilder';
 
 export * from './LiteralFieldBuilder';
@@ -20,3 +20,12 @@ export * from './CompositeFieldBuilder';
 export * from './UnionFieldBuilder';
 export * from './RefFieldBuilder';
 
+export * as j from './helpers';
+
+import * as j from './helpers';
+
+const a = j.model('User', {
+    
+});
+
+type a = typeof a.infer;

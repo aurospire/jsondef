@@ -1,4 +1,5 @@
 import { RegexString, StringAttributes, StringField, StringFieldPattern } from "../Field";
+import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
@@ -42,4 +43,9 @@ export class StringFieldBuilder<Optional extends boolean = false> extends Positi
 
 
     protected override clone() { return new StringFieldBuilder<Optional>(); }
+
+
+    get infer(): InferField<{ kind: 'string', isOptional: Optional; }> {
+        throw new Error('Type helper method');
+    }
 }

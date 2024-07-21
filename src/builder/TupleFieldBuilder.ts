@@ -1,4 +1,5 @@
 import { Field, TupleField } from "../Field";
+import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
@@ -29,4 +30,9 @@ export class TupleFieldBuilder<Of extends TupleField['of'], Rest extends TupleFi
     override required(): TupleFieldBuilder<Of, Rest, false> { return super.required() as any; }
 
     protected override clone() { return new TupleFieldBuilder<Of, Rest, Optional>(this); }
+
+
+    get infer(): InferField<{ kind: 'tuple', isOptional: Optional; of: Of; rest: Rest}> {
+        throw new Error('Type helper method');
+    }
 }

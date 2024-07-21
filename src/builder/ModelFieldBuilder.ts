@@ -1,4 +1,5 @@
 import { ModelField } from "../Field";
+import { InferField } from "../Infer";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 
@@ -30,4 +31,8 @@ export class ModelFieldBuilder<Of extends ModelField['of'], Optional extends boo
     override required(): ModelFieldBuilder<Of, false> { return super.required() as any; }
 
     protected override clone() { return new ModelFieldBuilder<Of, Optional>(this, this.name); }
+
+    get infer(): InferField<{ kind: 'model', isOptional: Optional; of: Of; name: string; }> {
+        throw new Error('Type helper method');
+    }
 }

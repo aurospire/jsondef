@@ -53,5 +53,6 @@ export {
     objectField as object,
     modelField as model,
     compositeField as composite,
+    unionField as union,
     refField as ref
 };

@@ -1,4 +1,5 @@
 import { NumberField, BoundedAttributes } from "../Field";
+import { InferField } from "../Infer";
 import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 
 export class NumberFieldBuilder<Optional extends boolean = false> extends BoundedFieldBuilder<'number', Optional> implements NumberField {
@@ -25,4 +26,8 @@ export class NumberFieldBuilder<Optional extends boolean = false> extends Bounde
 
 
     protected override clone() { return new NumberFieldBuilder<Optional>(); }
+
+    get infer(): InferField<{ kind: 'number', isOptional: Optional; }> {
+        throw new Error('Type helper method');
+    }
 }
