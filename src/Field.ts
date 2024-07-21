@@ -22,6 +22,8 @@ export type IntegerField = BaseField<'integer'> & BoundedAttributes;
 export type NumberField = BaseField<'number'> & BoundedAttributes;
 
 
+export type RegexString = `/${string}/${string}/`;
+
 export type StringFieldPattern =
     | 'date'
     | 'time'
@@ -29,7 +31,7 @@ export type StringFieldPattern =
     | 'uuid'
     | 'email'
     | 'base64'
-    | `/${string}/${string}/` // Regex Pattern
+    | RegexString
     ;
 
 export type StringAttributes = { of?: RegExp | StringFieldPattern; };
