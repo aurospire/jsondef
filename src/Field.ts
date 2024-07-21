@@ -3,16 +3,19 @@ export type BaseField<Kind extends string> = { kind: Kind; } & BaseAttributes;
 
 export type BaseAttributes = { isOptional?: boolean; description?: string; };
 
-export type BoundedAttributes = { min?: number; max?: number; xmin?: number; xmax?: number; };
-
-export type SizedAttributes = { length?: number; };
-
 
 export type NullField = BaseField<'null'>;
 
 export type AnyField = BaseField<'any'>;
 
+export type ThisField = BaseField<'this'>;
+
+export type RootField = BaseField<'root'>;
+
 export type BooleanField = BaseField<'boolean'>;
+
+
+export type BoundedAttributes = { min?: number; max?: number; xmin?: number; xmax?: number; };
 
 export type IntegerField = BaseField<'integer'> & BoundedAttributes;
 
@@ -26,11 +29,12 @@ export type StringFieldPattern =
     | 'uuid'
     | 'email'
     | 'base64'
+    | `/${string}/${string}/` // Regex Pattern
     ;
 
-export type StringAttributes = { format?: RegExp | StringFieldPattern; };
+export type StringAttributes = { of?: RegExp | StringFieldPattern; };
 
-export type StringField = BaseField<'string'> & StringAttributes & BoundedAttributes & SizedAttributes;
+export type StringField = BaseField<'string'> & BoundedAttributes & StringAttributes;
 
 
 export type LiteralAttributes = { of: boolean | number | string; };
@@ -40,20 +44,20 @@ export type LiteralField = BaseField<'literal'> & LiteralAttributes;
 
 export type ArrayAttributes = { of: Field; };
 
-export type ArrayField = BaseField<'array'> & ArrayAttributes & BoundedAttributes & SizedAttributes;
+export type ArrayField = BaseField<'array'> & BoundedAttributes & ArrayAttributes;
 
 
 export type TupleAttributes = { of: Field[]; rest?: Field; };
 
-export type TupleField = BaseField<'tuple'> & TupleAttributes;
+export type TupleField = BaseField<'tuple'> & BoundedAttributes & TupleAttributes;
 
 
-export type RecordAttributes = { key?: StringField; of?: Field; };
+export type RecordAttributes = { of?: Field; key?: StringField; };
 
-export type RecordField = BaseField<'record'> & RecordAttributes & BoundedAttributes & SizedAttributes;
+export type RecordField = BaseField<'record'> & BoundedAttributes & RecordAttributes;
 
 
-export type ModelAttributes = { name: string; of: FieldObject; };
+export type ModelAttributes = { of: FieldObject; name: string; };
 
 export type ModelField = BaseField<'model'> & ModelAttributes;
 
@@ -73,17 +77,21 @@ export type UnionAttributes = { of: [Field, Field, ...Field[]]; };
 export type UnionField = BaseField<'union'> & UnionAttributes;
 
 
-export type ThisField = BaseField<'this'>;
+export type RefAttributes = { of: string; };
 
-export type RootField = BaseField<'root'>;
+export type RefField = BaseField<'ref'> & RefAttributes;
 
 
 export type Field =
     | NullField
     | AnyField
+    | ThisField
+    | RootField
     | BooleanField
+
     | IntegerField
     | NumberField
+
     | StringField
     | LiteralField
     | ArrayField
@@ -93,8 +101,8 @@ export type Field =
     | ObjectField
     | CompositeField
     | UnionField
-    | ThisField
-    | RootField
+
+    | RefField
     ;
 
 export type FieldObject = { [key: string]: Field; };

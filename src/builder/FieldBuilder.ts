@@ -1,19 +1,18 @@
-import { BaseAttributes, BaseField, NullField } from "../Field";
+import { BaseAttributes, BaseField, BoundedAttributes, Field, NullField } from "../Field";
 
 
 export abstract class FieldBuilder<Kind extends string, Optional extends boolean> implements BaseField<Kind> {
-
     #attributes: BaseAttributes;
 
-    constructor(builder?: FieldBuilder<Kind, Optional>) {
-        const attributes = builder ? builder.#attributes : {};
+    constructor(from?: FieldBuilder<Kind, Optional>) {
+        const attributes = from ? from.#attributes : {};
 
         this.#attributes = { isOptional: false, ...attributes };
     }
 
     abstract get kind(): Kind;
 
-    abstract clone<NewOptional extends boolean = Optional>(): FieldBuilder<Kind, NewOptional>;
+    abstract clone(): FieldBuilder<Kind, Optional>;
 
 
     get isOptional(): Optional { return this.#attributes.isOptional as Optional; }
@@ -29,19 +28,45 @@ export abstract class FieldBuilder<Kind extends string, Optional extends boolean
     }
 
     optional(): FieldBuilder<Kind, true> {
-        const builder = this.clone<true>();
+        const builder = this.clone();
 
         builder.#attributes.isOptional = false;
 
-        return builder;
+        return builder as FieldBuilder<Kind, true>;
 
     };
     required(): FieldBuilder<Kind, false> {
-        const builder = this.clone<false>();
+        const builder = this.clone();
 
         builder.#attributes.isOptional = true;
+
+        return builder as FieldBuilder<Kind, false>;
+    }
+}
+
+export abstract class BoundedBuilder<Kind extends string, Optional extends boolean> extends FieldBuilder<Kind, Optional> {
+    #bounds: BoundedAttributes;
+
+    constructor(from?: BoundedBuilder<Kind, Optional>) {
+        super(from);
+
+        const bounds = from ? from.#bounds : {};
+
+        this.#bounds = bounds;
+    }
+
+    get min() { return this.#bounds.min; }
+    get xmin() { return this.#bounds.xmin; }
+    get max() { return this.#bounds.max; }
+    get xmax() { return this.#bounds.xmax; }
+
+    bound(bounds: BoundedAttributes): BoundedBuilder<Kind, Optional> {
+        const builder = this.clone();
+
+        builder.#bounds = { ...bounds };
 
         return builder;
     }
 
+    abstract override clone(): BoundedBuilder<Kind, Optional>;
 }
