@@ -7,7 +7,7 @@ import {
     TupleField,
     UnionField
 } from "./Field";
-import { UnionToIntersection } from "./util/Combine";
+import { UnionToIntersection } from "./util";
 
 export type InferField<F extends Field, N extends { [key: string]: any; } = {}, M = undefined, S = undefined> =
     F extends { kind: infer K; } ? (

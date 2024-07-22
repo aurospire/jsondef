@@ -1,1 +1,1 @@
-export * from './Combine';
+export * from './UnionToIntersection';
