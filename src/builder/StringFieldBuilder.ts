@@ -1,9 +1,7 @@
 import { RegexString, StringAttributes, StringField, StringFieldPattern } from "../Field";
-import { InferField } from "../Infer";
-import { BaseFieldBuilder } from "./BaseFieldBuilder";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class StringFieldBuilder<Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'string', Optional> implements StringField {
+export class StringFieldBuilder<const Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'string', Optional> implements StringField {
     #of: StringAttributes['of'];
 
     constructor(from?: StringFieldBuilder<Optional>) {
@@ -16,7 +14,7 @@ export class StringFieldBuilder<Optional extends boolean = false> extends Positi
 
     get of() { return this.#of; }
 
-    ofPattern(pattern?: StringFieldPattern | RegExp): StringFieldBuilder<Optional> {
+    pattern(pattern?: StringFieldPattern | RegExp): StringFieldBuilder<Optional> {
         const builder = this.clone();
 
         builder.#of = pattern;
@@ -24,17 +22,17 @@ export class StringFieldBuilder<Optional extends boolean = false> extends Positi
         return builder;
     }
 
-    ofDate(): StringFieldBuilder<Optional> { return this.ofPattern('date'); }
+    date(): StringFieldBuilder<Optional> { return this.pattern('date'); }
 
-    ofTime(): StringFieldBuilder<Optional> { return this.ofPattern('time'); }
+    time(): StringFieldBuilder<Optional> { return this.pattern('time'); }
 
-    ofDatetime(): StringFieldBuilder<Optional> { return this.ofPattern('datetime'); }
+    datetime(): StringFieldBuilder<Optional> { return this.pattern('datetime'); }
 
-    ofUuid(): StringFieldBuilder<Optional> { return this.ofPattern('uuid'); }
+    uuid(): StringFieldBuilder<Optional> { return this.pattern('uuid'); }
 
-    ofEmail(): StringFieldBuilder<Optional> { return this.ofPattern('email'); }
+    email(): StringFieldBuilder<Optional> { return this.pattern('email'); }
 
-    ofRegex(pattern: RegExp | RegexString): StringFieldBuilder<Optional> { return this.ofPattern(pattern); }
+    regex(pattern: RegExp | RegexString): StringFieldBuilder<Optional> { return this.pattern(pattern); }
 
 
     override optional(): StringFieldBuilder<true> { return super.optional() as any; }

@@ -21,24 +21,3 @@ export * from './UnionFieldBuilder';
 export * from './RefFieldBuilder';
 
 export * as j from './helpers';
-
-import { InferField } from '../Infer';
-import * as j from './helpers';
-
-const a = j.model('User', {
-    first: j.string().bound({ max: 10 }),
-    last: j.string().bound({ max: 10 }),
-    middle: j.string().bound({ max: 1 }).optional(),    
-    this: j.this().optional()
-});
-
-type a = InferField<typeof a>;
-
-const b: a = {
-    first: '',
-    last: '',
-    this: {
-        first: 'a',
-        last: 'b'
-    }
-}

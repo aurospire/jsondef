@@ -1,7 +1,7 @@
 import { ObjectField } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class ObjectFieldBuilder<Of extends ObjectField['of'], Optional extends boolean = false>
+export class ObjectFieldBuilder<const Of extends ObjectField['of'], const Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'object', Optional>
     implements ObjectField {
 

@@ -1,7 +1,7 @@
 import { RefField } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class RefFieldBuilder<Of extends RefField['of'], Optional extends boolean = false>
+export class RefFieldBuilder<const Of extends RefField['of'], const Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'ref', Optional>
     implements RefField {
 

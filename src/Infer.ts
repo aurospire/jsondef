@@ -1,4 +1,5 @@
 import {
+    ArrayField,
     CompositeField,
     Field, FieldObject,
     LiteralField,
@@ -28,7 +29,7 @@ export type InferField<F extends Field, N extends { [key: string]: any; } = {}, 
         K extends 'number' ? number :
         K extends 'string' ? string :
         K extends 'literal' ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
-        K extends 'array' ? F extends { of: infer O extends Field; } ? InferField<O, N, M, S>[] : never :
+        K extends 'array' ? F extends { of: infer O extends Field; } ? Array<InferField<O, N, M, S>> : never :        
         K extends 'record' ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, N, M, S>; } : never :
         K extends 'model' ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, N> : never :
         K extends 'object' ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, N, M> : never :

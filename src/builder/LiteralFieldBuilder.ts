@@ -1,7 +1,7 @@
 import { LiteralField } from "../Field";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
-export class LiteralFieldBuilder<Of extends LiteralField['of'], Optional extends boolean = false>
+export class LiteralFieldBuilder<const Of extends LiteralField['of'], const Optional extends boolean = false>
     extends BaseFieldBuilder<'literal', Optional>
     implements LiteralField {
 

@@ -2,7 +2,7 @@ import { ArrayField, Field } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 
-export class ArrayFieldBuilder<Of extends Field, Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'array', Optional> implements ArrayField {
+export class ArrayFieldBuilder<const Of extends Field, const Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'array', Optional> implements ArrayField {
     #of: Of;
 
     constructor(from: ArrayFieldBuilder<Of, Optional> | Of) {

@@ -1,7 +1,7 @@
 import { CompositeField } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class CompositeFieldBuilder<Of extends CompositeField['of'], Optional extends boolean = false>
+export class CompositeFieldBuilder<const Of extends CompositeField['of'], const Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'composite', Optional>
     implements CompositeField {
 
