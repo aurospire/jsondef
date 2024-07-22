@@ -1,5 +1,4 @@
 import { ObjectField } from "../Field";
-import { InferField } from "../Infer";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 export class ObjectFieldBuilder<Of extends ObjectField['of'], Optional extends boolean = false>
@@ -23,8 +22,4 @@ export class ObjectFieldBuilder<Of extends ObjectField['of'], Optional extends b
     override required(): ObjectFieldBuilder<Of, false> { return super.required() as any; }
 
     protected override clone() { return new ObjectFieldBuilder<Of, Optional>(this); }
-
-    get infer(): InferField<{ kind: 'object', isOptional: Optional; of: Of}> {
-        throw new Error('Type helper method');
-    }
 }

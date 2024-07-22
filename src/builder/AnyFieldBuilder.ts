@@ -1,5 +1,4 @@
 import { AnyField } from "../Field";
-import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class AnyFieldBuilder<Optional extends boolean = false> extends BaseFieldBuilder<'any', Optional> implements AnyField {
@@ -14,8 +13,4 @@ export class AnyFieldBuilder<Optional extends boolean = false> extends BaseField
 
 
     protected override clone() { return new AnyFieldBuilder<Optional>(this); }
-
-    get infer(): InferField<{ kind: 'any', isOptional: Optional; }> {
-        throw new Error('Type helper method');
-    }
 }

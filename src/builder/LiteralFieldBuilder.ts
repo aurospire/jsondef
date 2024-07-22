@@ -1,5 +1,4 @@
 import { LiteralField } from "../Field";
-import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class LiteralFieldBuilder<Of extends LiteralField['of'], Optional extends boolean = false>
@@ -28,9 +27,4 @@ export class LiteralFieldBuilder<Of extends LiteralField['of'], Optional extends
 
 
     protected override clone(): LiteralFieldBuilder<Of, Optional> { return new LiteralFieldBuilder<Of, Optional>(this); }
-
-
-    get infer(): InferField<{ kind: 'literal', isOptional: Optional; of: Of}> {
-        throw new Error('Type helper method');
-    }
 }

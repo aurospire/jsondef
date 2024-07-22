@@ -1,5 +1,4 @@
 import { NullField } from "../Field";
-import { InferField } from "../Infer";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class NullFieldBuilder<Optional extends boolean = false> extends BaseFieldBuilder<'null', Optional> implements NullField {
@@ -14,8 +13,4 @@ export class NullFieldBuilder<Optional extends boolean = false> extends BaseFiel
 
 
     protected override clone() { return new NullFieldBuilder<Optional>(this); }
-
-    get infer(): InferField<{ kind: 'null', isOptional: Optional;}> {
-        throw new Error('Type helper method');
-    }
 }

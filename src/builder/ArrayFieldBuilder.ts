@@ -1,5 +1,4 @@
-import { Field, ArrayField } from "../Field";
-import { InferField } from "../Infer";
+import { ArrayField, Field } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 
@@ -23,9 +22,4 @@ export class ArrayFieldBuilder<Of extends Field, Optional extends boolean = fals
 
 
     protected override clone() { return new ArrayFieldBuilder<Of, Optional>(this); }
-
-
-    get infer(): InferField<{ kind: 'array', isOptional: Optional; of: Of}> {
-        throw new Error('Type helper method');
-    }
 }

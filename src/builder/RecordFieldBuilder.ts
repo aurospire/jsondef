@@ -1,5 +1,4 @@
 import { RecordField } from "../Field";
-import { InferField } from "../Infer";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 export class RecordFieldBuilder<Of extends RecordField['of'] = undefined, Optional extends boolean = false>
@@ -37,9 +36,4 @@ export class RecordFieldBuilder<Of extends RecordField['of'] = undefined, Option
     override required(): RecordFieldBuilder<Of, false> { return super.required() as any; }
 
     protected override clone() { return new RecordFieldBuilder<Of, Optional>(this); }
-
-
-    get infer(): InferField<{ kind: 'record', isOptional: Optional; of: Of}> {
-        throw new Error('Type helper method');
-    }
 }

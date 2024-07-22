@@ -1,5 +1,4 @@
 import { CompositeField } from "../Field";
-import { InferField } from "../Infer";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 export class CompositeFieldBuilder<Of extends CompositeField['of'], Optional extends boolean = false>
@@ -23,9 +22,4 @@ export class CompositeFieldBuilder<Of extends CompositeField['of'], Optional ext
     override required(): CompositeFieldBuilder<Of, false> { return super.required() as any; }
 
     protected override clone() { return new CompositeFieldBuilder<Of, Optional>(this); }
-
-
-    get infer(): InferField<{ kind: 'composite', isOptional: Optional; of: Of; }> {
-        throw new Error('Type helper method');
-    }
 }

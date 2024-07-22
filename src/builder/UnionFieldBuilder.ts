@@ -1,5 +1,4 @@
 import { UnionField } from "../Field";
-import { InferField } from "../Infer";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 export class UnionFieldBuilder<Of extends UnionField['of'], Optional extends boolean = false>
@@ -23,8 +22,4 @@ export class UnionFieldBuilder<Of extends UnionField['of'], Optional extends boo
     override required(): UnionFieldBuilder<Of, false> { return super.required() as any; }
 
     protected override clone() { return new UnionFieldBuilder<Of, Optional>(this); }
-
-    get infer(): InferField<{ kind: 'union', isOptional: Optional; of: Of}> {
-        throw new Error('Type helper method');
-    }
 }
