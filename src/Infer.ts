@@ -1,35 +1,35 @@
-import { Combine } from "./util/Combine";
 import {
-    AnyField, ArrayField, BooleanField, CompositeField,
-    Field, FieldObject, IntegerField, LiteralField,
-    ModelField, NullField, NumberField, ObjectField,
-    RecordField, RefField, RootField, StringField, ThisField,
+    CompositeField,
+    Field, FieldObject,
+    LiteralField,
+    ModelField,
+    ObjectField,
     TupleField,
-    UnionField,
+    UnionField
 } from "./Field";
+import { UnionToIntersection } from "./util/Combine";
 
-export type InferField<T extends Field, N extends { [key: string]: any; } = {}, R = undefined, S = undefined> =
-    T extends NullField ? null :
-    T extends AnyField ? any :
-    // Returns current Scope (S - most recent Object/Model or root Object/Model)
-    T extends ThisField ? S :
-    // Returns root Scope (R - most recent Model)
-    T extends RootField ? R :
-    T extends BooleanField ? boolean :
-    T extends IntegerField ? number :
-    T extends NumberField ? number :
-    T extends StringField ? string :
-    T extends LiteralField ? T['of'] :
-    T extends ArrayField ? InferField<T['of'], N, R, S>[] :
-    T extends TupleField ? InferTuple<T['of'], N, R, S, T['rest']> :
-    T extends RecordField ? { [key: string]: T['of'] extends Field ? InferField<T['of'], N, R, S> : any; } :
-    T extends ModelField ? InferObject<T['of'], N> :
-    T extends ObjectField ? InferObject<T['of'], N, R> :
-    T extends CompositeField ? Combine<{ [K in number]: InferField<T['of'][K], N, R, S> }, number> :
-    T extends UnionField ? InferField<T['of'][number], N, R, S> :
-    // Returns type referenced in N (namespace)
-    T extends RefField ? T['of'] extends keyof N ? N[T['of']] extends Field ? InferField<N[T['of']], N, R, S> : N[T['of']] : never :
-    never;
+export type InferField<F extends Field, N extends { [key: string]: any; } = {}, M = undefined, S = undefined> =
+    F extends { kind: infer K; } ? (
+        K extends 'null'      ? null :
+        K extends 'any'       ? any :
+        K extends 'boolean'   ? boolean :
+        K extends 'integer'   ? number :
+        K extends 'number'    ? number :
+        K extends 'string'    ? string :
+        K extends 'literal'   ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
+        K extends 'array'     ? F extends { of: infer O extends Field; } ? InferField<O, N, M, S>[] : never :
+        K extends 'record'    ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, N, M, S>; } : never :
+        K extends 'model'     ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, N> : never :
+        K extends 'object'    ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, N, M> : never :
+        K extends 'union'     ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], N, M, S> : never :
+        K extends 'tuple'     ? F extends { of: infer O extends TupleField['of'], rest?: infer R extends Field | undefined; } ? InferTuple<O, N, M, S, R> : never :
+        K extends 'composite' ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
+        K extends 'ref'       ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
+        K extends 'this'      ? S :
+        K extends 'root'      ? M :
+        never
+    ) : never;
 
 export type InferObject<T extends FieldObject, N extends { [key: string]: string; } = {}, R = undefined> = {
     -readonly [K in keyof T as T[K] extends { isOptional: true; } ? never : K]: InferField<T[K], N, R extends undefined ? InferObject<T> : R, InferObject<T>>

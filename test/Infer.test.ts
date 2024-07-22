@@ -3,10 +3,9 @@ import {
     BooleanField,
     IntegerField,
     NullField, NumberField,
-    RecordField,
     StringField
 } from "@/Field";
-import { InferField, InferObject, InferTuple } from '@/Infer';
+import { InferField, InferNamespace, InferObject, InferTuple } from '@/Infer';
 import { expectType } from 'jestype';
 import { RootField, ThisField } from "types";
 
@@ -131,6 +130,7 @@ describe('Infer Types', () => {
             });
         });
 
+
         describe('Recursive Structures', () => {
             it('should test stand-alone this and root', () => {
                 expectType<InferField<ThisField>>().toBe<undefined>();
@@ -196,6 +196,147 @@ describe('Infer Types', () => {
 
                 expectType<InferredPost>().toBe<ExpectedPost>();
             });
+        });
+
+
+        describe('RefField', () => {
+            it('should infer the correct type for RefField', () => {
+                type TestNamespace = {
+                    User: {
+                        kind: 'object';
+                        of: {
+                            id: NumberField;
+                            name: StringField;
+                        };
+                    };
+                    Post: {
+                        kind: 'object';
+                        of: {
+                            id: NumberField;
+                            title: StringField;
+                            author: { kind: 'ref', of: 'User'; };
+                        };
+                    };
+                };
+
+                type InferredPost = InferField<TestNamespace['Post'], TestNamespace>;
+
+                type ExpectedPost = {
+                    id: number;
+                    title: string;
+                    author: {
+                        id: number;
+                        name: string;
+                    };
+                };
+
+                expectType<InferredPost>().toBe<ExpectedPost>();
+            });
+
+            it('should handle circular references', () => {
+                type TestNamespace = {
+                    TreeNode: {
+                        kind: 'object';
+                        of: {
+                            value: NumberField;
+                            left: { kind: 'ref', of: 'TreeNode', isOptional: true; };
+                            right: { kind: 'ref', of: 'TreeNode', isOptional: true; };
+                        };
+                    };
+                };
+
+                type InferredTreeNode = InferField<TestNamespace['TreeNode'], TestNamespace>;
+
+                type ExpectedTreeNode = {
+                    value: number;
+                    left?: ExpectedTreeNode;
+                    right?: ExpectedTreeNode;
+                };
+
+                expectType<InferredTreeNode>().toBe<ExpectedTreeNode>();
+            });
+        });
+    });
+
+    describe('InferNamespace', () => {
+        it('should infer all types in a namespace correctly', () => {
+            type TestNamespace = {
+                User: {
+                    kind: 'object';
+                    of: {
+                        id: NumberField;
+                        name: StringField;
+                    };
+                };
+                Post: {
+                    kind: 'object';
+                    of: {
+                        id: NumberField;
+                        title: StringField;
+                        author: { kind: 'ref', of: 'User' };
+                    };
+                };
+            };
+
+            type InferredNamespace = InferNamespace<TestNamespace>;
+
+            type ExpectedNamespace = {
+                User: {
+                    id: number;
+                    name: string;
+                };
+                Post: {
+                    id: number;
+                    title: string;
+                    author: {
+                        id: number;
+                        name: string;
+                    };
+                };
+            };
+
+            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+        });
+
+        it('should handle complex nested structures in a namespace', () => {
+            type TestNamespace = {
+                SimpleType: StringField;
+                ComplexType: {
+                    kind: 'object';
+                    of: {
+                        field1: NumberField;
+                        field2: {
+                            kind: 'array';
+                            of: { kind: 'ref', of: 'SimpleType' };
+                        };
+                        field3: { kind: 'ref', of: 'NestedType' };
+                    };
+                };
+                NestedType: {
+                    kind: 'object';
+                    of: {
+                        nestedField: BooleanField;
+                    };
+                };
+            };
+
+            type InferredNamespace = InferNamespace<TestNamespace>;
+
+            type ExpectedNamespace = {
+                SimpleType: string;
+                ComplexType: {
+                    field1: number;
+                    field2: string[];
+                    field3: {
+                        nestedField: boolean;
+                    };
+                };
+                NestedType: {
+                    nestedField: boolean;
+                };
+            };
+
+            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
         });
     });
 });
