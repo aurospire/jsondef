@@ -31,15 +31,15 @@ export type InferField<F extends Field, N extends { [key: string]: any; } = {}, 
         never
     ) : never;
 
-export type InferObject<T extends FieldObject, N extends { [key: string]: string; } = {}, R = undefined> = {
-    -readonly [K in keyof T as T[K] extends { isOptional: true; } ? never : K]: InferField<T[K], N, R extends undefined ? InferObject<T> : R, InferObject<T>>
+export type InferObject<T extends FieldObject, N extends { [key: string]: string; } = {}, M = undefined> = {
+    -readonly [K in keyof T as T[K] extends { isOptional: true; } ? never : K]: InferField<T[K], N, M extends undefined ? InferObject<T> : M, InferObject<T>>
 } & {
-    -readonly [K in keyof T as T[K] extends { isOptional: true; } ? K : never]?: InferField<T[K], N, R extends undefined ? InferObject<T> : R, InferObject<T>>
+    -readonly [K in keyof T as T[K] extends { isOptional: true; } ? K : never]?: InferField<T[K], N, M extends undefined ? InferObject<T> : M, InferObject<T>>
 } & unknown;
 
-export type InferTuple<T extends Field[], N extends { [key: string]: string; } = {}, R = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
-    [K in keyof T]: InferField<T[K], N, R, S>;
-} extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, N, R, S>[] : [])] : never : never;
+export type InferTuple<T extends Field[], N extends { [key: string]: string; } = {}, M = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
+    [K in keyof T]: InferField<T[K], N, M, S>;
+} extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, N, M, S>[] : [])] : never : never;
 
 // Allows namespace to be referenced together
 export type InferNamespace<T extends { [key: string]: Field; }> = { [K in keyof T]: InferField<T[K], T> };
