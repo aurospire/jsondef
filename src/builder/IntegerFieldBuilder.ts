@@ -11,11 +11,13 @@ export class IntegerFieldBuilder<const Optional extends boolean = false> extends
             if (value !== undefined && !Number.isInteger(value))
                 throw new Error(`${name} must be an integer`);
 
-        let min = bounds.xmin ?? bounds.min ?? -Infinity;
+        const min = bounds.xmin ?? bounds.min ?? -Infinity;
 
-        let max = bounds.xmax ?? bounds.max ?? +Infinity;
+        const max = bounds.xmax ?? bounds.max ?? +Infinity;
 
-        if (min <= max)
+        if (bounds.min === 10 && bounds.max === 0)
+            console.log({bounds, min, max})
+        if (min > max)
             throw new Error('Minimum must be less or equal to Maximum');
     }
 

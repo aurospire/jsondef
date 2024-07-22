@@ -266,7 +266,7 @@ describe('Jestype Builder Helpers', () => {
             expect(shape.kind).toBe('union');
 
             type Shape = j.infer<typeof shape>;
-            expectType<Shape>().toBeOfUnion<
+            expectType<Shape>().toBe<
                 { kind: 'circle'; radius: number; } | { kind: 'rectangle'; width: number; height: number; }
             >();
         });

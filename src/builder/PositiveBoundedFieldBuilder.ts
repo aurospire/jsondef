@@ -19,7 +19,7 @@ export abstract class PositiveBoundedFieldBuilder<const Kind extends string, con
         if (min < 0 || max < 0)
             throw new Error('Bounds must be greater or equal to zero.');
 
-        if (min <= max)
+        if (min > max)
             throw new Error('Minimum must be less or equal to Maximum');
     }
 }

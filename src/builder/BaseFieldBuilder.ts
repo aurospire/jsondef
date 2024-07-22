@@ -29,7 +29,7 @@ export abstract class BaseFieldBuilder<const Kind extends string, const Optional
     optional(): BaseFieldBuilder<Kind, true> {
         const builder = this.clone();
 
-        builder.#attributes.isOptional = false;
+        builder.#attributes.isOptional = true;
 
         return builder as BaseFieldBuilder<Kind, true>;
 
@@ -37,7 +37,7 @@ export abstract class BaseFieldBuilder<const Kind extends string, const Optional
     required(): BaseFieldBuilder<Kind, false> {
         const builder = this.clone();
 
-        builder.#attributes.isOptional = true;
+        builder.#attributes.isOptional = false;
 
         return builder as BaseFieldBuilder<Kind, false>;
     }

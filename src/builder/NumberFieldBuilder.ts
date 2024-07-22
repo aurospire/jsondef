@@ -15,7 +15,7 @@ export class NumberFieldBuilder<const Optional extends boolean = false> extends 
 
         let max = bounds.xmax ?? bounds.max ?? +Infinity;
 
-        if (min <= max)
+        if (min > max)
             throw new Error('Minimum must be less or equal to Maximum');
     }
 

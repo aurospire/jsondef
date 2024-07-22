@@ -18,6 +18,8 @@ export abstract class BoundedFieldBuilder<const Kind extends string, const Optio
     get xmax() { return this.#bounds.xmax; }
 
     bound(bounds: BoundedAttributes): BoundedFieldBuilder<Kind, Optional> {
+        this.validateBounds(bounds);
+
         const builder = this.clone();
 
         builder.#bounds = { ...bounds };
