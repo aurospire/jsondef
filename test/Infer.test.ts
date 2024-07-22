@@ -96,7 +96,7 @@ describe('Infer Types', () => {
             it('should handle rest element in tuples', () => {
                 type TestTuple = [StringField, NumberField];
                 type TestRest = BooleanField;
-                expectType<InferTuple<TestTuple, undefined, undefined, TestRest>>().toExtend<[string, number, ...boolean[]]>();
+                expectType<InferTuple<TestTuple, {}, undefined, undefined, TestRest>>().toExtend<[string, number, ...boolean[]]>();
             });
         });
 
@@ -104,15 +104,18 @@ describe('Infer Types', () => {
             it('should infer object structure correctly', () => {
                 type TestFieldObject = {
                     implicit: { kind: 'string'; };
-                    explicit: { kind: 'boolean'; optional: false; };
-                    optional: { kind: 'number'; optional: true; };
+                    explicit: { kind: 'boolean'; isOptional: false; };
+                    optional: { kind: 'number'; isOptional: true; };
                 };
+                type Inferred = InferObject<TestFieldObject>;
+
                 type Expected = {
                     implicit: string;
                     explicit: boolean;
                     optional?: number;
                 };
-                expectType<InferObject<TestFieldObject>>().toBe<Expected>();
+
+                expectType<Inferred>().toBe<Expected>();
             });
 
             it('should handle nested objects', () => {
@@ -140,16 +143,19 @@ describe('Infer Types', () => {
                     kind: 'object';
                     of: {
                         value: StringField;
-                        root: { kind: 'root', optional: true; };
-                        this: { kind: 'this', optional: true; };
+                        root: { kind: 'root', isOptional: true; };
+                        this: { kind: 'this', isOptional: true; };
                     };
                 };
+
                 type Inferred = InferField<Field>;
+
                 type Expected = {
                     value: string;
                     root?: Expected;
                     this?: Expected;
                 };
+
                 expectType<Inferred>().toBe<Expected>();
             });
 
@@ -160,7 +166,7 @@ describe('Infer Types', () => {
                     of: {
                         id: NumberField;
                         name: StringField;
-                        root: { kind: 'root', optional: true; }; // models keep the root internal
+                        root: { kind: 'root', isOptional: true; }; // models keep the root internal
                     };
                 };
 
@@ -186,7 +192,9 @@ describe('Infer Types', () => {
                     author: ExpectedUser;
                 };
 
-                expectType<InferField<PostModel>>().toBe<ExpectedPost>();
+                type InferredPost = InferField<PostModel>;
+
+                expectType<InferredPost>().toBe<ExpectedPost>();
             });
         });
     });

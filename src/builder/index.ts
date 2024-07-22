@@ -26,15 +26,19 @@ import { InferField } from '../Infer';
 import * as j from './helpers';
 
 const a = j.model('User', {
-    name: j.object({
-        first: j.string().bound({ max: 10 }),
-        last: j.string().bound({ max: 10 }),
-        middle: j.string().bound({ max: 1 }).optional()
-    })
+    first: j.string().bound({ max: 10 }),
+    last: j.string().bound({ max: 10 }),
+    middle: j.string().bound({ max: 1 }).optional(),    
+    this: j.this().optional()
 });
 
 type a = InferField<typeof a>;
 
 const b: a = {
-    name: {first: 'Jon', last: 'smith', middle: 'H'}
+    first: '',
+    last: '',
+    this: {
+        first: 'a',
+        last: 'b'
+    }
 }

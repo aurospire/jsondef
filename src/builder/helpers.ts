@@ -1,5 +1,7 @@
-import { ArrayField, CompositeField, LiteralField, ModelField, ObjectField, RecordField, RefField, TupleField, UnionField } from "../Field";
+import { ArrayField, CompositeField, Field, LiteralField, ModelField, ObjectField, RecordField, RefField, TupleField, UnionField } from "../Field";
 import { AnyFieldBuilder } from "./AnyFieldBuilder";
+import { ThisFieldBuilder } from "./ThisFieldBuilder";
+import { RootFieldBuilder } from "./RootFieldBuilder";
 import { BooleanFieldBuilder } from "./BooleanFieldBuilder";
 import { IntegerFieldBuilder } from "./IntegerFieldBuilder";
 import { LiteralFieldBuilder } from "./LiteralFieldBuilder";
@@ -17,6 +19,8 @@ import { RefFieldBuilder } from './RefFieldBuilder';
 
 const nullField = () => new NullFieldBuilder();
 const anyField = () => new AnyFieldBuilder();
+const thisField = () => new ThisFieldBuilder();
+const rootField = () => new RootFieldBuilder();
 const booleanField = () => new BooleanFieldBuilder();
 const integerField = () => new IntegerFieldBuilder();
 const numberField = () => new NumberFieldBuilder();
@@ -39,9 +43,15 @@ const compositeField = <Of extends CompositeField['of']>(of: Of) => new Composit
 const unionField = <Of extends UnionField['of']>(of: Of) => new UnionFieldBuilder(of);
 const refField = <Of extends RefField['of']>(of: Of) => new RefFieldBuilder(of);
 
+const namespace = <Fields extends { [key: string]: Field; }>(fields: Fields): Fields => {
+    return fields;
+};
+
 export {
     nullField as null,
     anyField as any,
+    thisField as this,
+    rootField as root,
     booleanField as booleanl,
     integerField as integer,
     numberField as number,
