@@ -1,4 +1,4 @@
-import { ArrayField, CompositeField, Field, LiteralField, ModelField, ObjectField, RecordField, RefField, TupleField, UnionField } from "../Field";
+import { ArrayField, CompositeField, Field, LiteralField, ModelField, NamespaceField, ObjectField, RecordField, RefField, TupleField, UnionField } from "../Field";
 import { AnyFieldBuilder } from "./AnyFieldBuilder";
 import { ThisFieldBuilder } from "./ThisFieldBuilder";
 import { RootFieldBuilder } from "./RootFieldBuilder";
@@ -17,6 +17,7 @@ import { CompositeFieldBuilder } from './CompositeFieldBuilder';
 import { UnionFieldBuilder } from './UnionFieldBuilder';
 import { RefFieldBuilder } from './RefFieldBuilder';
 import { InferField } from "../Infer";
+import { NamespaceFieldBuilder } from "./NamespaceFieldBuilder";
 
 const nullField = () => new NullFieldBuilder();
 const anyField = () => new AnyFieldBuilder();
@@ -43,7 +44,7 @@ const modelField = <const Of extends ModelField['of']>(name: string, of: Of) => 
 const compositeField = <const Of extends CompositeField['of']>(of: Of) => new CompositeFieldBuilder<Of>(of);
 const unionField = <const Of extends UnionField['of']>(of: Of) => new UnionFieldBuilder<Of>(of);
 const refField = <const Of extends RefField['of']>(of: Of) => new RefFieldBuilder<Of>(of);
-
+const namespaceField = <const Of extends NamespaceField['of']>(of: Of) => new NamespaceFieldBuilder(of);
 
 // import from this file as 'j' to use these methods
 // example: j.null();
@@ -64,6 +65,7 @@ export {
     modelField as model,
     compositeField as composite,
     unionField as union,
+    namespaceField as namespace,
     refField as ref,
     InferField as infer
 };
