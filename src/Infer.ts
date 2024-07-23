@@ -4,6 +4,7 @@ import {
     Field, FieldObject,
     LiteralField,
     ModelField,
+    NamespaceField,
     ObjectField,
     TupleField,
     UnionField
@@ -22,23 +23,24 @@ import { UnionToIntersection } from "./util";
  */
 export type InferField<F extends Field, N extends { [key: string]: any; } = {}, M = undefined, S = undefined> =
     F extends { kind: infer K; } ? (
-        K extends 'null' ? null :
-        K extends 'any' ? any :
-        K extends 'boolean' ? boolean :
-        K extends 'integer' ? number :
-        K extends 'number' ? number :
-        K extends 'string' ? string :
-        K extends 'literal' ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
-        K extends 'array' ? F extends { of: infer O extends Field; } ? Array<InferField<O, N, M, S>> : never :        
-        K extends 'record' ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, N, M, S>; } : never :
-        K extends 'model' ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, N> : never :
-        K extends 'object' ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, N, M> : never :
-        K extends 'union' ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], N, M, S> : never :
-        K extends 'tuple' ? F extends { of: infer O extends TupleField['of'], rest?: infer R extends Field | undefined; } ? InferTuple<O, N, M, S, R> : never :
-        K extends 'composite' ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
-        K extends 'ref' ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
-        K extends 'this' ? S :
-        K extends 'root' ? M :
+        K extends 'null'        ? null :
+        K extends 'any'         ? any :
+        K extends 'boolean'     ? boolean :
+        K extends 'integer'     ? number :
+        K extends 'number'      ? number :
+        K extends 'string'      ? string :
+        K extends 'literal'     ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
+        K extends 'array'       ? F extends { of: infer O extends Field; } ? Array<InferField<O, N, M, S>> : never :
+        K extends 'record'      ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, N, M, S>; } : never :
+        K extends 'model'       ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, N> : never :
+        K extends 'object'      ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, N, M> : never :
+        K extends 'union'       ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], N, M, S> : never :
+        K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, N, M, S, R> : InferTuple<O, N, M, S> ): never :
+        K extends 'composite'   ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
+        K extends 'ref'         ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
+        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? InferNamespace<O> : never :
+        K extends 'this'        ? S :
+        K extends 'root'        ? M :
         never
     ) : never;
 

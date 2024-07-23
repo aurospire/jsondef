@@ -202,6 +202,9 @@ export type RefAttributes = { of: string; };
 export type RefField = BaseField<'ref'> & RefAttributes;
 
 
+export type NamespaceAttributes = { of: FieldObject; };
+
+export type NamespaceField = BaseField<'namespace'> & NamespaceAttributes;
 /**
  * Union type of all possible field types.
  */
@@ -222,7 +225,9 @@ export type Field =
     | ObjectField
     | CompositeField
     | UnionField
-    | RefField;
+    | RefField
+    | NamespaceField
+    ;
 
 
 /**
