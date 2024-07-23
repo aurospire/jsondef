@@ -1,23 +1,23 @@
-import { ArrayField, CompositeField, Field, LiteralField, ModelField, NamespaceField, ObjectField, RecordField, RefField, TupleField, UnionField } from "../Field";
-import { AnyFieldBuilder } from "./AnyFieldBuilder";
-import { ThisFieldBuilder } from "./ThisFieldBuilder";
-import { RootFieldBuilder } from "./RootFieldBuilder";
-import { BooleanFieldBuilder } from "./BooleanFieldBuilder";
-import { IntegerFieldBuilder } from "./IntegerFieldBuilder";
-import { LiteralFieldBuilder } from "./LiteralFieldBuilder";
-import { NullFieldBuilder } from "./NullFieldBuilder";
-import { NumberFieldBuilder } from "./NumberFieldBuilder";
-import { StringFieldBuilder } from "./StringFieldBuilder";
-import { ArrayFieldBuilder } from './ArrayFieldBuilder';
-import { TupleFieldBuilder } from './TupleFieldBuilder';
-import { RecordFieldBuilder } from './RecordFieldBuilder';
-import { ObjectFieldBuilder } from './ObjectFieldBuilder';
-import { ModelFieldBuilder } from './ModelFieldBuilder';
-import { CompositeFieldBuilder } from './CompositeFieldBuilder';
-import { UnionFieldBuilder } from './UnionFieldBuilder';
-import { RefFieldBuilder } from './RefFieldBuilder';
-import { InferField } from "../Infer";
-import { NamespaceFieldBuilder } from "./NamespaceFieldBuilder";
+import { ArrayField, CompositeField, LiteralField, ModelField, NamespaceField, ObjectField, RecordField, RefField, TupleField, UnionField } from "./Field";
+import { InferField } from "./Infer";
+import { AnyFieldBuilder } from "./builder/AnyFieldBuilder";
+import { ArrayFieldBuilder } from './builder/ArrayFieldBuilder';
+import { BooleanFieldBuilder } from "./builder/BooleanFieldBuilder";
+import { CompositeFieldBuilder } from './builder/CompositeFieldBuilder';
+import { IntegerFieldBuilder } from "./builder/IntegerFieldBuilder";
+import { LiteralFieldBuilder } from "./builder/LiteralFieldBuilder";
+import { ModelFieldBuilder } from './builder/ModelFieldBuilder';
+import { NamespaceFieldBuilder } from "./builder/NamespaceFieldBuilder";
+import { NullFieldBuilder } from "./builder/NullFieldBuilder";
+import { NumberFieldBuilder } from "./builder/NumberFieldBuilder";
+import { ObjectFieldBuilder } from './builder/ObjectFieldBuilder';
+import { RecordFieldBuilder } from './builder/RecordFieldBuilder';
+import { RefFieldBuilder } from './builder/RefFieldBuilder';
+import { RootFieldBuilder } from "./builder/RootFieldBuilder";
+import { StringFieldBuilder } from "./builder/StringFieldBuilder";
+import { ThisFieldBuilder } from "./builder/ThisFieldBuilder";
+import { TupleFieldBuilder } from './builder/TupleFieldBuilder';
+import { UnionFieldBuilder } from './builder/UnionFieldBuilder';
 
 const nullField = () => new NullFieldBuilder();
 const anyField = () => new AnyFieldBuilder();
@@ -49,23 +49,5 @@ const namespaceField = <const Of extends NamespaceField['of']>(of: Of) => new Na
 // import from this file as 'j' to use these methods
 // example: j.null();
 export {
-    nullField as null,
-    anyField as any,
-    thisField as this,
-    rootField as root,
-    booleanField as boolean,
-    integerField as integer,
-    numberField as number,
-    stringField as string,
-    literalField as literal,
-    arrayField as array,
-    tupleField as tuple,
-    recordField as record,
-    objectField as object,
-    modelField as model,
-    compositeField as composite,
-    unionField as union,
-    namespaceField as namespace,
-    refField as ref,
-    InferField as infer
+    anyField as any, arrayField as array, booleanField as boolean, compositeField as composite, InferField as infer, integerField as integer, literalField as literal, modelField as model, namespaceField as namespace, nullField as null, numberField as number, objectField as object, recordField as record, refField as ref, rootField as root, stringField as string, thisField as this, tupleField as tuple, unionField as union
 };

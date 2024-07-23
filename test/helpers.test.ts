@@ -1,4 +1,4 @@
-import * as j from '@/builder/helpers';
+import * as j from '@/helpers';
 import { expectType } from 'jestype';
 
 describe('Jestype Builder Helpers', () => {

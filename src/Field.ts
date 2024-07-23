@@ -60,7 +60,7 @@ export type NumberField = BaseField<'number'> & BoundedAttributes;
 /**
  * Represents a string pattern using a regex format.
  */
-export type RegexString = `/${string}/${string}/`;
+export type RegexString = `/${string}/${string}`;
 
 /**
  * Defines patterns that a string field can match.
@@ -207,25 +207,25 @@ export type RefField = BaseField<'ref'> & RefAttributes;
 /**
  * Union type of all possible field types.
  */
-export type Field =
-    | NullField
-    | AnyField
-    | ThisField
-    | RootField
-    | BooleanField
-    | IntegerField
-    | NumberField
-    | StringField
-    | LiteralField
-    | ArrayField
-    | TupleField
-    | RecordField
-    | ModelField
-    | ObjectField
-    | CompositeField
-    | UnionField
-    | RefField
-    | NamespaceField;
+export type Field = BaseField<string> // How much should this speed it up?
+    // | NullField
+    // | AnyField
+    // | ThisField
+    // | RootField
+    // | BooleanField
+    // | IntegerField
+    // | NumberField
+    // | StringField
+    // | LiteralField
+    // | ArrayField
+    // | TupleField
+    // | RecordField
+    // | ModelField
+    // | ObjectField
+    // | CompositeField
+    // | UnionField
+    // | RefField
+    // | NamespaceField;
 
 /**
  * Represents an object where each key is associated with a specific field type.
