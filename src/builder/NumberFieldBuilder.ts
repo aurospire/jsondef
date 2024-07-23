@@ -23,6 +23,7 @@ export class NumberFieldBuilder<const Optional extends boolean = false> extends 
 
     override required(): NumberFieldBuilder<false> { return super.required() as any; }
 
+    override bound(bounds: BoundedAttributes): NumberFieldBuilder<Optional> { return super.bound(bounds) as any; }
 
     protected override clone() { return new NumberFieldBuilder<Optional>(); }
 }

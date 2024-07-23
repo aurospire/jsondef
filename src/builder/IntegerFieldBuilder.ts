@@ -16,7 +16,7 @@ export class IntegerFieldBuilder<const Optional extends boolean = false> extends
         const max = bounds.xmax ?? bounds.max ?? +Infinity;
 
         if (bounds.min === 10 && bounds.max === 0)
-            console.log({bounds, min, max})
+            console.log({ bounds, min, max });
         if (min > max)
             throw new Error('Minimum must be less or equal to Maximum');
     }
@@ -25,6 +25,7 @@ export class IntegerFieldBuilder<const Optional extends boolean = false> extends
 
     override required(): IntegerFieldBuilder<false> { return super.required() as any; }
 
+    override bound(bounds: BoundedAttributes): IntegerFieldBuilder<Optional> { return super.bound(bounds) as any; }
 
     protected override clone() { return new IntegerFieldBuilder<Optional>(); }
 }

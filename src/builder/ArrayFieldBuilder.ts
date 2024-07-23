@@ -1,8 +1,11 @@
-import { ArrayField, Field } from "../Field";
+import { ArrayField, BoundedAttributes, Field } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 
-export class ArrayFieldBuilder<const Of extends Field, const Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'array', Optional> implements ArrayField {
+export class ArrayFieldBuilder<const Of extends Field, const Optional extends boolean = false>
+    extends PositiveBoundedFieldBuilder<'array', Optional>
+    implements ArrayField {
+
     #of: Of;
 
     constructor(from: ArrayFieldBuilder<Of, Optional> | Of) {
@@ -19,6 +22,8 @@ export class ArrayFieldBuilder<const Of extends Field, const Optional extends bo
     override optional(): ArrayFieldBuilder<Of, true> { return super.optional() as any; }
 
     override required(): ArrayFieldBuilder<Of, false> { return super.required() as any; }
+
+    override bound(bounds: BoundedAttributes): ArrayFieldBuilder<Of, Optional> { return super.bound(bounds) as any; }
 
 
     protected override clone() { return new ArrayFieldBuilder<Of, Optional>(this); }

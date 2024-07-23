@@ -1,4 +1,4 @@
-import { RecordField } from "../Field";
+import { BoundedAttributes, RecordField } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
 export class RecordFieldBuilder<const Of extends RecordField['of'] = undefined, const Optional extends boolean = false>
@@ -34,6 +34,8 @@ export class RecordFieldBuilder<const Of extends RecordField['of'] = undefined, 
     override optional(): RecordFieldBuilder<Of, true> { return super.optional() as any; }
 
     override required(): RecordFieldBuilder<Of, false> { return super.required() as any; }
+
+    override bound(bounds: BoundedAttributes): RecordFieldBuilder<Of, Optional> { return super.bound(bounds) as any; }
 
     protected override clone() { return new RecordFieldBuilder<Of, Optional>(this); }
 }

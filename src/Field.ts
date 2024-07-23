@@ -7,64 +7,55 @@ export type BaseAttributes = {
 };
 
 /**
- * Represents a basic field with a specific kind and additional base attributes.
+ * Represents a basic field with a specific kind.
  * @template Kind The specific kind of the field.
  */
 export type BaseField<Kind extends string> = { kind: Kind; } & BaseAttributes;
-
 
 /**
  * Represents a field of type 'null'.
  */
 export type NullField = BaseField<'null'>;
 
-
 /**
  * Represents a field of type 'any'.
  */
 export type AnyField = BaseField<'any'>;
-
 
 /**
  * Represents a field referring to 'this' context. 'This' refers to the current object or model scope.
  */
 export type ThisField = BaseField<'this'>;
 
-
 /**
  * Represents a root field type. 'Root' refers to the most recent model or the top-level object.
  */
 export type RootField = BaseField<'root'>;
-
 
 /**
  * Represents a boolean field type.
  */
 export type BooleanField = BaseField<'boolean'>;
 
-
 /**
- * Defines attributes for bounded fields, specifying minimum and maximum values.
+ * Defines attributes for bounded fields, specifying optional minimum and maximum values, including exclusive bounds.
  */
 export type BoundedAttributes = {
-    min?: number;  // Minimum value.
-    max?: number;  // Maximum value.
+    min?: number;  // Inclusive minimum value.
+    max?: number;  // Inclusive maximum value.
     xmin?: number; // Exclusive minimum value.
     xmax?: number; // Exclusive maximum value.
 };
-
 
 /**
  * Represents an integer field with optional bounded attributes.
  */
 export type IntegerField = BaseField<'integer'> & BoundedAttributes;
 
-
 /**
  * Represents a numeric field with optional bounded attributes.
  */
 export type NumberField = BaseField<'number'> & BoundedAttributes;
-
 
 /**
  * Represents a string pattern using a regex format.
@@ -192,6 +183,17 @@ export type UnionField = BaseField<'union'> & UnionAttributes;
 
 
 /**
+ * Defines attributes for namespace fields specifying the structure.
+ */
+export type NamespaceAttributes = { of: FieldObject; };
+
+/**
+ * Represents a namespace field with specific structure attributes.
+ */
+export type NamespaceField = BaseField<'namespace'> & NamespaceAttributes;
+
+
+/**
  * Defines attributes for reference fields specifying a reference by name. 'Ref' refers to another type in a Field namespace.
  */
 export type RefAttributes = { of: string; };
@@ -202,9 +204,6 @@ export type RefAttributes = { of: string; };
 export type RefField = BaseField<'ref'> & RefAttributes;
 
 
-export type NamespaceAttributes = { of: FieldObject; };
-
-export type NamespaceField = BaseField<'namespace'> & NamespaceAttributes;
 /**
  * Union type of all possible field types.
  */
@@ -226,9 +225,7 @@ export type Field =
     | CompositeField
     | UnionField
     | RefField
-    | NamespaceField
-    ;
-
+    | NamespaceField;
 
 /**
  * Represents an object where each key is associated with a specific field type.

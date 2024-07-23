@@ -18,6 +18,7 @@ export * from './ObjectFieldBuilder';
 export * from './ModelFieldBuilder';
 export * from './CompositeFieldBuilder';
 export * from './UnionFieldBuilder';
+export * from './NamespaceFieldBuilder';
 export * from './RefFieldBuilder';
 
 export * as j from './helpers';
