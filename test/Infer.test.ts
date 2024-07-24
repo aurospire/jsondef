@@ -244,7 +244,7 @@ describe('InferField', () => {
         it('should infer correct types for namespace fields with main', () => {
             type TestNamespace = {
                 kind: 'namespace',
-                main: 'Post',
+                mainKey: 'Post',
                 of: {
                     User: {
                         kind: 'model',
@@ -279,5 +279,106 @@ describe('InferField', () => {
 
             expectType<InferredNamespace>().toBe<ExpectedNamespace>();
         });
+
+        it('should infer correct types for namespace fields with invalid mainKey', () => {
+            type TestNamespace = {
+                kind: 'namespace',
+                mainKey: 'Address',
+                of: {
+                    User: {
+                        kind: 'model',
+                        of: {
+                            id: NumberField;
+                            name: StringField;
+                        };
+                        name: 'User';
+                    };
+                    Post: {
+                        kind: 'model',
+                        of: {
+                            id: NumberField;
+                            title: StringField;
+                            author: { kind: 'ref', of: 'User'; };
+                        };
+                        name: 'Post';
+                    };
+                };
+            };
+
+            type InferredNamespace = InferField<TestNamespace>;
+            type ExpectedNamespace = never;
+            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+        });
+    });
+
+    it('should infer correct types for namespace fields with generic mainKey', () => {
+        type TestNamespace = {
+            kind: 'namespace',
+            mainKey: string,
+            of: {
+                User: {
+                    kind: 'model',
+                    of: {
+                        id: NumberField;
+                        name: StringField;
+                    };
+                    name: 'User';
+                };
+                Post: {
+                    kind: 'model',
+                    of: {
+                        id: NumberField;
+                        title: StringField;
+                        author: { kind: 'ref', of: 'User'; };
+                    };
+                    name: 'Post';
+                };
+            };
+        };
+
+        type InferredNamespace = InferField<TestNamespace>;
+        type ExpectedNamespace = never;
+        expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+    });
+
+    it('should infer correct types for namespace fields with multiple mainKey', () => {
+        type TestNamespace = {
+            kind: 'namespace',
+            mainKey: 'User' | 'Post',
+            of: {
+                User: {
+                    kind: 'model',
+                    of: {
+                        id: NumberField;
+                        name: StringField;
+                    };
+                    name: 'User';
+                };
+                Post: {
+                    kind: 'model',
+                    of: {
+                        id: NumberField;
+                        title: StringField;
+                        author: { kind: 'ref', of: 'User'; };
+                    };
+                    name: 'Post';
+                };
+            };
+        };
+
+        type InferredNamespace = InferField<TestNamespace>;
+        type ExpectedNamespace = {
+            id: number;
+            name: string;
+        } | {
+            id: number;
+            title: string;
+            author: {
+                id: number;
+                name: string;
+            };
+        };
+
+        expectType<InferredNamespace>().toBe<ExpectedNamespace>();
     });
 });

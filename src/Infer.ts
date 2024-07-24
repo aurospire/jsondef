@@ -38,7 +38,7 @@ export type InferField<F extends Field, N extends { [key: string]: Field; } = {}
         K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, N, M, S, R> : InferTuple<O, N, M, S> ): never :
         K extends 'composite'   ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
         K extends 'ref'         ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
-        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? (F extends {main: infer N extends keyof O }? InferField<O[N], O> : InferNamespace<O> ): never :
+        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? (F extends { mainKey: infer N extends string } ? InferField<O[N], O> : InferNamespace<O> ): never :
         K extends 'this'        ? S extends undefined ? never : S :
         K extends 'root'        ? M extends undefined ? never : M :
         never
@@ -82,3 +82,4 @@ export type InferTuple<F extends Field[], N extends { [key: string]: Field; } = 
  * @returns An object type with properties corresponding to the namespace's fields, each typed according to its definition.
  */
 export type InferNamespace<N extends { [key: string]: Field; }> = { [K in keyof N]: InferField<N[K], N> };
+
