@@ -185,7 +185,7 @@ export type UnionField = BaseField<'union'> & UnionAttributes;
 /**
  * Defines attributes for namespace fields specifying the structure.
  */
-export type NamespaceAttributes = { of: FieldObject; };
+export type NamespaceAttributes = { of: FieldObject; mainKey?: string };
 
 /**
  * Represents a namespace field with specific structure attributes.
@@ -207,7 +207,11 @@ export type RefField = BaseField<'ref'> & RefAttributes;
 /**
  * Union type of all possible field types.
  */
-export type Field = BaseField<string> // How much should this speed it up?
+
+
+// The benefit is that you prevent super deep resolution
+// But you cant resolve kind by type anymore :\
+export type Field = BaseField<string> 
     // | NullField
     // | AnyField
     // | ThisField

@@ -49,5 +49,23 @@ const namespaceField = <const Of extends NamespaceField['of']>(of: Of) => new Na
 // import from this file as 'j' to use these methods
 // example: j.null();
 export {
-    anyField as any, arrayField as array, booleanField as boolean, compositeField as composite, InferField as infer, integerField as integer, literalField as literal, modelField as model, namespaceField as namespace, nullField as null, numberField as number, objectField as object, recordField as record, refField as ref, rootField as root, stringField as string, thisField as this, tupleField as tuple, unionField as union
+    nullField as null,
+    anyField as any,
+    booleanField as boolean,
+    integerField as integer,
+    numberField as number,
+    stringField as string,
+    literalField as literal,
+    arrayField as array,
+    tupleField as tuple,
+    recordField as record,
+    objectField as object,
+    modelField as model,
+    compositeField as composite,
+    thisField as this,
+    rootField as root,
+    unionField as union,
+    namespaceField as namespace,
+    refField as ref,
+    InferField as infer,
 };

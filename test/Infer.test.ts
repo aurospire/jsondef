@@ -240,5 +240,44 @@ describe('InferField', () => {
             };
             expectType<InferredNamespace>().toBe<ExpectedNamespace>();
         });
+
+        it('should infer correct types for namespace fields with main', () => {
+            type TestNamespace = {
+                kind: 'namespace',
+                main: 'Post',
+                of: {
+                    User: {
+                        kind: 'model',
+                        of: {
+                            id: NumberField;
+                            name: StringField;
+                        };
+                        name: 'User';
+                    };
+                    Post: {
+                        kind: 'model',
+                        of: {
+                            id: NumberField;
+                            title: StringField;
+                            author: { kind: 'ref', of: 'User'; };
+                        };
+                        name: 'Post';
+                    };
+                };
+            };
+
+            type InferredNamespace = InferField<TestNamespace>;
+
+            type ExpectedNamespace = {
+                id: number;
+                title: string;
+                author: {
+                    id: number;
+                    name: string;
+                };
+            };
+
+            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+        });
     });
 });

@@ -1,11 +1,13 @@
 export * from './Field';
 export * from './Infer';
 export * from './builder';
+export * as j from './helpers';
 
-import nodefs from 'fs';
-import nodepath from 'path';
 
-const combine_files = () => {
+const combine_files = async () => {
+    const nodefs = await import('fs');
+    const nodepath = await import('path');
+
     const root = nodepath.resolve(__dirname, '..', 'src',);
 
     const output = nodepath.resolve(__dirname, '..', 'combined');

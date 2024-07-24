@@ -12,7 +12,7 @@ export abstract class PositiveBoundedFieldBuilder<const Kind extends string, con
             if (value !== undefined && !Number.isInteger(value))
                 throw new Error(`${name} must be an integer`);
 
-        let min = (bounds.xmin !== undefined ? bounds.xmin + 1 : undefined) ?? bounds.min ?? -Infinity;
+        let min = (bounds.xmin !== undefined ? bounds.xmin + 1 : undefined) ?? bounds.min ?? 0;
 
         let max = (bounds.xmax !== undefined ? bounds.xmax - 1 : undefined) ?? bounds.max ?? +Infinity;
 

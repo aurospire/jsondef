@@ -1,4 +1,4 @@
-import { BoundedAttributes, Field, FieldObject, ModelField, ObjectField, StringField } from "../Field";
+import { BoundedAttributes, Field, FieldObject, LiteralField, ModelField, ObjectField, StringField } from "../Field";
 import { InferField } from "../Infer";
 
 export type Issue = {
@@ -19,7 +19,9 @@ export const Result = Object.freeze({
 
 
 export const validate = <const F extends Field>(value: any, field: F): Result<InferField<F>> => {
-    return validateField(value, field, []);
+    const result = validateField(value, field, []);
+
+    return result ? result : Result.success(value);
 };
 
 const validateField = <const F extends Field>(
@@ -29,24 +31,57 @@ const validateField = <const F extends Field>(
     namespace?: FieldObject,
     root?: ModelField | ObjectField,
     scope?: ModelField | ObjectField
-): Result<InferField<F>> => {
+): ResultFailure | undefined => {
     switch (field.kind) {
-        case "string": {
-            return validateString(value, field as StringField, path) as Result<InferField<F>>;
+        case "any": {
+            return;
         }
+        case "null": {
+            return value === null ? undefined : Result.failure({ path, issue: 'value must be null' });
+        }
+        case "boolean": {
+            return typeof value === 'boolean' ? undefined : Result.failure({ path, issue: 'value must be boolean' });
+        }
+        case "literal": {
+            const literal = (field as LiteralField).of;
+            return value === literal ? undefined : Result.failure({ path, issue: `value must be ${literal}` });
+        }
+
         case "number": {
             break;
         }
-        case "boolean": {
+        case "integer": {
+            break;
+        }
+
+        case "string": {
+            return validateString(value, field as StringField, path);
+        }
+        case "array": {
+            break;
+        }
+        case "tuple": {
+            break;
+        }
+
+        case "record": {
+            break;
+        }
+        case "model": {
             break;
         }
         case "object": {
             break;
         }
-        case "null": {
+        case "composite": {
             break;
         }
-        case "any": {
+
+        case "union": {
+            break;
+        }
+
+        case "namespace": {
             break;
         }
         case "this": {
@@ -55,81 +90,59 @@ const validateField = <const F extends Field>(
         case "root": {
             break;
         }
-        case "integer": {
-            break;
-        }
-        case "literal": {
-            break;
-        }
-        case "array": {
-            break;
-        }
-        case "tuple": {
-            break;
-        }
-        case "record": {
-            break;
-        }
-        case "model": {
-            break;
-        }
-        case "composite": {
-            break;
-        }
-        case "union": {
-            break;
-        }
         case "ref": {
             break;
         }
-            "namespace";
     }
 
     return Result.failure();
 };
 
 const validateBounds = (value: number, field: BoundedAttributes, prefix: string): string | undefined => {
-    if (field.xmin !== undefined && value < field.xmin)
+    if (field.xmin !== undefined && value <= field.xmin)
         return `${prefix} must be greater than ${field.xmin}.`;
-    else if (field.min !== undefined && value <= field.min)
-        return `${prefix} must be at least ${field.min}.`;
+    else if (field.min !== undefined && value < field.min)
+        return `${prefix} must be greater than or equal to ${field.min}.`;
 
-    if (field.xmax !== undefined && value > field.xmax)
+    if (field.xmax !== undefined && value >= field.xmax)
         return `${prefix} must be less than ${field.xmax}.`;
-    else if (field.max !== undefined && value >= field.max)
-        return `${prefix} must be at most ${field.max}.`;
+    else if (field.max !== undefined && value > field.max)
+        return `${prefix} must be less than or equal to ${field.max}.`;
 
 };
 
-const validateString = (value: any, field: StringField, path: string[]): Result<string> => {
+export const validateString = (value: any, field: StringField, path: string[]): ResultFailure | undefined => {
     if (typeof value === 'string') {
-        if (field.of) {
-            switch (field.of) {
+
+        const { of: filter } = field;
+
+        if (filter) {
+            switch (filter) {
 
                 case 'date':
                     // YYYY-MM-DD
                     // JSON Schema: date format (RFC 3339, section 5.6)
                     const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
                     if (!dateRegex.test(value))
-                        return Result.failure({ path, issue: 'Invalid date format. Use YYYY-MM-DD.' });
+                        return Result.failure({ path, issue: 'value must be a date string' });
 
                 case 'time':
                     // JSON Schema: time format (RFC 3339, section 5.6)
                     const timeRegex = /^([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/;
                     if (!timeRegex.test(value))
-                        return Result.failure({ path, issue: 'Invalid time format. Use hh:mm:ss[.sss]±hh:mm.' });
+                        return Result.failure({ path, issue: 'value must be a time string' });
 
                 case 'datetime':
                     // JSON Schema: date-time format (RFC 3339, section 5.6)
                     const datetimeRegex = /^(\d{4})-(\d{2})-(\d{2})T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)([01][0-9]|2[0-3]):([0-5][0-9]))$/;
                     if (!datetimeRegex.test(value))
-                        return Result.failure({ path, issue: 'Invalid datetime format. Use YYYY-MM-DDThh:mm:ss[.sss]±hh:mm.' });
+                        return Result.failure({ path, issue: 'value must be a datetime string' });
 
                 case 'uuid':
-                    // JSON Schema: uuid format
+                    // uuid format
                     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
                     if (!uuidRegex.test(value)) {
-                        return Result.failure({ path, issue: 'Invalid UUID format.' });
+                        return Result.failure({ path, issue: 'value must be a uuid string' });
                     }
                     break;
 
@@ -137,21 +150,45 @@ const validateString = (value: any, field: StringField, path: string[]): Result<
                     // JSON Schema: email format (simplified RFC 5322)
                     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
                     if (!emailRegex.test(value))
-                        return Result.failure({ path, issue: 'Invalid email format.' });
+                        return Result.failure({ path, issue: 'value must be an email string' });
 
                 case 'base64':
                     // JSON Schema: base64 format (RFC 4648, section 4)
                     const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
                     if (!base64Regex.test(value))
-                        return Result.failure({ path, issue: 'Invalid base64 format.' });
+                        return Result.failure({ path, issue: 'value must be a base64 string' });
 
+                default: {
+
+                    if (filter instanceof RegExp) {
+                        if (!filter.test(value))
+                            return Result.failure({ path, issue: `value must match custom regex: ${filter}` });
+                    }
+                    else if (typeof filter === 'string') {
+                        const [matched, pattern, flags] = filter.match(/\/(.+)\/(.*)/) ?? [];
+
+                        if (matched)
+                            try {
+                                const regex = new RegExp(pattern, flags);
+
+                                if (!regex.test(value))
+                                    return Result.failure({ path, issue: `value must match custom regex: ${filter}` });
+                            }
+                            catch (error) {
+                                return Result.failure({ path, issue: `invalid regex ${filter}` });
+                            }
+                    }
+                    else {
+                        return Result.failure({ path, issue: `invalid string filter ${filter}` });
+                    }
+                }
             }
         }
-        const bounds = validateBounds(value.length, field, 'String length');
+        const bounds = validateBounds(value.length, field, 'value length');
 
         if (bounds)
             return Result.failure({ path, issue: bounds });
-    }
+    };
 
     return Result.failure({ path, issue: 'value must be string.' });
 };

@@ -21,7 +21,7 @@ import { UnionToIntersection } from "./util";
  * @template S - An optional type parameter for self-reference, usable with 'this' kind fields.
  * @returns The TypeScript type inferred from the field type definition.
  */
-export type InferField<F extends Field, N extends { [key: string]: any; } = {}, M = undefined, S = undefined> =
+export type InferField<F extends Field, N extends { [key: string]: Field; } = {}, M = undefined, S = undefined> =
     F extends { kind: infer K; } ? (
         K extends 'null'        ? null :
         K extends 'any'         ? any :
@@ -38,7 +38,7 @@ export type InferField<F extends Field, N extends { [key: string]: any; } = {}, 
         K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, N, M, S, R> : InferTuple<O, N, M, S> ): never :
         K extends 'composite'   ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
         K extends 'ref'         ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
-        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? InferNamespace<O> : never :
+        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? (F extends {main: infer N extends keyof O }? InferField<O[N], O> : InferNamespace<O> ): never :
         K extends 'this'        ? S extends undefined ? never : S :
         K extends 'root'        ? M extends undefined ? never : M :
         never
@@ -53,7 +53,7 @@ export type InferField<F extends Field, N extends { [key: string]: any; } = {}, 
  * @template M - An optional root type, providing context when 'root' kind fields are used.
  * @returns A TypeScript object type, with properties inferred from the field definitions.
  */
-export type InferObject<F extends FieldObject, N extends { [key: string]: string; } = {}, M = undefined> = {
+export type InferObject<F extends FieldObject, N extends { [key: string]: Field; } = {}, M = undefined> = {
     -readonly [K in keyof F as F[K] extends { isOptional: true; } ? never : K]: InferField<F[K], N, M extends undefined ? InferObject<F> : M, InferObject<F>>
 } & {
     -readonly [K in keyof F as F[K] extends { isOptional: true; } ? K : never]?: InferField<F[K], N, M extends undefined ? InferObject<F> : M, InferObject<F>>
@@ -70,7 +70,7 @@ export type InferObject<F extends FieldObject, N extends { [key: string]: string
  * @template Rest - An optional Field type for additional tuple elements beyond the explicitly defined types in T.
  * @returns A TypeScript tuple type corresponding to the provided field definitions.
  */
-export type InferTuple<F extends Field[], N extends { [key: string]: string; } = {}, M = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
+export type InferTuple<F extends Field[], N extends { [key: string]: Field; } = {}, M = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
     [K in keyof F]: InferField<F[K], N, M, S>;
 } extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, N, M, S>[] : [])] : never : never;
 
