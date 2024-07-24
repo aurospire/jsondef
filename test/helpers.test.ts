@@ -88,7 +88,7 @@ describe('Jestype Builder Helpers', () => {
             expect(() => j.integer().bound({ min: -Infinity, max: 0 })).toThrow();
             expect(() => j.integer().bound({ min: 0, max: NaN })).toThrow();
             expect(() => j.integer().bound({ xmin: NaN, xmax: NaN })).toThrow();
-        });        
+        });
     });
 
     // Literal, Array, and Object fields
@@ -144,6 +144,22 @@ describe('Jestype Builder Helpers', () => {
                 User: { id: number; name: string; },
                 Post: { title: string; author: { id: number; name: string; }; };
             };
+            expectType<Inferred>().toBe<Expected>();
+        });
+
+        it('should create namespace fields with main', () => {
+            const field = j.namespace({
+                User: j.object({ id: j.number(), name: j.string() }),
+                Post: j.object({ title: j.string(), author: j.ref('User') })
+            }).main('Post');
+
+            expect(field.kind).toBe('namespace');
+            type Inferred = j.infer<typeof field>;
+            type Expected = {
+                User: { id: number; name: string; },
+                Post: { title: string; author: { id: number; name: string; }; };
+            }['Post'];
+
             expectType<Inferred>().toBe<Expected>();
         });
     });
