@@ -1,7 +1,7 @@
 import * as j from '@/helpers';
 import { expectType } from 'jestype';
 
-describe('Jestype Builder Helpers', () => {
+describe('Builder Helpers', () => {
     // Testing basic field types and their optional versions
     describe('Field Type Tests', () => {
         it('should create and validate null fields, both regular and optional', () => {
@@ -123,8 +123,8 @@ describe('Jestype Builder Helpers', () => {
         });
     });
 
-    // Reference and Namespace field tests
-    describe('Reference and Namespace Tests', () => {
+    // Reference and Group field tests
+    describe('Reference and Group Tests', () => {
         it('should create reference fields and handle undefined references as never', () => {
             const refField = j.ref('Nonexistent');
             expect(refField.kind).toBe('ref');
@@ -133,12 +133,12 @@ describe('Jestype Builder Helpers', () => {
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create namespace fields and validate nested structures', () => {
-            const field = j.namespace({
+        it('should create group fields and validate nested structures', () => {
+            const field = j.group({
                 User: j.object({ id: j.number(), name: j.string() }),
                 Post: j.object({ title: j.string(), author: j.ref('User') })
             });
-            expect(field.kind).toBe('namespace');
+            expect(field.kind).toBe('group');
             type Inferred = j.infer<typeof field>;
             type Expected = {
                 User: { id: number; name: string; },
@@ -147,13 +147,13 @@ describe('Jestype Builder Helpers', () => {
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create namespace fields with main', () => {
-            const field = j.namespace({
+        it('should create group fields with select', () => {
+            const field = j.group({
                 User: j.object({ id: j.number(), name: j.string() }),
                 Post: j.object({ title: j.string(), author: j.ref('User') })
-            }).main('Post');
+            }).select('Post');
 
-            expect(field.kind).toBe('namespace');
+            expect(field.kind).toBe('group');
             type Inferred = j.infer<typeof field>;
             type Expected = {
                 User: { id: number; name: string; },

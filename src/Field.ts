@@ -1,69 +1,65 @@
 /**
- * Defines the base attributes that can be applied to any field.
+ * Base attributes common to all field types.
  */
 export type BaseAttributes = {
-    isOptional?: boolean;  // Indicates if the field is optional.
-    description?: string;  // Provides a description of the field.
+    /** Indicates if the field is optional. */
+    isOptional?: boolean;
+    /** Provides a description of the field. */
+    description?: string;
 };
 
 /**
- * Represents a basic field with a specific kind.
- * @template Kind The specific kind of the field.
+ * Base field type with a specific kind.
+ * @template Kind - The kind of field, extending string.
  */
 export type BaseField<Kind extends string> = { kind: Kind; } & BaseAttributes;
 
 /**
- * Represents a field of type 'null'.
+ * Represents a null field.
  */
 export type NullField = BaseField<'null'>;
 
 /**
- * Represents a field of type 'any'.
+ * Represents a field of any type.
  */
 export type AnyField = BaseField<'any'>;
 
 /**
- * Represents a field referring to 'this' context. 'This' refers to the current object or model scope.
- */
-export type ThisField = BaseField<'this'>;
-
-/**
- * Represents a root field type. 'Root' refers to the most recent model or the top-level object.
- */
-export type RootField = BaseField<'root'>;
-
-/**
- * Represents a boolean field type.
+ * Represents a boolean field.
  */
 export type BooleanField = BaseField<'boolean'>;
 
 /**
- * Defines attributes for bounded fields, specifying optional minimum and maximum values, including exclusive bounds.
+ * Attributes for fields with bounded values.
  */
 export type BoundedAttributes = {
-    min?: number;  // Inclusive minimum value.
-    max?: number;  // Inclusive maximum value.
-    xmin?: number; // Exclusive minimum value.
-    xmax?: number; // Exclusive maximum value.
+    /** Inclusive minimum value. */
+    min?: number;
+    /** Inclusive maximum value. */
+    max?: number;
+    /** Exclusive minimum value. */
+    xmin?: number;
+    /** Exclusive maximum value. */
+    xmax?: number;
 };
 
 /**
- * Represents an integer field with optional bounded attributes.
+ * Represents an integer field.
  */
 export type IntegerField = BaseField<'integer'> & BoundedAttributes;
 
 /**
- * Represents a numeric field with optional bounded attributes.
+ * Represents a number field.
  */
 export type NumberField = BaseField<'number'> & BoundedAttributes;
 
 /**
- * Represents a string pattern using a regex format.
+ * Represents a regex string in the format /.../...
  */
 export type RegexString = `/${string}/${string}`;
 
 /**
- * Defines patterns that a string field can match.
+ * Possible string field patterns.
  */
 export type StringFieldPattern =
     | 'date'
@@ -75,163 +71,161 @@ export type StringFieldPattern =
     | RegexString;
 
 /**
- * Defines attributes for string fields, including patterns they can match.
+ * Attributes specific to string fields.
  */
 export type StringAttributes = { of?: StringFieldPattern | RegExp; };
 
 /**
- * Represents a string field with optional bounded and string-specific attributes.
+ * Represents a string field.
  */
 export type StringField = BaseField<'string'> & BoundedAttributes & StringAttributes;
 
-
 /**
- * Defines attributes for literal fields specifying the exact value.
+ * Attributes for literal fields.
  */
 export type LiteralAttributes = { of: boolean | number | string; };
 
 /**
- * Represents a literal field with specific value attributes.
+ * Represents a literal field (boolean, number, or string).
  */
 export type LiteralField = BaseField<'literal'> & LiteralAttributes;
 
-
 /**
- * Defines attributes for array fields specifying the type of elements.
+ * Attributes for array fields.
  */
 export type ArrayAttributes = { of: Field; };
 
 /**
- * Represents an array field with optional bounded attributes and element type specification.
+ * Represents an array field.
  */
 export type ArrayField = BaseField<'array'> & BoundedAttributes & ArrayAttributes;
 
-
 /**
- * Defines attributes for tuple fields including types of elements and optional rest type.
+ * Attributes for tuple fields.
  */
 export type TupleAttributes = {
-    of: Field[];   // Fixed number of elements with specified types.
-    rest?: Field;  // Optional type for additional elements.
+    /** Fixed number of elements with specified types. */
+    of: Field[];
+    /** Optional type for additional elements. */
+    rest?: Field;
 };
 
 /**
- * Represents a tuple field with optional bounded attributes and specific element types.
+ * Represents a tuple field.
  */
 export type TupleField = BaseField<'tuple'> & BoundedAttributes & TupleAttributes;
 
-
 /**
- * Defines attributes for record fields including optional field type for values and key type.
+ * Attributes for record fields.
  */
 export type RecordAttributes = {
-    of?: Field;        // Optional field type for the values.
-    key?: StringField; // Optional string field for the keys.
+    /** Optional field type for the values. */
+    of?: Field;
+    /** Optional string field for the keys. */
+    key?: StringField;
 };
 
 /**
- * Represents a record field with optional bounded attributes and key-value specifications.
+ * Represents a record field.
  */
 export type RecordField = BaseField<'record'> & BoundedAttributes & RecordAttributes;
 
-
 /**
- * Defines attributes for model fields including the structure and name.
- */
-export type ModelAttributes = {
-    of: FieldObject; // Structure of the model.
-    name: string;    // Name of the model.
-};
-
-/**
- * Represents a model field with specific model attributes.
- */
-export type ModelField = BaseField<'model'> & ModelAttributes;
-
-
-/**
- * Defines attributes for object fields specifying the structure.
- */
-export type ObjectAttributes = { of: FieldObject; };
-
-/**
- * Represents an object field with specific structure attributes.
- */
-export type ObjectField = BaseField<'object'> & ObjectAttributes;
-
-
-/**
- * Defines attributes for composite fields combining multiple model, object, or record fields.
- */
-export type CompositeAttributes = { of: (ModelField | ObjectField | RecordField)[]; };
-
-/**
- * Represents a composite field with specific composition attributes.
- */
-export type CompositeField = BaseField<'composite'> & CompositeAttributes;
-
-
-/**
- * Defines attributes for union fields specifying multiple possible types.
+ * Attributes for union fields.
  */
 export type UnionAttributes = { of: [Field, Field, ...Field[]]; };
 
 /**
- * Represents a union field with specific union attributes.
+ * Represents a union field.
  */
 export type UnionField = BaseField<'union'> & UnionAttributes;
 
-
 /**
- * Defines attributes for namespace fields specifying the structure.
+ * Attributes for object fields.
  */
-export type NamespaceAttributes = { of: FieldObject; mainKey?: string };
+export type ObjectAttributes = { of: FieldObject; };
 
 /**
- * Represents a namespace field with specific structure attributes.
+ * Represents an object field.
  */
-export type NamespaceField = BaseField<'namespace'> & NamespaceAttributes;
-
+export type ObjectField = BaseField<'object'> & ObjectAttributes;
 
 /**
- * Defines attributes for reference fields specifying a reference by name. 'Ref' refers to another type in a Field namespace.
+ * Attributes for model fields.
+ */
+export type ModelAttributes = {
+    /** Structure of the model. */
+    of: FieldObject;
+    /** Name of the model. */
+    name: string;
+};
+
+/**
+ * Represents a model field.
+ */
+export type ModelField = BaseField<'model'> & ModelAttributes;
+
+/**
+ * Attributes for group fields.
+ */
+export type GroupAttributes = {
+    /** Field object containing the group's fields. */
+    of: FieldObject;
+    /** Optional selected field within the group. */
+    selected?: string;
+};
+
+/**
+ * Represents a group field.
+ */
+export type GroupField = BaseField<'group'> & GroupAttributes;
+
+/**
+ * Attributes for reference fields.
  */
 export type RefAttributes = { of: string; };
 
 /**
- * Represents a reference field with a string reference.
+ * Represents a reference field.
  */
 export type RefField = BaseField<'ref'> & RefAttributes;
 
+/**
+ * Represents a root field.
+ */
+export type RootField = BaseField<'root'>;
 
+/**
+ * Represents a this field.
+ */
+export type ThisField = BaseField<'this'>;
+
+// Making Field a BaseField with certain kinds speeds up (and prevents recursion errors)
+// but you cant resolve kind by type anymore :\
 /**
  * Union type of all possible field types.
  */
-
-
-// The benefit is that you prevent super deep resolution
-// But you cant resolve kind by type anymore :\
-export type Field = BaseField<string> 
-    // | NullField
-    // | AnyField
-    // | ThisField
-    // | RootField
-    // | BooleanField
-    // | IntegerField
-    // | NumberField
-    // | StringField
-    // | LiteralField
-    // | ArrayField
-    // | TupleField
-    // | RecordField
-    // | ModelField
-    // | ObjectField
-    // | CompositeField
-    // | UnionField
-    // | RefField
-    // | NamespaceField;
+export type Field = BaseField<
+    | NullField['kind']
+    | AnyField['kind']
+    | BooleanField['kind']
+    | IntegerField['kind']
+    | NumberField['kind']
+    | StringField['kind']
+    | LiteralField['kind']
+    | ArrayField['kind']
+    | TupleField['kind']
+    | RecordField['kind']
+    | UnionField['kind']
+    | ObjectField['kind']
+    | ModelField['kind']
+    | GroupField['kind']
+    | RefField['kind']
+    | RootField['kind']
+    | ThisField['kind']
+>;
 
 /**
- * Represents an object where each key is associated with a specific field type.
+ * Represents an object containing fields.
  */
 export type FieldObject = { [key: string]: Field; };

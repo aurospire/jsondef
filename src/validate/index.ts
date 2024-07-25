@@ -1,4 +1,4 @@
-import { BoundedAttributes, Field, FieldObject, LiteralField, ModelField, ObjectField, StringField } from "../Field";
+import { BoundedAttributes, Field, FieldObject, IntegerField, LiteralField, ModelField, NumberField, ObjectField, StringField } from "../Field";
 import { InferField } from "../Infer";
 
 export type Issue = {
@@ -46,12 +46,12 @@ const validateField = <const F extends Field>(
             const literal = (field as LiteralField).of;
             return value === literal ? undefined : Result.failure({ path, issue: `value must be ${literal}` });
         }
+        case "integer": {
+            return validateInteger(value, field as IntegerField, path);
+        }
 
         case "number": {
-            break;
-        }
-        case "integer": {
-            break;
+            return validateNumber(value, field as NumberField, path);
         }
 
         case "string": {
@@ -73,15 +73,11 @@ const validateField = <const F extends Field>(
         case "object": {
             break;
         }
-        case "composite": {
-            break;
-        }
 
         case "union": {
             break;
         }
-
-        case "namespace": {
+        case "group": {
             break;
         }
         case "this": {
@@ -109,6 +105,26 @@ const validateBounds = (value: number, field: BoundedAttributes, prefix: string)
     else if (field.max !== undefined && value > field.max)
         return `${prefix} must be less than or equal to ${field.max}.`;
 
+};
+
+export const validateInteger = (value: any, field: IntegerField, path: string[]): ResultFailure | undefined => {
+    if (typeof value === 'number' && Number.isInteger(value)) {
+        const bounds = validateBounds(length, field, 'length');
+
+        if (bounds) return Result.failure({ path, issue: bounds });
+    }
+
+    return Result.failure({ path, issue: 'value must be integer.' });
+};
+
+export const validateNumber = (value: any, field: NumberField, path: string[]): ResultFailure | undefined => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        const bounds = validateBounds(length, field, 'length');
+
+        if (bounds) return Result.failure({ path, issue: bounds });
+    }
+
+    return Result.failure({ path, issue: 'value must be number.' });
 };
 
 export const validateString = (value: any, field: StringField, path: string[]): ResultFailure | undefined => {
@@ -186,8 +202,7 @@ export const validateString = (value: any, field: StringField, path: string[]): 
         }
         const bounds = validateBounds(value.length, field, 'value length');
 
-        if (bounds)
-            return Result.failure({ path, issue: bounds });
+        if (bounds) return Result.failure({ path, issue: bounds });
     };
 
     return Result.failure({ path, issue: 'value must be string.' });

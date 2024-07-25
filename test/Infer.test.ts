@@ -105,26 +105,9 @@ describe('InferField', () => {
         });
     });
 
-    describe('Composite Fields', () => {
-        it('should infer correct types for composite fields', () => {
-            type CompositeAddressField = {
-                kind: 'composite',
-                of: [
-                    { kind: 'model', name: 'Address'; of: { street: StringField; }; },
-                    { kind: 'object', of: { city: StringField; }; },
-                    { kind: 'record', of: StringField; }
-                ];
-            };
-            type InferredComposite = InferField<CompositeAddressField>;
-            expectType<InferredComposite>().toExtend<
-                { street: string; } & { city: string; } & { [key: string]: string; }
-            >();
-        });
-    });
-
     describe('Reference Fields', () => {
         it('should infer correct types for ref fields', () => {
-            type TestNamespace = {
+            type TestGroup = {
                 User: {
                     kind: 'model',
                     of: {
@@ -144,7 +127,7 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredPost = InferField<TestNamespace['Post'], TestNamespace>;
+            type InferredPost = InferField<TestGroup['Post'], TestGroup>;
             type ExpectedPost = {
                 id: number;
                 title: string;
@@ -177,7 +160,7 @@ describe('InferField', () => {
         });
 
         it('should handle circular references', () => {
-            type TreeNodeNamespace = {
+            type TreeNodeGroup = {
                 TreeNode: {
                     kind: 'object',
                     of: {
@@ -188,7 +171,7 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredTreeNode = InferField<TreeNodeNamespace['TreeNode'], TreeNodeNamespace>;
+            type InferredTreeNode = InferField<TreeNodeGroup['TreeNode'], TreeNodeGroup>;
             type ExpectedTreeNode = {
                 value: number;
                 left?: ExpectedTreeNode;
@@ -198,10 +181,10 @@ describe('InferField', () => {
         });
     });
 
-    describe('Namespace Fields', () => {
-        it('should infer correct types for namespace fields', () => {
-            type TestNamespace = {
-                kind: 'namespace',
+    describe('Group Fields', () => {
+        it('should infer correct types for group fields', () => {
+            type TestGroup = {
+                kind: 'group',
                 of: {
                     User: {
                         kind: 'model',
@@ -223,8 +206,8 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredNamespace = InferField<TestNamespace>;
-            type ExpectedNamespace = {
+            type InferredGroup = InferField<TestGroup>;
+            type ExpectedGroup = {
                 User: {
                     id: number;
                     name: string;
@@ -238,13 +221,13 @@ describe('InferField', () => {
                     };
                 };
             };
-            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+            expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
 
-        it('should infer correct types for namespace fields with main', () => {
-            type TestNamespace = {
-                kind: 'namespace',
-                mainKey: 'Post',
+        it('should infer correct types for group fields with main', () => {
+            type TestGroup = {
+                kind: 'group',
+                selected: 'Post',
                 of: {
                     User: {
                         kind: 'model',
@@ -266,9 +249,9 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredNamespace = InferField<TestNamespace>;
+            type InferredGroup = InferField<TestGroup>;
 
-            type ExpectedNamespace = {
+            type ExpectedGroup = {
                 id: number;
                 title: string;
                 author: {
@@ -277,13 +260,13 @@ describe('InferField', () => {
                 };
             };
 
-            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+            expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
 
-        it('should infer correct types for namespace fields with invalid mainKey', () => {
-            type TestNamespace = {
-                kind: 'namespace',
-                mainKey: 'Address',
+        it('should infer correct types for group fields with invalid selected', () => {
+            type TestGroup = {
+                kind: 'group',
+                selected: 'Address',
                 of: {
                     User: {
                         kind: 'model',
@@ -305,16 +288,16 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredNamespace = InferField<TestNamespace>;
-            type ExpectedNamespace = never;
-            expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+            type InferredGroup = InferField<TestGroup>;
+            type ExpectedGroup = never;
+            expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
     });
 
-    it('should infer correct types for namespace fields with generic mainKey', () => {
-        type TestNamespace = {
-            kind: 'namespace',
-            mainKey: string,
+    it('should infer correct types for group fields with generic selected', () => {
+        type TestGroup = {
+            kind: 'group',
+            selected: string,
             of: {
                 User: {
                     kind: 'model',
@@ -336,15 +319,15 @@ describe('InferField', () => {
             };
         };
 
-        type InferredNamespace = InferField<TestNamespace>;
-        type ExpectedNamespace = never;
-        expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+        type InferredGroup = InferField<TestGroup>;
+        type ExpectedGroup = never;
+        expectType<InferredGroup>().toBe<ExpectedGroup>();
     });
 
-    it('should infer correct types for namespace fields with multiple mainKey', () => {
-        type TestNamespace = {
-            kind: 'namespace',
-            mainKey: 'User' | 'Post',
+    it('should infer correct types for group fields with multiple selected', () => {
+        type TestGroup = {
+            kind: 'group',
+            selected: 'User' | 'Post',
             of: {
                 User: {
                     kind: 'model',
@@ -366,8 +349,8 @@ describe('InferField', () => {
             };
         };
 
-        type InferredNamespace = InferField<TestNamespace>;
-        type ExpectedNamespace = {
+        type InferredGroup = InferField<TestGroup>;
+        type ExpectedGroup = {
             id: number;
             name: string;
         } | {
@@ -379,6 +362,6 @@ describe('InferField', () => {
             };
         };
 
-        expectType<InferredNamespace>().toBe<ExpectedNamespace>();
+        expectType<InferredGroup>().toBe<ExpectedGroup>();
     });
 });

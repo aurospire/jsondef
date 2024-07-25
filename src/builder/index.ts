@@ -16,7 +16,8 @@ export * from './TupleFieldBuilder';
 export * from './RecordFieldBuilder';
 export * from './ObjectFieldBuilder';
 export * from './ModelFieldBuilder';
-export * from './CompositeFieldBuilder';
+export * from './GroupFieldBuilder';
 export * from './UnionFieldBuilder';
-export * from './NamespaceFieldBuilder';
 export * from './RefFieldBuilder';
+export * from './ThisFieldBuilder'
+export * from './RootFieldBuilder'

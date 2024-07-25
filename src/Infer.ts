@@ -1,27 +1,24 @@
 import {
-    ArrayField,
-    CompositeField,
     Field, FieldObject,
     LiteralField,
     ModelField,
-    NamespaceField,
+    GroupField,
     ObjectField,
     TupleField,
     UnionField
 } from "./Field";
-import { UnionToIntersection } from "./util";
 
 /**
  * Infers a TypeScript type from a given field type definition.
- * This type utility processes different `Field` kinds and converts them into corresponding TypeScript types.
  * 
  * @template F - The field type extending the generic Field type.
- * @template N - An optional namespace object with keys to referenceable fields, usable with 'ref' kind fields.
- * @template M - An optional type parameter for the root-reference, usable with 'root' kind fields.
- * @template S - An optional type parameter for self-reference, usable with 'this' kind fields.
+ * @template G - A FieldObject representing the global scope, containing all referenceable fields.
+ * @template R - The root scope, representing the top-level structure.
+ * @template L - The local scope, representing the immediate context.
+ * 
  * @returns The TypeScript type inferred from the field type definition.
  */
-export type InferField<F extends Field, N extends { [key: string]: Field; } = {}, M = undefined, S = undefined> =
+export type InferField<F extends Field, G extends FieldObject = {}, R = undefined, L = undefined> =
     F extends { kind: infer K; } ? (
         K extends 'null'        ? null :
         K extends 'any'         ? any :
@@ -30,56 +27,54 @@ export type InferField<F extends Field, N extends { [key: string]: Field; } = {}
         K extends 'number'      ? number :
         K extends 'string'      ? string :
         K extends 'literal'     ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
-        K extends 'array'       ? F extends { of: infer O extends Field; } ? Array<InferField<O, N, M, S>> : never :
-        K extends 'record'      ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, N, M, S>; } : { [key: string]: any; } :
-        K extends 'model'       ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, N> : never :
-        K extends 'object'      ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, N, M> : never :
-        K extends 'union'       ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], N, M, S> : never :
-        K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, N, M, S, R> : InferTuple<O, N, M, S> ): never :
-        K extends 'composite'   ? F extends { of: infer O extends CompositeField['of']; } ? UnionToIntersection<InferField<O[number], N, M, S>> : never :
-        K extends 'ref'         ? F extends { of: infer O extends string; } ? (O extends keyof N ? (N[O] extends Field ? InferField<N[O], N, M, S> : N[O]) : never) : never :
-        K extends 'namespace'   ? F extends { of: infer O extends NamespaceField['of']; } ? (F extends { mainKey: infer N extends string } ? InferField<O[N], O> : InferNamespace<O> ): never :
-        K extends 'this'        ? S extends undefined ? never : S :
-        K extends 'root'        ? M extends undefined ? never : M :
+        K extends 'array'       ? F extends { of: infer O extends Field; } ? Array<InferField<O, G, R, L>> : never :
+        K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, G, R, L, R> : InferTuple<O, G, R, L> ): never :
+        K extends 'record'      ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, G, R, L>; } : { [key: string]: any; } :
+        K extends 'union'       ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], G, R, L> : never :
+        K extends 'object'      ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, G, R> : never :
+        K extends 'model'       ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, G> : never :
+        K extends 'group'       ? F extends { of: infer O extends GroupField['of']; } ? (F extends { selected: infer S extends string } ? InferField<O[S], O> : InferGlobal<O> ): never :
+        K extends 'ref'         ? F extends { of: infer O extends string; } ? (O extends keyof G ? (G[O] extends Field ? InferField<G[O], G, R, L> : G[O]) : never) : never :
+        K extends 'root'        ? R extends undefined ? never : R :
+        K extends 'this'        ? L extends undefined ? never : L :
         never
     ) : never;
 
 /**
- * Converts a FieldObject containing field definitions into a TypeScript type object.
- * This function ensures that properties marked as optional in the field definitions are also optional in the inferred TypeScript type.
- *
- * @template F - FieldObject containing field definitions.
- * @template N - An optional namespace for additional type context.
- * @template M - An optional root type, providing context when 'root' kind fields are used.
- * @returns A TypeScript object type, with properties inferred from the field definitions.
+ * Infers a TypeScript object type from a FieldObject definition.
+ * 
+ * @template F - The FieldObject to infer from.
+ * @template G - A FieldObject representing the global scope.
+ * @template R - The root scope, representing the top-level structure.
+ * 
+ * @returns An object type with required and optional properties based on the FieldObject definition.
  */
-export type InferObject<F extends FieldObject, N extends { [key: string]: Field; } = {}, M = undefined> = {
-    -readonly [K in keyof F as F[K] extends { isOptional: true; } ? never : K]: InferField<F[K], N, M extends undefined ? InferObject<F> : M, InferObject<F>>
+export type InferObject<F extends FieldObject, G extends FieldObject = {}, R = undefined> = {
+    -readonly [K in keyof F as F[K] extends { isOptional: true; } ? never : K]: InferField<F[K], G, R extends undefined ? InferObject<F> : R, InferObject<F>>
 } & {
-    -readonly [K in keyof F as F[K] extends { isOptional: true; } ? K : never]?: InferField<F[K], N, M extends undefined ? InferObject<F> : M, InferObject<F>>
+    -readonly [K in keyof F as F[K] extends { isOptional: true; } ? K : never]?: InferField<F[K], G, R extends undefined ? InferObject<F> : R, InferObject<F>>
 } & unknown;
 
 /**
- * Infers TypeScript tuple types from an array of `Field` definitions, potentially including a rest parameter.
- * This utility handles tuples by inferring types for each specified field and optionally extends the tuple with additional types if a 'rest' field is defined.
- *
- * @template F - Array of Field types defining each element of the tuple.
- * @template N - Namespace providing additional context for type inference.
- * @template M - Root type context, especially relevant for nested field structures.
- * @template S - Self-reference type, applicable in recursive type structures.
- * @template Rest - An optional Field type for additional tuple elements beyond the explicitly defined types in T.
- * @returns A TypeScript tuple type corresponding to the provided field definitions.
+ * Infers a TypeScript tuple type from an array of Field definitions.
+ * 
+ * @template F - An array of Field types representing the tuple elements.
+ * @template G - A FieldObject representing the global scope.
+ * @template M - The model scope.
+ * @template L - The local scope.
+ * @template R - An optional rest Field type for additional elements.
+ * 
+ * @returns A tuple type based on the input Field array and optional rest type.
  */
-export type InferTuple<F extends Field[], N extends { [key: string]: Field; } = {}, M = undefined, S = undefined, Rest extends Field | undefined = undefined> = {
-    [K in keyof F]: InferField<F[K], N, M, S>;
-} extends infer U ? U extends any[] ? [...U, ...(Rest extends Field ? InferField<Rest, N, M, S>[] : [])] : never : never;
+export type InferTuple<F extends Field[], G extends FieldObject = {}, M = undefined, L = undefined, R extends Field | undefined = undefined> = {
+    [K in keyof F]: InferField<F[K], G, M, L>;
+} extends infer U ? U extends any[] ? [...U, ...(R extends Field ? InferField<R, G, M, L>[] : [])] : never : never;
 
 /**
- * Creates a TypeScript type representing a namespace where each field name is mapped to its inferred type.
- * This utility is useful for processing entire collections of fields at once, providing a concise and type-safe way to handle groups of related fields.
- *
- * @template N - An object with fields as properties, where each key is a field name and each value is a Field type.
- * @returns An object type with properties corresponding to the namespace's fields, each typed according to its definition.
+ * Infers a global object type from a FieldObject, where each property is inferred using InferField.
+ * 
+ * @template G - A FieldObject representing the global scope.
+ * 
+ * @returns An object type where each property is inferred from the corresponding Field in the input FieldObject.
  */
-export type InferNamespace<N extends { [key: string]: Field; }> = { [K in keyof N]: InferField<N[K], N> };
-
+export type InferGlobal<G extends FieldObject> = { [K in keyof G]: InferField<G[K], G> };

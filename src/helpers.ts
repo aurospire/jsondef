@@ -1,13 +1,12 @@
-import { ArrayField, CompositeField, LiteralField, ModelField, NamespaceField, ObjectField, RecordField, RefField, TupleField, UnionField } from "./Field";
+import { ArrayField, LiteralField, ModelField, GroupField, ObjectField, RecordField, RefField, TupleField, UnionField } from "./Field";
 import { InferField } from "./Infer";
 import { AnyFieldBuilder } from "./builder/AnyFieldBuilder";
 import { ArrayFieldBuilder } from './builder/ArrayFieldBuilder';
 import { BooleanFieldBuilder } from "./builder/BooleanFieldBuilder";
-import { CompositeFieldBuilder } from './builder/CompositeFieldBuilder';
 import { IntegerFieldBuilder } from "./builder/IntegerFieldBuilder";
 import { LiteralFieldBuilder } from "./builder/LiteralFieldBuilder";
 import { ModelFieldBuilder } from './builder/ModelFieldBuilder';
-import { NamespaceFieldBuilder } from "./builder/NamespaceFieldBuilder";
+import { GroupFieldBuilder } from "./builder/GroupFieldBuilder";
 import { NullFieldBuilder } from "./builder/NullFieldBuilder";
 import { NumberFieldBuilder } from "./builder/NumberFieldBuilder";
 import { ObjectFieldBuilder } from './builder/ObjectFieldBuilder';
@@ -41,10 +40,9 @@ function recordField<const Of extends RecordField['of']>(of?: Of): RecordFieldBu
 const objectField = <const Of extends ObjectField['of']>(of: Of) => new ObjectFieldBuilder<Of>(of);
 const modelField = <const Of extends ModelField['of']>(name: string, of: Of) => new ModelFieldBuilder<Of>(of, name);
 
-const compositeField = <const Of extends CompositeField['of']>(of: Of) => new CompositeFieldBuilder<Of>(of);
 const unionField = <const Of extends UnionField['of']>(of: Of) => new UnionFieldBuilder<Of>(of);
 const refField = <const Of extends RefField['of']>(of: Of) => new RefFieldBuilder<Of>(of);
-const namespaceField = <const Of extends NamespaceField['of']>(of: Of) => new NamespaceFieldBuilder(of);
+const groupField = <const Of extends GroupField['of']>(of: Of) => new GroupFieldBuilder(of);
 
 // import from this file as 'j' to use these methods
 // example: j.null();
@@ -61,11 +59,10 @@ export {
     recordField as record,
     objectField as object,
     modelField as model,
-    compositeField as composite,
     thisField as this,
     rootField as root,
     unionField as union,
-    namespaceField as namespace,
+    groupField as group,
     refField as ref,
     InferField as infer,
 };
