@@ -21,41 +21,65 @@ export const Result = Object.freeze({
 export const validate = <const F extends Field>(value: any, field: F): Result<InferField<F>> => {
     const result = validateField(value, field, []);
 
-    return result ? result : Result.success(value);
+    return result !== true ? result : Result.success(value);
 };
+
+
+type ValidationResult = true | ResultFailure;
 
 const validateField = <const F extends Field>(
     value: any,
     field: Field,
     path: string[],
+    cache: Map<Field, Map<any, ResultFailure | true>> = new Map<Field, Map<any, ValidationResult>>(),
     namespace?: FieldObject,
     root?: ModelField | ObjectField,
     scope?: ModelField | ObjectField
-): ResultFailure | undefined => {
+): ValidationResult => {
+
+    let fieldCache = cache.get(field);
+    if (fieldCache) {
+        const cachedValue = fieldCache.get(value);
+        if (cachedValue) return cachedValue;
+    }
+    else {
+        fieldCache = new Map<any, ValidationResult>();
+        cache.set(field, fieldCache);
+    }
+
+    let result: ResultFailure | true = true;
+
     switch (field.kind) {
         case "any": {
-            return;
+            result = true;
+            break;
         }
         case "null": {
-            return value === null ? undefined : Result.failure({ path, issue: 'value must be null' });
+            result = value === null ? true : Result.failure({ path, issue: 'value must be null' });
+            break;
         }
         case "boolean": {
-            return typeof value === 'boolean' ? undefined : Result.failure({ path, issue: 'value must be boolean' });
+            result = typeof value === 'boolean' ? true : Result.failure({ path, issue: 'value must be boolean' });
+            break;
         }
         case "literal": {
             const literal = (field as LiteralField).of;
-            return value === literal ? undefined : Result.failure({ path, issue: `value must be ${literal}` });
+            result = value === literal ? true : Result.failure({ path, issue: `value must be ${literal}` });
+            break;
         }
         case "integer": {
-            return validateInteger(value, field as IntegerField, path);
+            result = validateInteger(value, field as IntegerField, path);
+            break;
         }
 
         case "number": {
-            return validateNumber(value, field as NumberField, path);
+            result = validateNumber(value, field as NumberField, path);
+            break;
         }
 
         case "string": {
-            return validateString(value, field as StringField, path);
+            result = validateString(value, field as StringField, path);
+            break;
         }
         case "array": {
             break;
@@ -73,13 +97,14 @@ const validateField = <const F extends Field>(
         case "object": {
             break;
         }
+        case "group": {
+            break;
+        }
 
         case "union": {
             break;
         }
-        case "group": {
-            break;
-        }
+
         case "this": {
             break;
         }
@@ -89,9 +114,15 @@ const validateField = <const F extends Field>(
         case "ref": {
             break;
         }
+        default: {
+            result = Result.failure({ path, issue: `Invalid field kind: '${field.kind}'` });
+            break;
+        }
     }
 
-    return Result.failure();
+    fieldCache.set(value, result);
+
+    return result;
 };
 
 const validateBounds = (value: number, field: BoundedAttributes, prefix: string): string | undefined => {
@@ -107,27 +138,32 @@ const validateBounds = (value: number, field: BoundedAttributes, prefix: string)
 
 };
 
-export const validateInteger = (value: any, field: IntegerField, path: string[]): ResultFailure | undefined => {
+export const validateInteger = (value: any, field: IntegerField, path: string[]): ValidationResult => {
     if (typeof value === 'number' && Number.isInteger(value)) {
         const bounds = validateBounds(length, field, 'length');
 
         if (bounds) return Result.failure({ path, issue: bounds });
+        return true;
     }
-
-    return Result.failure({ path, issue: 'value must be integer.' });
+    else {
+        return Result.failure({ path, issue: 'value must be integer.' });
+    }
 };
 
-export const validateNumber = (value: any, field: NumberField, path: string[]): ResultFailure | undefined => {
+export const validateNumber = (value: any, field: NumberField, path: string[]): ValidationResult => {
     if (typeof value === 'number' && Number.isFinite(value)) {
         const bounds = validateBounds(length, field, 'length');
 
         if (bounds) return Result.failure({ path, issue: bounds });
-    }
 
-    return Result.failure({ path, issue: 'value must be number.' });
+        return true;
+    }
+    else {
+        return Result.failure({ path, issue: 'value must be number.' });
+    }
 };
 
-export const validateString = (value: any, field: StringField, path: string[]): ResultFailure | undefined => {
+export const validateString = (value: any, field: StringField, path: string[]): ValidationResult => {
     if (typeof value === 'string') {
 
         const { of: filter } = field;
@@ -203,7 +239,10 @@ export const validateString = (value: any, field: StringField, path: string[]): 
         const bounds = validateBounds(value.length, field, 'value length');
 
         if (bounds) return Result.failure({ path, issue: bounds });
-    };
 
-    return Result.failure({ path, issue: 'value must be string.' });
+        return true;
+    }
+    else {
+        return Result.failure({ path, issue: 'value must be string.' });
+    }
 };
