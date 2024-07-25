@@ -1,4 +1,4 @@
-import { ArrayField, BoundedAttributes, Field, FieldObject, IntegerField, LiteralField, ModelField, NumberField, ObjectField, RecordField, RefField, StringField, TupleField, UnionField } from "../Field";
+import { ArrayField, BoundedAttributes, Field, FieldObject, GroupField, IntegerField, LiteralField, ModelField, NumberField, ObjectField, RecordField, RefField, StringField, TupleField, UnionField } from "../Field";
 import { InferField } from "../Infer";
 
 export type Issue = {
@@ -198,14 +198,37 @@ const validateField = <const F extends Field>(
             break;
         }
 
-        
+
         case "object": {
+            const object = field as ObjectField;
+
+            result = validateObject(value, object.of, path, cache, global, root, object, true);
+
             break;
         }
         case "model": {
+            const model = field as ModelField;
+
+            result = validateObject(value, model.of, path, cache, global, model, model, true);
+
             break;
         }
         case "group": {
+            const group = field as GroupField;
+
+            if (group.selected) {
+                const selected = group.of[group.selected];
+
+                if (selected) {
+                    result = validateField(value, field, path, cache, group.of, undefined, undefined);
+                }
+                else {
+                    result = [{ path, issue: `selection '${group.selected}' does not exist in group` }];
+                }
+            }
+            else {
+                result = validateObject(value, group.of, path, cache, undefined, undefined, undefined, false);
+            }
             break;
         }
 
@@ -414,3 +437,45 @@ export const validateString = (value: any, field: StringField, path: string[]): 
         return [{ path, issue: 'value must be string.' }];
     }
 };
+export const validateObject = (
+    value: any,
+    fields: FieldObject,
+    path: string[],
+    cache: Map<Field, Map<any, ValidationResult>>,
+    global?: FieldObject,
+    root?: ModelField | ObjectField,
+    local?: ModelField | ObjectField,
+    optionals: boolean = false
+): ValidationResult => {
+    if (Object.getPrototypeOf(value ?? true) === Object.prototype) {
+        const names = new Set<string>(Object.keys(value));
+
+        const issues: Issue[] = [];
+
+        for (const [fieldKey, field] of Object.entries(fields)) {
+            const fieldPath = [...path, fieldKey];
+
+            if (names.has(fieldKey)) {
+
+                names.delete(fieldKey);
+
+                const itemValue = value[fieldKey];
+
+                const result = validateField(itemValue, field, fieldPath, cache, global, root, local);
+
+                if (result !== true) issues.push(...result);
+            }
+            else if (!optionals || !field.isOptional) {
+                issues.push({ path: fieldPath, issue: `missing key '${fieldKey}'` });
+            }
+        }
+
+        if (names.size) issues.push({ path, issue: `has excess keys: [${[...names].join(', ')}]` });
+
+        return issues.length ? issues : true;
+    }
+    else {
+        return [{ path, issue: 'value must be an object' }];
+    }
+}
+
