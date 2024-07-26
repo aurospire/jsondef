@@ -32,6 +32,7 @@ const validateArrayItems = (value: any[], path: string[]): ValidationResult => {
 
     return issues.length ? issues : true;
 };
+
 const validateObjectProperties = (value: Object, path: string[]): ValidationResult => {
     const issues: Issue[] = [];
 
@@ -40,6 +41,5 @@ const validateObjectProperties = (value: Object, path: string[]): ValidationResu
 
         if (result !== true) issues.push(...result);
     }
-
     return issues.length ? issues : true;
 };
