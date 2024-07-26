@@ -17,43 +17,55 @@ export const Result = Object.freeze({
     failure: (issues: Issue[]): ResultFailure => ({ success: false, issues })
 });
 
+export type ValidationResult = true | Issue[];
+
+export type ResultCache = Map<any, ValidationResult>;
+
+export type FieldCache = Map<Field, ResultCache>;
+
+export type Context = {
+    cache: FieldCache;
+    global?: FieldObject,
+    root?: ModelField | ObjectField,
+    local?: ModelField | ObjectField;
+};
+
+export const newResultCache = (): ResultCache => new Map<any, ValidationResult>();
+
+export const newFieldCache = (): FieldCache => new Map<Field, ResultCache>();
+
+export const makeContext = (
+    cache: Context['cache'] = newFieldCache(),
+    global?: Context['global'],
+    root?: Context['root'],
+    local?: Context['local']) => ({ cache, global, root, local });
+
 
 export const validate = <const F extends Field>(value: any, field: F): Result<InferField<F>> => {
-    const result = validateField(value, field, []);
+    const result = validateField(value, field, [], makeContext());
 
     return result !== true ? Result.failure(result) : Result.success(value);
 };
 
+export const validateField = (value: any, field: Field, path: string[], context: Context): ValidationResult => {
 
-type ValidationResult = true | Issue[];
+    let resultCache = context.cache.get(field);
 
-const validateField = <const F extends Field>(
-    value: any,
-    field: Field,
-    path: string[],
-    cache: Map<Field, Map<any, ValidationResult>> = new Map<Field, Map<any, ValidationResult>>(),
-    global?: FieldObject,
-    root?: ModelField | ObjectField,
-    local?: ModelField | ObjectField
-): ValidationResult => {
-
-    let fieldCache = cache.get(field);
-    if (fieldCache) {
-        const cachedValue = fieldCache.get(value);
+    if (resultCache) {
+        const cachedValue = resultCache.get(value);
         if (cachedValue) return cachedValue;
     }
     else {
-        fieldCache = new Map<any, ValidationResult>();
-        cache.set(field, fieldCache);
+        resultCache = newResultCache();
+        context.cache.set(field, resultCache);
     }
 
-    let result: ValidationResult = true;
+    let result: ValidationResult;
 
     switch (field.kind) {
         /* TERMINALS */
         case "any": {
-            // TODO: go through all fields/subfield make sure only valid JSON types
-            result = true;
+            result = validateAny(value, path );
             break;
         }
         case "null": {
@@ -86,131 +98,28 @@ const validateField = <const F extends Field>(
 
 
         case "array": {
-            if (Array.isArray(value)) {
-                const array = field as ArrayField;
-
-                const boundsCheck = validateBounds(value.length, array, 'value length');
-
-                if (boundsCheck) {
-                    result = [{ path, issue: boundsCheck }];
-                }
-                else {
-                    let issues: Issue[] = [];
-
-                    for (let i = 0; i <= value.length; i++) {
-                        const result = validateField(value, array.of, [...path, i.toString()], cache, global, root, local);
-
-                        if (result !== true)
-                            issues.push(...result);
-                    }
-
-                    result = issues.length ? issues : true;
-                }
-            }
-            else {
-                result = [{ path, issue: 'value must be an array' }];
-            }
+            result = validateArray(value, field as ArrayField, path, context);
             break;
         }
 
         case "tuple": {
-            if (Array.isArray(value)) {
-                const tuple = field as TupleField;
-
-                const boundsCheck = validateBounds(value.length, tuple, 'value length');
-
-                if (boundsCheck) {
-                    result = [{ path, issue: boundsCheck }];
-                }
-                else {
-                    const issues: Issue[] = [];
-
-                    let i = 0;
-
-                    for (const item of tuple.of) {
-                        const result = validateField(value, item, [...path, i.toString()], cache, global, root, local);
-
-                        if (result !== true) issues.push(...result);
-
-                        i++;
-                    }
-
-                    if (tuple.rest) {
-                        while (i < value.length) {
-                            const result = validateField(value, tuple.rest, [...path, i.toString()], cache, global, root, local);
-
-                            if (result !== true) issues.push(...result);
-
-                            i++;
-                        }
-                    }
-
-                    result = issues.length ? issues : true;
-                }
-            }
-            else {
-                result = [{ path, issue: 'value must be a tuple' }];
-            }
+            result = validateTuple(value, field as TupleField, path, context);
             break;
         }
 
         case "record": {
-            if (Object.getPrototypeOf(value ?? true) === Object.prototype) {
-                const record = field as RecordField;
-
-                const issues: Issue[] = [];
-
-                const entries = Object.entries(value);
-
-                const boundsCheck = validateBounds(entries.length, record, 'value length');
-
-                if (boundsCheck)
-                    issues.push({ path, issue: boundsCheck });
-
-                const valueField = record.of || ({ kind: 'any' });
-
-                if (record.key) {
-                    for (const [itemKey, itemValue] of entries) {
-                        const itemPath = [...path, itemKey];
-
-                        const keyCheck = validateString(itemKey, record.key, itemPath);
-
-                        if (keyCheck !== true) issues.push(...keyCheck);
-
-                        const valueCheck = validateField(itemValue, valueField, itemPath, cache, global, root, local);
-
-                        if (valueCheck !== true) issues.push(...valueCheck);
-                    }
-                }
-                else {
-                    for (const [itemKey, itemValue] of entries) {
-                        const itemPath = [...path, itemKey];
-
-                        const valueCheck = validateField(itemValue, valueField, itemPath, cache, global, root, local);
-
-                        if (valueCheck !== true) issues.push(...valueCheck);
-                    }
-                }
-            }
-            else {
-                result = [{ path, issue: 'value must be an object' }];
-            }
+            result = validateRecord(value, field as RecordField, path, context);
             break;
         }
 
-
         case "object": {
             const object = field as ObjectField;
-
-            result = validateObject(value, object.of, path, cache, global, root, object, true);
-
+            result = validateObject(value, object.of, path, makeContext(context.cache, context.global, context.root, object), true);
             break;
         }
         case "model": {
             const model = field as ModelField;
-
-            result = validateObject(value, model.of, path, cache, global, model, model, true);
-
+            result = validateObject(value, model.of, path, makeContext(context.cache, context.global, model, model), true);
             break;
         }
         case "group": {
@@ -220,14 +129,14 @@ const validateField = <const F extends Field>(
                 const selected = group.of[group.selected];
 
                 if (selected) {
-                    result = validateField(value, field, path, cache, group.of, undefined, undefined);
+                    result = validateField(value, field, path, makeContext(context.cache, group.of));
                 }
                 else {
                     result = [{ path, issue: `selection '${group.selected}' does not exist in group` }];
                 }
             }
             else {
-                result = validateObject(value, group.of, path, cache, undefined, undefined, undefined, false);
+                result = validateObject(value, group.of, path, makeContext(context.cache), false);
             }
             break;
         }
@@ -238,7 +147,7 @@ const validateField = <const F extends Field>(
             const issues: Issue[] = [];
 
             for (const option of union.of) {
-                const optionResult = validateField(value, option, path, cache, global, root, local);
+                const optionResult = validateField(value, option, path, context);
 
                 if (optionResult === true) {
                     issues.length = 0;
@@ -255,27 +164,21 @@ const validateField = <const F extends Field>(
         }
 
         case "this": {
-            if (local)
-                result = validateField(value, local, path, cache, global, root, local);
-            else
-                result = [{ path, issue: 'no local field' }];
+            result = context.local ? validateField(value, context.local, path, context) : [{ path, issue: 'no local field' }];
             break;
         }
         case "root": {
-            if (root)
-                result = validateField(value, root, path, cache, global, root, local);
-            else
-                result = [{ path, issue: 'no root field' }];
+            result = (context.root) ? validateField(value, context.root, path, context) : [{ path, issue: 'no root field' }];
             break;
         }
         case "ref": {
-            if (global) {
+            if (context.global) {
                 const ref = field as RefField;
 
-                const selected = global[ref.of];
+                const selected = context.global[ref.of];
 
                 if (selected)
-                    result = validateField(value, selected, path, cache, global, root, local);
+                    result = validateField(value, selected, path, context);
                 else
                     result = [{ path, issue: `ref: '${ref.of}' does not exist in global context` }];
             }
@@ -289,12 +192,52 @@ const validateField = <const F extends Field>(
         }
     }
 
-    fieldCache.set(value, result);
+    resultCache.set(value, result);
 
     return result;
 };
 
-const validateBounds = (value: number, field: BoundedAttributes, prefix: string): string | undefined => {
+export const isObject = (value: any): value is Object => Object.getPrototypeOf(value ?? true) === Object.prototype;
+
+
+export const validateAny = (value: any, path: string[]): ValidationResult => {
+
+    if (value === null)
+        return true;
+    else if (typeof value === 'boolean')
+        return true;
+    else if (typeof value === 'number')
+        return true;
+    else if (typeof value === 'string')
+        return true;
+    else if (Array.isArray(value)) {
+        const issues: Issue[] = [];
+
+        for (let i = 0; i < value.length; i++) {
+            const result = validateAny(value[i], [...path, i.toString()]);
+
+            if (result !== true) issues.push(...result);
+        }
+
+        return issues.length ? issues : true;
+    }
+    else if (isObject(value)) {
+        const issues: Issue[] = [];
+
+        for (const [itemKey, itemValue] of Object.entries(value)) {
+            const result = validateAny(itemValue, [...path, itemKey]);
+
+            if (result !== true) issues.push(...result);
+        }
+
+        return issues.length ? issues : true;
+    }
+    else {
+        return [{ path, issue: 'not a valid type' }];
+    }
+};
+
+export const validateBounds = (value: number, field: BoundedAttributes, prefix: string): string | undefined => {
     let minMessage: string | undefined;
     let maxMessage: string | undefined;
     let minOperator = ">";
@@ -330,7 +273,6 @@ const validateBounds = (value: number, field: BoundedAttributes, prefix: string)
 
     return undefined;
 };
-
 
 export const validateInteger = (value: any, field: IntegerField, path: string[]): ValidationResult => {
     if (typeof value === 'number' && Number.isInteger(value)) {
@@ -437,17 +379,123 @@ export const validateString = (value: any, field: StringField, path: string[]): 
         return [{ path, issue: 'value must be string.' }];
     }
 };
+
+export const validateArray = (value: any, array: ArrayField, path: string[], context: Context): ValidationResult => {
+    if (Array.isArray(value)) {
+
+        const boundsCheck = validateBounds(value.length, array, 'value length');
+
+        if (boundsCheck) {
+            return [{ path, issue: boundsCheck }];
+        }
+        else {
+            let issues: Issue[] = [];
+
+            for (let i = 0; i <= value.length; i++) {
+                const result = validateField(value, array.of, [...path, i.toString()], context);
+
+                if (result !== true) issues.push(...result);
+            }
+
+            return issues.length ? issues : true;
+        }
+    }
+    else {
+        return [{ path, issue: 'value must be an array' }];
+    };
+};
+
+export const validateTuple = (value: any, field: TupleField, path: string[], context: Context): ValidationResult => {
+    if (Array.isArray(value)) {
+
+        const boundsCheck = validateBounds(value.length, field, 'value length');
+
+        if (boundsCheck) {
+            return [{ path, issue: boundsCheck }];
+        }
+        else {
+            const issues: Issue[] = [];
+
+            let i = 0;
+
+            for (const item of field.of) {
+                const result = validateField(value, item, [...path, i.toString()], context);
+
+                if (result !== true) issues.push(...result);
+
+                i++;
+            }
+
+            if (field.rest) {
+                while (i < value.length) {
+                    const result = validateField(value, field.rest, [...path, i.toString()], context);
+
+                    if (result !== true) issues.push(...result);
+
+                    i++;
+                }
+            }
+
+            return issues.length ? issues : true;
+        }
+    }
+    else {
+        return [{ path, issue: 'value must be a tuple' }];
+    }
+};
+
+export const validateRecord = (value: any, field: RecordField, path: string[], context: Context): ValidationResult => {
+    if (Object.getPrototypeOf(value ?? true) === Object.prototype) {
+
+        const issues: Issue[] = [];
+
+        const entries = Object.entries(value);
+
+        const boundsCheck = validateBounds(entries.length, field, 'value length');
+
+        if (boundsCheck)
+            issues.push({ path, issue: boundsCheck });
+
+        const valueField = field.of || ({ kind: 'any' });
+
+        if (field.key) {
+            for (const [itemKey, itemValue] of entries) {
+                const itemPath = [...path, itemKey];
+
+                const keyCheck = validateString(itemKey, field.key, itemPath);
+
+                if (keyCheck !== true) issues.push(...keyCheck);
+
+                const valueCheck = validateField(itemValue, valueField, itemPath, context);
+
+                if (valueCheck !== true) issues.push(...valueCheck);
+            }
+        }
+        else {
+            for (const [itemKey, itemValue] of entries) {
+                const itemPath = [...path, itemKey];
+
+                const valueCheck = validateField(itemValue, valueField, itemPath, context);
+
+                if (valueCheck !== true) issues.push(...valueCheck);
+            }
+        }
+        return issues.length ? issues : true;
+    }
+    else {
+        return [{ path, issue: 'value must be an object' }];
+    }
+
+};
+
 export const validateObject = (
     value: any,
     fields: FieldObject,
     path: string[],
-    cache: Map<Field, Map<any, ValidationResult>>,
-    global?: FieldObject,
-    root?: ModelField | ObjectField,
-    local?: ModelField | ObjectField,
+    context: Context,
     optionals: boolean = false
 ): ValidationResult => {
-    if (Object.getPrototypeOf(value ?? true) === Object.prototype) {
+    if (isObject(value)) {
         const names = new Set<string>(Object.keys(value));
 
         const issues: Issue[] = [];
@@ -461,7 +509,7 @@ export const validateObject = (
 
                 const itemValue = value[fieldKey];
 
-                const result = validateField(itemValue, field, fieldPath, cache, global, root, local);
+                const result = validateField(itemValue, field, fieldPath, context);
 
                 if (result !== true) issues.push(...result);
             }
@@ -477,5 +525,6 @@ export const validateObject = (
     else {
         return [{ path, issue: 'value must be an object' }];
     }
-}
+};
+
 

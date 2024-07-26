@@ -77,4 +77,4 @@ export type InferTuple<F extends Field[], G extends FieldObject = {}, M = undefi
  * 
  * @returns An object type where each property is inferred from the corresponding Field in the input FieldObject.
  */
-export type InferGlobal<G extends FieldObject> = { [K in keyof G]: InferField<G[K], G> };
+export type InferGlobal<G extends FieldObject> = { -readonly [K in keyof G]: InferField<G[K], G> };
