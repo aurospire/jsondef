@@ -1,12 +1,7 @@
 /**
  * Base attributes common to all field types.
  */
-export type BaseAttributes = {
-    /** Indicates if the field is optional. */
-    isOptional?: boolean;
-    /** Provides a description of the field. */
-    description?: string;
-};
+export type BaseAttributes = { description?: string; isOptional?: boolean; };
 
 /**
  * Base field type with a specific kind.
@@ -54,7 +49,7 @@ export type IntegerField = BaseField<'integer'> & BoundedAttributes;
 export type NumberField = BaseField<'number'> & BoundedAttributes;
 
 /**
- * Represents a regex string in the format /.../...
+ * Represents a regex string in the format /pattern/flags?
  */
 export type RegexString = `/${string}/${string}`;
 
@@ -103,27 +98,17 @@ export type ArrayField = BaseField<'array'> & BoundedAttributes & ArrayAttribute
 /**
  * Attributes for tuple fields.
  */
-export type TupleAttributes = {
-    /** Fixed number of elements with specified types. */
-    of: Field[];
-    /** Optional type for additional elements. */
-    rest?: Field;
-};
+export type TupleAttributes = { of: Field[]; rest?: ArrayField; };
 
 /**
  * Represents a tuple field.
  */
-export type TupleField = BaseField<'tuple'> & BoundedAttributes & TupleAttributes;
+export type TupleField = BaseField<'tuple'> & TupleAttributes;
 
 /**
  * Attributes for record fields.
  */
-export type RecordAttributes = {
-    /** Optional field type for the values. */
-    of?: Field;
-    /** Optional string field for the keys. */
-    key?: StringField;
-};
+export type RecordAttributes = { of: Field; key?: StringField; };
 
 /**
  * Represents a record field.
@@ -153,12 +138,7 @@ export type ObjectField = BaseField<'object'> & ObjectAttributes;
 /**
  * Attributes for model fields.
  */
-export type ModelAttributes = {
-    /** Structure of the model. */
-    of: FieldObject;
-    /** Name of the model. */
-    name: string;
-};
+export type ModelAttributes = { of: FieldObject; };
 
 /**
  * Represents a model field.
@@ -168,12 +148,7 @@ export type ModelField = BaseField<'model'> & ModelAttributes;
 /**
  * Attributes for group fields.
  */
-export type GroupAttributes = {
-    /** Field object containing the group's fields. */
-    of: FieldObject;
-    /** Optional selected field within the group. */
-    selected?: string;
-};
+export type GroupAttributes = { of: FieldObject; selected?: string; };
 
 /**
  * Represents a group field.
@@ -201,7 +176,7 @@ export type RootField = BaseField<'root'>;
 export type ThisField = BaseField<'this'>;
 
 // Making Field a BaseField with certain kinds speeds up (and prevents recursion errors)
-// but you cant resolve kind by type anymore :\
+// but you cant resolve type by kind anymore :\
 /**
  * Union type of all possible field types.
  */

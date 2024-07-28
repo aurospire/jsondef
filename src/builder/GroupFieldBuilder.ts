@@ -1,8 +1,12 @@
 import { GroupField } from "../Field";
-import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
+import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
-export class GroupFieldBuilder<const Of extends GroupField['of'], const Selected extends string | undefined = undefined, const Optional extends boolean = false>
-    extends PositiveBoundedFieldBuilder<'group', Optional>
+export class GroupFieldBuilder<
+    const Of extends GroupField['of'],
+    const Selected extends string | undefined = undefined,
+    const Optional extends boolean = false
+>
+    extends BaseFieldBuilder<'group', Optional>
     implements GroupField {
 
     #of: Of;

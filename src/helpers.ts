@@ -33,9 +33,7 @@ function tupleField<const Of extends TupleField['of']>(of: Of): TupleFieldBuilde
 function tupleField<const Of extends TupleField['of'], Rest extends TupleField['rest']>(of: Of, rest: Rest): TupleFieldBuilder<Of, Rest>;
 function tupleField<const Of extends TupleField['of'], Rest extends TupleField['rest']>(of: Of, rest?: Rest): TupleFieldBuilder<Of, Rest> { return new TupleFieldBuilder(of, rest); }
 
-function recordField(): RecordFieldBuilder;
-function recordField<const Of extends RecordField['of']>(of: Of): RecordFieldBuilder<Of>;
-function recordField<const Of extends RecordField['of']>(of?: Of): RecordFieldBuilder<Of> { return new RecordFieldBuilder<Of>(of as Of); }
+const recordField = <const Of extends RecordField['of']>(of: Of): RecordFieldBuilder<Of> => new RecordFieldBuilder<Of>(of);
 
 const objectField = <const Of extends ObjectField['of']>(of: Of) => new ObjectFieldBuilder<Of>(of);
 const modelField = <const Of extends ModelField['of']>(name: string, of: Of) => new ModelFieldBuilder<Of>(of, name);

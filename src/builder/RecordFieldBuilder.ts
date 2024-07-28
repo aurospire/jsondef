@@ -1,7 +1,7 @@
 import { BoundedAttributes, RecordField } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class RecordFieldBuilder<const Of extends RecordField['of'] = undefined, const Optional extends boolean = false>
+export class RecordFieldBuilder<const Of extends RecordField['of'], const Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'record', Optional>
     implements RecordField {
 

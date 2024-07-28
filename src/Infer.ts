@@ -5,7 +5,8 @@ import {
     GroupField,
     ObjectField,
     TupleField,
-    UnionField
+    UnionField,
+    ArrayField
 } from "./Field";
 
 /**
@@ -28,8 +29,8 @@ export type InferField<F extends Field, G extends FieldObject = {}, R = undefine
         K extends 'string'      ? string :
         K extends 'literal'     ? F extends { of: infer O extends LiteralField['of']; } ? O : never :
         K extends 'array'       ? F extends { of: infer O extends Field; } ? Array<InferField<O, G, R, L>> : never :
-        K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends Field; } ? InferTuple<O, G, R, L, R> : InferTuple<O, G, R, L> ): never :
-        K extends 'record'      ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, G, R, L>; } : { [key: string]: any; } :
+        K extends 'tuple'       ? F extends { of: infer O extends TupleField['of']; } ? (F extends { rest: infer R extends ArrayField; } ? InferTuple<O, G, R, L, R['of']> : InferTuple<O, G, R, L> ): never :
+        K extends 'record'      ? F extends { of: infer O extends Field; } ? { [key: string]: InferField<O, G, R, L>; } : never :
         K extends 'union'       ? F extends { of: infer O extends UnionField['of']; } ? InferField<O[number], G, R, L> : never :
         K extends 'object'      ? F extends { of: infer O extends ObjectField['of']; } ? InferObject<O, G, R> : never :
         K extends 'model'       ? F extends { of: infer O extends ModelField['of']; } ? InferObject<O, G> : never :

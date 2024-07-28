@@ -1,8 +1,9 @@
 import { BoundedAttributes } from "../Field";
 import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 
+export abstract class PositiveBoundedFieldBuilder<const Kind extends string, const  Optional extends boolean = false>
+    extends BoundedFieldBuilder<Kind, Optional> {
 
-export abstract class PositiveBoundedFieldBuilder<const Kind extends string, const  Optional extends boolean = false> extends BoundedFieldBuilder<Kind, Optional> {
     constructor(from?: PositiveBoundedFieldBuilder<Kind, Optional>) {
         super(from);
     }

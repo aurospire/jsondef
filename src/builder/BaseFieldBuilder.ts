@@ -1,6 +1,8 @@
 import { BaseField, BaseAttributes, NullField } from "../Field";
 
-export abstract class BaseFieldBuilder<const Kind extends string, const Optional extends boolean = false> implements BaseField<Kind> {
+export abstract class BaseFieldBuilder<const Kind extends string, const Optional extends boolean = false>
+    implements BaseField<Kind> {
+
     #attributes: BaseAttributes;
 
     constructor(from?: BaseFieldBuilder<Kind, Optional>) {

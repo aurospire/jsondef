@@ -1,8 +1,8 @@
 import { RefField } from "../Field";
-import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
+import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class RefFieldBuilder<const Of extends RefField['of'], const Optional extends boolean = false>
-    extends PositiveBoundedFieldBuilder<'ref', Optional>
+    extends BaseFieldBuilder<'ref', Optional>
     implements RefField {
 
     #of: Of;

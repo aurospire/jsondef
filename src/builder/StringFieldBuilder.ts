@@ -1,8 +1,10 @@
 import { BoundedAttributes, RegexString, StringAttributes, StringField, StringFieldPattern } from "../Field";
-import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-export class StringFieldBuilder<const Optional extends boolean = false> extends PositiveBoundedFieldBuilder<'string', Optional> implements StringField {
+export class StringFieldBuilder<const Optional extends boolean = false>
+    extends PositiveBoundedFieldBuilder<'string', Optional>
+    implements StringField {
+
     #of: StringAttributes['of'];
 
     constructor(from?: StringFieldBuilder<Optional>) {
@@ -36,11 +38,11 @@ export class StringFieldBuilder<const Optional extends boolean = false> extends 
     regex(pattern: RegExp | RegexString): StringFieldBuilder<Optional> { return this.pattern(pattern); }
 
 
-    
+
     override optional(): StringFieldBuilder<true> { return super.optional() as any; }
-    
+
     override required(): StringFieldBuilder<false> { return super.required() as any; }
-    
+
     override bound(bounds: BoundedAttributes): StringFieldBuilder<Optional> { return super.bound(bounds) as any; }
 
     protected override clone() { return new StringFieldBuilder<Optional>(); }

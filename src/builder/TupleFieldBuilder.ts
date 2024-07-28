@@ -1,8 +1,12 @@
 import { TupleField } from "../Field";
-import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
+import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
-export class TupleFieldBuilder<const Of extends TupleField['of'], const  Rest extends TupleField['rest'] = undefined, Optional extends boolean = false>
-    extends PositiveBoundedFieldBuilder<'tuple', Optional>
+export class TupleFieldBuilder<
+    const Of extends TupleField['of'],
+    const Rest extends TupleField['rest'] = undefined,
+    Optional extends boolean = false
+>
+    extends BaseFieldBuilder<'tuple', Optional>
     implements TupleField {
 
     #of: Of;

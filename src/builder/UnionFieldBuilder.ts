@@ -1,8 +1,8 @@
 import { UnionField } from "../Field";
-import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
+import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
 export class UnionFieldBuilder<const Of extends UnionField['of'], const Optional extends boolean = false>
-    extends PositiveBoundedFieldBuilder<'union', Optional>
+    extends BaseFieldBuilder<'union', Optional>
     implements UnionField {
 
     #of: Of;

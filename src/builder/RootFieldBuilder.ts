@@ -1,7 +1,10 @@
 import { RootField } from "../Field";
 import { BaseFieldBuilder } from "./BaseFieldBuilder";
 
-export class RootFieldBuilder<const Optional extends boolean=false> extends BaseFieldBuilder<'root', Optional> implements RootField {
+export class RootFieldBuilder<const Optional extends boolean = false>
+    extends BaseFieldBuilder<'root', Optional>
+    implements RootField {
+
     constructor(from?: RootFieldBuilder<Optional>) { super(from); }
 
     get kind(): "root" { return 'root'; }

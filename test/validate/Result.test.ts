@@ -378,7 +378,7 @@ describe('Validation Tests', () => {
         test('tuple with optional rest elements', () => {
             const tupleWithRest: TupleField = {
                 ...tupleField,
-                rest: { kind: 'string' }
+                rest: { kind: 'array', of: { kind: 'string' } }
             };
             expect(validate(['hello', 42, true, 'extra1', 'extra2'], tupleWithRest).success).toBe(true);
             expect(validate(['hello', 42, true, 123], tupleWithRest).success).toBe(false);

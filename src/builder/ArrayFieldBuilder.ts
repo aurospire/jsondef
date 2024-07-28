@@ -1,7 +1,6 @@
 import { ArrayField, BoundedAttributes, Field } from "../Field";
 import { PositiveBoundedFieldBuilder } from "./PositiveBoundedFieldBuilder";
 
-
 export class ArrayFieldBuilder<const Of extends Field, const Optional extends boolean = false>
     extends PositiveBoundedFieldBuilder<'array', Optional>
     implements ArrayField {
