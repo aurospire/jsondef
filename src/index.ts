@@ -4,7 +4,7 @@ export * from './builder';
 export * as j from './helpers';
 
 
-const combine_files = async () => {
+const combine_files = async (split: boolean) => {
     const nodefs = await import('fs');
     const nodepath = await import('path');
 
@@ -14,40 +14,44 @@ const combine_files = async () => {
     let result = '';
 
     const files = [
-        'util/UnionToIntersection',
-        'Schema',
-        'Infer',
-        'builder/BaseSchemaBuilder',
-        'builder/NullSchemaBuilder',
-        'builder/AnySchemaBuilder',
-        'builder/BooleanSchemaBuilder',
-        'builder/BoundedSchemaBuilder',
-        'builder/NumberSchemaBuilder',
-        'builder/IntegerSchemaBuilder',
-        'builder/PositiveBoundedSchemaBuilder',
-        'builder/StringSchemaBuilder',
-        'builder/LiteralSchemaBuilder',
-        'builder/ArraySchemaBuilder',
-        'builder/TupleSchemaBuilder',
-        'builder/RecordSchemaBuilder',
-        'builder/ObjectSchemaBuilder',
-        'builder/ModelSchemaBuilder',
-        'builder/CompositeSchemaBuilder',
-        'builder/UnionSchemaBuilder',
-        'builder/NamespaceSchemaBuilder',
-        'builder/RefSchemaBuilder',
-        'builder/helpers'
+        'Schema.ts',
+        'validate/Context.ts',
+        'validate/SchemaValidator.ts',
+        'validate/isObject.ts',
+        'validate/Result.ts',
+        'validate/validateAny.ts',
+        'validate/validateBounds.ts',
+        'validate/validateInteger.ts',
+        'validate/validateNumber.ts',
+        'validate/validateString.ts',
+        'validate/validateArray.ts',
+        'validate/validateTuple.ts',
+        'validate/validateRecord.ts',
+        'validate/validateUnion.ts',
+        'validate/validateObject.ts',
+        'validate/validateGroup.ts',
+        'validate/validateRef.ts',
+        'validate/validateSchema.ts',
+        'validate/validate.ts',
     ];
 
     const log = (...data: string[]) => {
         result += data.join('') + '\n';
     };
     for (const file of files) {
-        const path = nodepath.resolve(root, file + '.ts');
+        const path = nodepath.resolve(root, file.endsWith('.ts') ? file : file + '.ts');
 
-        const code = nodefs.readFileSync(path).toString();
+        let code = nodefs.readFileSync(path).toString();
 
-        log('### @/', file, '.ts ###');
+        if (split) {
+            log('### @/', file, '.ts ###');
+        }
+        else {
+            code = code.split('\n')
+                .filter(line => !line.startsWith('import '))
+                .filter(line => line.trim() !== '')
+                .join('\n');
+        }
 
         log(code);
         log();

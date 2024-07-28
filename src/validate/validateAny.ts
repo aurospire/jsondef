@@ -3,17 +3,16 @@ import { isObject } from "./isObject";
 import { Issue } from "./Result";
 
 export const validateAny = (value: any, path: string[]): ValidationResult => {
-    if (
-        value === null ||
-        typeof value === 'boolean' ||
-        typeof value === 'number' ||
-        typeof value === 'string'
-    )
+    if (value === null)
         return true;
-
+    else if (typeof value === 'boolean')
+        return true;
+    else if (typeof value === 'string')
+        return true;
+    else if (typeof value === 'number')
+        return Number.isFinite(value) ? true : [{ path, issue: 'not a valid number' }];
     else if (Array.isArray(value))
         return validateArrayItems(value, path);
-
     else if (isObject(value))
         return validateObjectProperties(value, path);
 
