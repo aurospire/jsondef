@@ -2,85 +2,85 @@ import * as j from '@/helpers';
 import { expectType } from 'jestype';
 
 describe('Builder Helpers', () => {
-    // Testing basic field types and their optional versions
-    describe('Field Type Tests', () => {
-        it('should create and validate null fields, both regular and optional', () => {
-            const field = j.null();
-            expect(field.kind).toBe('null');
-            expect(field.isOptional).toBe(false);
-            type Inferred = j.infer<typeof field>;
+    // Testing basic schema types and their optional versions
+    describe('Schema Type Tests', () => {
+        it('should create and validate null schemas, both regular and optional', () => {
+            const schema = j.null();
+            expect(schema.kind).toBe('null');
+            expect(schema.isOptional).toBe(false);
+            type Inferred = j.infer<typeof schema>;
             type Expected = null;
             expectType<Inferred>().toBe<Expected>();
 
-            const optionalField = field.optional();
-            expect(optionalField.isOptional).toBe(true);
-            type InferredOptional = j.infer<typeof optionalField>;
+            const optionalSchema = schema.optional();
+            expect(optionalSchema.isOptional).toBe(true);
+            type InferredOptional = j.infer<typeof optionalSchema>;
             type ExpectedOptional = null;
             expectType<InferredOptional>().toBe<ExpectedOptional>();
         });
 
-        it('should create and validate boolean fields, both regular and optional', () => {
-            const field = j.boolean();
-            expect(field.kind).toBe('boolean');
-            expect(field.isOptional).toBe(false);
-            type Inferred = j.infer<typeof field>;
+        it('should create and validate boolean schemas, both regular and optional', () => {
+            const schema = j.boolean();
+            expect(schema.kind).toBe('boolean');
+            expect(schema.isOptional).toBe(false);
+            type Inferred = j.infer<typeof schema>;
             type Expected = boolean;
             expectType<Inferred>().toBe<Expected>();
 
-            const optionalField = field.optional();
-            expect(optionalField.isOptional).toBe(true);
-            type InferredOptional = j.infer<typeof optionalField>;
+            const optionalSchema = schema.optional();
+            expect(optionalSchema.isOptional).toBe(true);
+            type InferredOptional = j.infer<typeof optionalSchema>;
             type ExpectedOptional = boolean;
             expectType<InferredOptional>().toBe<ExpectedOptional>();
         });
 
-        it('should create an any field with correct type inference', () => {
-            const field = j.any();
-            expect(field.kind).toBe('any');
-            type Inferred = j.infer<typeof field>;
+        it('should create an any schema with correct type inference', () => {
+            const schema = j.any();
+            expect(schema.kind).toBe('any');
+            type Inferred = j.infer<typeof schema>;
             type Expected = any;
             expectType<Inferred>().toBe<Expected>();
         });
     });
 
-    // Testing contextual 'this' and 'root' fields within and outside models
-    describe('Contextual Field Tests', () => {
-        it('should validate this and root fields within models', () => {
+    // Testing contextual 'this' and 'root' schemas within and outside models
+    describe('Contextual Schema Tests', () => {
+        it('should validate this and root schemas within models', () => {
             const model = j.model('Model', {
-                thisField: j.this().optional(),
-                rootField: j.root().optional(),
+                thisSchema: j.this().optional(),
+                rootSchema: j.root().optional(),
             });
             expect(model.kind).toBe('model');
             type InferredModel = j.infer<typeof model>;
             type ExpectedModel = {
-                thisField?: ExpectedModel;
-                rootField?: ExpectedModel;
+                thisSchema?: ExpectedModel;
+                rootSchema?: ExpectedModel;
             };
             expectType<InferredModel>().toBe<ExpectedModel>();
         });
 
-        it('should handle this and root fields without scope as undefined', () => {
-            const thisField = j.this();
-            const rootField = j.root();
-            expect(thisField.kind).toBe('this');
-            expect(rootField.kind).toBe('root');
-            type InferredThis = j.infer<typeof thisField>;
+        it('should handle this and root schemas without scope as undefined', () => {
+            const thisSchema = j.this();
+            const rootSchema = j.root();
+            expect(thisSchema.kind).toBe('this');
+            expect(rootSchema.kind).toBe('root');
+            type InferredThis = j.infer<typeof thisSchema>;
             type ExpectedThis = never;
-            type InferredRoot = j.infer<typeof rootField>;
+            type InferredRoot = j.infer<typeof rootSchema>;
             type ExpectedRoot = never;
             expectType<InferredThis>().toBe<ExpectedThis>();
             expectType<InferredRoot>().toBe<ExpectedRoot>();
         });
     });
 
-    // Testing numeric fields with bounds
-    describe('Numeric Field Bounds Tests', () => {
-        it('should enforce bounds correctly on integer fields and handle invalid bounds', () => {
-            const field = j.integer().bound({ min: 1, max: 100 });
-            expect(field.kind).toBe('integer');
-            expect(field.min).toBe(1);
-            expect(field.max).toBe(100);
-            type Inferred = j.infer<typeof field>;
+    // Testing numeric schemas with bounds
+    describe('Numeric Schema Bounds Tests', () => {
+        it('should enforce bounds correctly on integer schemas and handle invalid bounds', () => {
+            const schema = j.integer().bound({ min: 1, max: 100 });
+            expect(schema.kind).toBe('integer');
+            expect(schema.min).toBe(1);
+            expect(schema.max).toBe(100);
+            type Inferred = j.infer<typeof schema>;
             type Expected = number;
             expectType<Inferred>().toBe<Expected>();
 
@@ -91,55 +91,55 @@ describe('Builder Helpers', () => {
         });
     });
 
-    // Literal, Array, and Object fields
-    describe('Literal, Array, and Object Field Tests', () => {
-        it('should create literal fields and validate their types', () => {
-            const field = j.literal('test');
-            expect(field.kind).toBe('literal');
-            expect(field.of).toBe('test');
-            type Inferred = j.infer<typeof field>;
+    // Literal, Array, and Object schemas
+    describe('Literal, Array, and Object Schema Tests', () => {
+        it('should create literal schemas and validate their types', () => {
+            const schema = j.literal('test');
+            expect(schema.kind).toBe('literal');
+            expect(schema.of).toBe('test');
+            type Inferred = j.infer<typeof schema>;
             type Expected = 'test';
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create array fields with type checks and bounds', () => {
-            const field = j.array(j.number()).bound({ min: 1, max: 5 });
-            expect(field.kind).toBe('array');
-            expect(field.min).toBe(1);
-            expect(field.max).toBe(5);
-            type Inferred = j.infer<typeof field>;
+        it('should create array schemas with type checks and bounds', () => {
+            const schema = j.array(j.number()).bound({ min: 1, max: 5 });
+            expect(schema.kind).toBe('array');
+            expect(schema.min).toBe(1);
+            expect(schema.max).toBe(5);
+            type Inferred = j.infer<typeof schema>;
             type Expected = number[];
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create object fields and ensure correct field types', () => {
-            const field = j.object({ name: j.string(), age: j.number() });
-            expect(field.kind).toBe('object');
-            expect(field.of.name.kind).toBe('string');
-            expect(field.of.age.kind).toBe('number');
-            type Inferred = j.infer<typeof field>;
+        it('should create object schemas and ensure correct schema types', () => {
+            const schema = j.object({ name: j.string(), age: j.number() });
+            expect(schema.kind).toBe('object');
+            expect(schema.of.name.kind).toBe('string');
+            expect(schema.of.age.kind).toBe('number');
+            type Inferred = j.infer<typeof schema>;
             type Expected = { name: string; age: number; };
             expectType<Inferred>().toBe<Expected>();
         });
     });
 
-    // Reference and Group field tests
+    // Reference and Group schema tests
     describe('Reference and Group Tests', () => {
-        it('should create reference fields and handle undefined references as never', () => {
-            const refField = j.ref('Nonexistent');
-            expect(refField.kind).toBe('ref');
-            type Inferred = j.infer<typeof refField>;
+        it('should create reference schemas and handle undefined references as never', () => {
+            const refSchema = j.ref('Nonexistent');
+            expect(refSchema.kind).toBe('ref');
+            type Inferred = j.infer<typeof refSchema>;
             type Expected = never;
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create group fields and validate nested structures', () => {
-            const field = j.group({
+        it('should create group schemas and validate nested structures', () => {
+            const schema = j.group({
                 User: j.object({ id: j.number(), name: j.string() }),
                 Post: j.object({ title: j.string(), author: j.ref('User') })
             });
-            expect(field.kind).toBe('group');
-            type Inferred = j.infer<typeof field>;
+            expect(schema.kind).toBe('group');
+            type Inferred = j.infer<typeof schema>;
             type Expected = {
                 User: { id: number; name: string; },
                 Post: { title: string; author: { id: number; name: string; }; };
@@ -147,14 +147,14 @@ describe('Builder Helpers', () => {
             expectType<Inferred>().toBe<Expected>();
         });
 
-        it('should create group fields with select', () => {
-            const field = j.group({
+        it('should create group schemas with select', () => {
+            const schema = j.group({
                 User: j.object({ id: j.number(), name: j.string() }),
                 Post: j.object({ title: j.string(), author: j.ref('User') })
             }).select('Post');
 
-            expect(field.kind).toBe('group');
-            type Inferred = j.infer<typeof field>;
+            expect(schema.kind).toBe('group');
+            type Inferred = j.infer<typeof schema>;
             type Expected = {
                 User: { id: number; name: string; },
                 Post: { title: string; author: { id: number; name: string; }; };
@@ -164,9 +164,9 @@ describe('Builder Helpers', () => {
         });
     });
 
-    // Complex field combinations
-    describe('Complex Field Combinations', () => {
-        it('should handle complex union and composite fields', () => {
+    // Complex schema combinations
+    describe('Complex Schema Combinations', () => {
+        it('should handle complex union and composite schemas', () => {
             const shape = j.union([
                 j.object({ kind: j.literal('circle'), radius: j.number() }),
                 j.object({ kind: j.literal('rectangle'), width: j.number(), height: j.number() })

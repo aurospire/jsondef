@@ -1,5 +1,5 @@
 import { validateBounds } from "./validateBounds";
-import { StringField } from "../Field";
+import { StringSchema } from "../Schema";
 import { ValidationResult } from "./Context";
 import { Issue } from "./Result";
 
@@ -152,10 +152,10 @@ const stringTesters: Record<string, StringTester> = {
     email: emailTester
 };
 
-export const validateString = (value: any, field: StringField, path: string[]): ValidationResult => {
+export const validateString = (value: any, schema: StringSchema, path: string[]): ValidationResult => {
     if (typeof value !== 'string') return [{ path, issue: 'value must be string.' }];
 
-    const { of: filter } = field;
+    const { of: filter } = schema;
 
     if (filter) {
         if (typeof filter === 'string') {
@@ -175,7 +175,7 @@ export const validateString = (value: any, field: StringField, path: string[]): 
         }
     }
 
-    const boundsCheck = validateBounds(value.length, field, 'value length');
+    const boundsCheck = validateBounds(value.length, schema, 'value length');
 
     return boundsCheck ? [{ path, issue: boundsCheck }] : true;
 };

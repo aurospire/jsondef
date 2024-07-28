@@ -1,12 +1,12 @@
-import { Field } from "../Field";
-import { InferField } from "../Infer";
+import { Schema } from "../Schema";
+import { InferSchema } from "../Infer";
 import { makeContext } from "./Context";
 import { Result } from "./Result";
-import { validateField } from "./validateField";
+import { validateSchema } from "./validateSchema";
 
 
-export const validate = <const F extends Field>(value: any, field: F): Result<InferField<F>> => {
-    const result = validateField(value, field, [], makeContext());
+export const validate = <const F extends Schema>(value: any, schema: F): Result<InferSchema<F>> => {
+    const result = validateSchema(value, schema, [], makeContext());
 
     return result === true ? Result.success(value) : Result.failure(result);
 };

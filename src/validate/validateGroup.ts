@@ -1,9 +1,9 @@
-import { GroupField } from "../Field";
+import { GroupSchema } from "../Schema";
 import { Context, ValidationResult, makeContext } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 import { validateObject } from "./validateObject";
 
-export const validateGroup = (value: any, group: GroupField, path: string[], context: Context, validate: FieldValidator): ValidationResult => {
+export const validateGroup = (value: any, group: GroupSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
     if (group.selected) {
 
         const selected = group.of[group.selected];

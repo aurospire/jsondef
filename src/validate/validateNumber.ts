@@ -1,11 +1,11 @@
 import { validateBounds } from "./validateBounds";
-import { NumberField } from "../Field";
+import { NumberSchema } from "../Schema";
 import { ValidationResult } from "./Context";
 
-export const validateNumber = (value: any, field: NumberField, path: string[]): ValidationResult => {
+export const validateNumber = (value: any, schema: NumberSchema, path: string[]): ValidationResult => {
     if (typeof value === 'number' && Number.isFinite(value)) {
 
-        const boundsCheck = validateBounds(value, field, 'value');
+        const boundsCheck = validateBounds(value, schema, 'value');
 
         return boundsCheck ? [{ path, issue: boundsCheck }] : true;
     }

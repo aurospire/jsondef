@@ -1,8 +1,8 @@
-import { BoundedAttributes } from "../Field";
+import { BoundedAttributes } from "../Schema";
 
 
-export const validateBounds = (value: number, field: BoundedAttributes, prefix: string): string | undefined => {
-    const { xmin, min, xmax, max } = field;
+export const validateBounds = (value: number, schema: BoundedAttributes, prefix: string): string | undefined => {
+    const { xmin, min, xmax, max } = schema;
 
     let messages: string[] = [];
 

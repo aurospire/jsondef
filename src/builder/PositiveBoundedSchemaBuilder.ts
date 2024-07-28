@@ -1,10 +1,10 @@
-import { BoundedAttributes } from "../Field";
-import { BoundedFieldBuilder } from "./BoundedFieldBuilder";
+import { BoundedAttributes } from "../Schema";
+import { BoundedSchemaBuilder } from "./BoundedSchemaBuilder";
 
-export abstract class PositiveBoundedFieldBuilder<const Kind extends string, const  Optional extends boolean = false>
-    extends BoundedFieldBuilder<Kind, Optional> {
+export abstract class PositiveBoundedSchemaBuilder<const Kind extends string, const  Optional extends boolean = false>
+    extends BoundedSchemaBuilder<Kind, Optional> {
 
-    constructor(from?: PositiveBoundedFieldBuilder<Kind, Optional>) {
+    constructor(from?: PositiveBoundedSchemaBuilder<Kind, Optional>) {
         super(from);
     }
 

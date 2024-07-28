@@ -1,10 +1,10 @@
-import { ArrayField } from "../Field";
+import { ArraySchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 import { Issue } from "./Result";
 import { validateBounds } from "./validateBounds";
 
-export const validateArray = (value: any, array: ArrayField, path: string[], context: Context, validate: FieldValidator): ValidationResult => {
+export const validateArray = (value: any, array: ArraySchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
     if (!Array.isArray(value)) return [{ path, issue: 'value must be an array' }];
 

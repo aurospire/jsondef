@@ -1,9 +1,9 @@
-import { UnionField } from "../Field";
+import { UnionSchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 import { Issue } from "./Result";
 
-export const validateUnion = (value: any, union: UnionField, path: string[], context: Context, validate: FieldValidator): ValidationResult => {
+export const validateUnion = (value: any, union: UnionSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
     const issues: Issue[] = [];
 
     for (const option of union.of) {

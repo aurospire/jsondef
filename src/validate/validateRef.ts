@@ -1,8 +1,8 @@
-import { RefField } from "../Field";
+import { RefSchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 
-export const validateRef = (value: any, ref: RefField, path: string[], context: Context, validate: FieldValidator): ValidationResult => {
+export const validateRef = (value: any, ref: RefSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
     if (!context.global) return [{ path, issue: 'no global context' }];
 
     const referred = context.global[ref.of];

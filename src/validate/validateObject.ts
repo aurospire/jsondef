@@ -1,15 +1,15 @@
-import { FieldObject } from "../Field";
+import { SchemaObject } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 import { isObject } from "./isObject";
 import { Issue } from "./Result";
 
 export const validateObject = (
     value: any,
-    fields: FieldObject,
+    schemas: SchemaObject,
     path: string[],
     context: Context,
-    validate: FieldValidator,
+    validate: SchemaValidator,
     optionals: boolean = false
 ): ValidationResult => {
     if (!isObject(value)) return [{ path, issue: 'value must be an object' }];
@@ -18,21 +18,21 @@ export const validateObject = (
 
     const issues: Issue[] = [];
 
-    Object.entries(fields).forEach(([fieldKey, field]) => {
-        const fieldPath = [...path, fieldKey];
+    Object.entries(schemas).forEach(([schemaKey, schema]) => {
+        const schemaPath = [...path, schemaKey];
 
-        if (names.has(fieldKey)) {
+        if (names.has(schemaKey)) {
 
-            names.delete(fieldKey);
+            names.delete(schemaKey);
 
-            const itemValue = value[fieldKey];
+            const itemValue = value[schemaKey];
 
-            const result = validate(itemValue, field, fieldPath, context);
+            const result = validate(itemValue, schema, schemaPath, context);
 
             if (result !== true) issues.push(...result);
         }
-        else if (!optionals || !field.isOptional) {
-            issues.push({ path: fieldPath, issue: `missing key '${fieldKey}'` });
+        else if (!optionals || !schema.isOptional) {
+            issues.push({ path: schemaPath, issue: `missing key '${schemaKey}'` });
         }
     });
 

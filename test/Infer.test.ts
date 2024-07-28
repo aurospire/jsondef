@@ -1,133 +1,133 @@
 import {
-    AnyField,
-    BooleanField,
-    IntegerField,
-    NullField,
-    NumberField,
-    RootField,
-    StringField,
-    ThisField
-} from "@/Field";
-import { InferField } from '@/Infer';
+    AnySchema,
+    BooleanSchema,
+    IntegerSchema,
+    NullSchema,
+    NumberSchema,
+    RootSchema,
+    StringSchema,
+    ThisSchema
+} from "@/Schema";
+import { InferSchema } from '@/Infer';
 import { expectType } from 'jestype';
 
-describe('InferField', () => {
-    describe('Basic Fields', () => {
-        it('should infer correct types for basic fields', () => {
-            expectType<InferField<NullField>>().toBe<null>();
-            expectType<InferField<AnyField>>().toBe<any>();
-            expectType<InferField<BooleanField>>().toBe<boolean>();
-            expectType<InferField<IntegerField>>().toBe<number>();
-            expectType<InferField<NumberField>>().toBe<number>();
-            expectType<InferField<StringField>>().toBe<string>();
+describe('InferSchema', () => {
+    describe('Basic Schemas', () => {
+        it('should infer correct types for basic schemas', () => {
+            expectType<InferSchema<NullSchema>>().toBe<null>();
+            expectType<InferSchema<AnySchema>>().toBe<any>();
+            expectType<InferSchema<BooleanSchema>>().toBe<boolean>();
+            expectType<InferSchema<IntegerSchema>>().toBe<number>();
+            expectType<InferSchema<NumberSchema>>().toBe<number>();
+            expectType<InferSchema<StringSchema>>().toBe<string>();
         });
     });
 
-    describe('Literal Fields', () => {
-        it('should infer correct types for literal fields', () => {
-            expectType<InferField<{ kind: 'literal', of: true; }>>().toBe<true>();
-            expectType<InferField<{ kind: 'literal', of: 42; }>>().toBe<42>();
-            expectType<InferField<{ kind: 'literal', of: 'test'; }>>().toBe<'test'>();
+    describe('Literal Schemas', () => {
+        it('should infer correct types for literal schemas', () => {
+            expectType<InferSchema<{ kind: 'literal', of: true; }>>().toBe<true>();
+            expectType<InferSchema<{ kind: 'literal', of: 42; }>>().toBe<42>();
+            expectType<InferSchema<{ kind: 'literal', of: 'test'; }>>().toBe<'test'>();
         });
     });
 
-    describe('Array Fields', () => {
-        it('should infer correct types for array fields', () => {
-            type StringArrayField = { kind: 'array', of: StringField; };
-            expectType<InferField<StringArrayField>>().toBe<string[]>();
+    describe('Array Schemas', () => {
+        it('should infer correct types for array schemas', () => {
+            type StringArraySchema = { kind: 'array', of: StringSchema; };
+            expectType<InferSchema<StringArraySchema>>().toBe<string[]>();
 
-            type NestedArrayField = { kind: 'array', of: { kind: 'array', of: NumberField; }; };
-            expectType<InferField<NestedArrayField>>().toBe<number[][]>();
+            type NestedArraySchema = { kind: 'array', of: { kind: 'array', of: NumberSchema; }; };
+            expectType<InferSchema<NestedArraySchema>>().toBe<number[][]>();
         });
     });
 
-    describe('Record Fields', () => {
-        it('should infer correct types for record fields', () => {
-            type StringRecordField = { kind: 'record', of: StringField; };
-            expectType<InferField<StringRecordField>>().toBe<{ [key: string]: string; }>();
+    describe('Record Schemas', () => {
+        it('should infer correct types for record schemas', () => {
+            type StringRecordSchema = { kind: 'record', of: StringSchema; };
+            expectType<InferSchema<StringRecordSchema>>().toBe<{ [key: string]: string; }>();
         });
     });
 
-    describe('Model and Object Fields', () => {
-        it('should infer correct types for model fields', () => {
+    describe('Model and Object Schemas', () => {
+        it('should infer correct types for model schemas', () => {
             type UserModel = {
                 kind: 'model',
                 of: {
-                    id: NumberField;
-                    name: StringField;
+                    id: NumberSchema;
+                    name: StringSchema;
                 };
                 name: 'User';
             };
-            expectType<InferField<UserModel>>().toBe<{ id: number; name: string; }>();
+            expectType<InferSchema<UserModel>>().toBe<{ id: number; name: string; }>();
         });
 
-        it('should infer correct types for object fields', () => {
+        it('should infer correct types for object schemas', () => {
             type AddressObject = {
                 kind: 'object',
                 of: {
-                    street: StringField;
-                    city: StringField;
-                    zipCode: NumberField;
+                    street: StringSchema;
+                    city: StringSchema;
+                    zipCode: NumberSchema;
                 };
             };
-            expectType<InferField<AddressObject>>().toBe<{ street: string; city: string; zipCode: number; }>();
+            expectType<InferSchema<AddressObject>>().toBe<{ street: string; city: string; zipCode: number; }>();
         });
     });
 
-    describe('Union Fields', () => {
-        it('should infer correct types for union fields', () => {
-            type StringOrNumberField = {
+    describe('Union Schemas', () => {
+        it('should infer correct types for union schemas', () => {
+            type StringOrNumberSchema = {
                 kind: 'union',
-                of: [StringField, NumberField];
+                of: [StringSchema, NumberSchema];
             };
-            expectType<InferField<StringOrNumberField>>().toBe<string | number>();
+            expectType<InferSchema<StringOrNumberSchema>>().toBe<string | number>();
         });
     });
 
-    describe('Tuple Fields', () => {
-        it('should infer correct types for tuple fields', () => {
-            type MixedTupleField = {
+    describe('Tuple Schemas', () => {
+        it('should infer correct types for tuple schemas', () => {
+            type MixedTupleSchema = {
                 kind: 'tuple',
-                of: [StringField, NumberField, BooleanField];
+                of: [StringSchema, NumberSchema, BooleanSchema];
             };
-            type Inferred = InferField<MixedTupleField>;
+            type Inferred = InferSchema<MixedTupleSchema>;
             expectType<Inferred>().toBe<[string, number, boolean]>();
         });
 
         it('should handle rest elements in tuples', () => {
-            type RestTupleField = {
+            type RestTupleSchema = {
                 kind: 'tuple',
-                of: [StringField, NumberField];
-                rest: BooleanField;
+                of: [StringSchema, NumberSchema];
+                rest: BooleanSchema;
             };
-            type InferredRestTuple = InferField<RestTupleField>;
+            type InferredRestTuple = InferSchema<RestTupleSchema>;
             expectType<InferredRestTuple>().toExtend<[string, number, ...boolean[]]>();
         });
     });
 
-    describe('Reference Fields', () => {
-        it('should infer correct types for ref fields', () => {
+    describe('Reference Schemas', () => {
+        it('should infer correct types for ref schemas', () => {
             type TestGroup = {
                 User: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        name: StringField;
+                        id: NumberSchema;
+                        name: StringSchema;
                     };
                     name: 'User';
                 };
                 Post: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        title: StringField;
+                        id: NumberSchema;
+                        title: StringSchema;
                         author: { kind: 'ref', of: 'User'; };
                     };
                     name: 'Post';
                 };
             };
 
-            type InferredPost = InferField<TestGroup['Post'], TestGroup>;
+            type InferredPost = InferSchema<TestGroup['Post'], TestGroup>;
             type ExpectedPost = {
                 id: number;
                 title: string;
@@ -141,16 +141,16 @@ describe('InferField', () => {
     });
 
     describe('Recursive Structures', () => {
-        it('should handle this and root fields', () => {
-            type RecursiveField = {
+        it('should handle this and root schemas', () => {
+            type RecursiveSchema = {
                 kind: 'object',
                 of: {
-                    value: StringField;
-                    root: RootField & { isOptional: true; };
-                    this: ThisField & { isOptional: true; };
+                    value: StringSchema;
+                    root: RootSchema & { isOptional: true; };
+                    this: ThisSchema & { isOptional: true; };
                 };
             };
-            type InferredRecursive = InferField<RecursiveField>;
+            type InferredRecursive = InferSchema<RecursiveSchema>;
             type ExpectedRecursive = {
                 value: string;
                 root?: ExpectedRecursive;
@@ -164,14 +164,14 @@ describe('InferField', () => {
                 TreeNode: {
                     kind: 'object',
                     of: {
-                        value: NumberField;
+                        value: NumberSchema;
                         left: { kind: 'ref', of: 'TreeNode'; isOptional: true; };
                         right: { kind: 'ref', of: 'TreeNode'; isOptional: true; };
                     };
                 };
             };
 
-            type InferredTreeNode = InferField<TreeNodeGroup['TreeNode'], TreeNodeGroup>;
+            type InferredTreeNode = InferSchema<TreeNodeGroup['TreeNode'], TreeNodeGroup>;
             type ExpectedTreeNode = {
                 value: number;
                 left?: ExpectedTreeNode;
@@ -181,24 +181,24 @@ describe('InferField', () => {
         });
     });
 
-    describe('Group Fields', () => {
-        it('should infer correct types for group fields', () => {
+    describe('Group Schemas', () => {
+        it('should infer correct types for group schemas', () => {
             type TestGroup = {
                 kind: 'group',
                 of: {
                     User: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            name: StringField;
+                            id: NumberSchema;
+                            name: StringSchema;
                         };
                         name: 'User';
                     };
                     Post: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            title: StringField;
+                            id: NumberSchema;
+                            title: StringSchema;
                             author: { kind: 'ref', of: 'User'; };
                         };
                         name: 'Post';
@@ -206,7 +206,7 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredGroup = InferField<TestGroup>;
+            type InferredGroup = InferSchema<TestGroup>;
             type ExpectedGroup = {
                 User: {
                     id: number;
@@ -224,7 +224,7 @@ describe('InferField', () => {
             expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
 
-        it('should infer correct types for group fields with main', () => {
+        it('should infer correct types for group schemas with main', () => {
             type TestGroup = {
                 kind: 'group',
                 selected: 'Post',
@@ -232,16 +232,16 @@ describe('InferField', () => {
                     User: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            name: StringField;
+                            id: NumberSchema;
+                            name: StringSchema;
                         };
                         name: 'User';
                     };
                     Post: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            title: StringField;
+                            id: NumberSchema;
+                            title: StringSchema;
                             author: { kind: 'ref', of: 'User'; };
                         };
                         name: 'Post';
@@ -249,7 +249,7 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredGroup = InferField<TestGroup>;
+            type InferredGroup = InferSchema<TestGroup>;
 
             type ExpectedGroup = {
                 id: number;
@@ -263,7 +263,7 @@ describe('InferField', () => {
             expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
 
-        it('should infer correct types for group fields with invalid selected', () => {
+        it('should infer correct types for group schemas with invalid selected', () => {
             type TestGroup = {
                 kind: 'group',
                 selected: 'Address',
@@ -271,16 +271,16 @@ describe('InferField', () => {
                     User: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            name: StringField;
+                            id: NumberSchema;
+                            name: StringSchema;
                         };
                         name: 'User';
                     };
                     Post: {
                         kind: 'model',
                         of: {
-                            id: NumberField;
-                            title: StringField;
+                            id: NumberSchema;
+                            title: StringSchema;
                             author: { kind: 'ref', of: 'User'; };
                         };
                         name: 'Post';
@@ -288,13 +288,13 @@ describe('InferField', () => {
                 };
             };
 
-            type InferredGroup = InferField<TestGroup>;
+            type InferredGroup = InferSchema<TestGroup>;
             type ExpectedGroup = never;
             expectType<InferredGroup>().toBe<ExpectedGroup>();
         });
     });
 
-    it('should infer correct types for group fields with generic selected', () => {
+    it('should infer correct types for group schemas with generic selected', () => {
         type TestGroup = {
             kind: 'group',
             selected: string,
@@ -302,16 +302,16 @@ describe('InferField', () => {
                 User: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        name: StringField;
+                        id: NumberSchema;
+                        name: StringSchema;
                     };
                     name: 'User';
                 };
                 Post: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        title: StringField;
+                        id: NumberSchema;
+                        title: StringSchema;
                         author: { kind: 'ref', of: 'User'; };
                     };
                     name: 'Post';
@@ -319,12 +319,12 @@ describe('InferField', () => {
             };
         };
 
-        type InferredGroup = InferField<TestGroup>;
+        type InferredGroup = InferSchema<TestGroup>;
         type ExpectedGroup = never;
         expectType<InferredGroup>().toBe<ExpectedGroup>();
     });
 
-    it('should infer correct types for group fields with multiple selected', () => {
+    it('should infer correct types for group schemas with multiple selected', () => {
         type TestGroup = {
             kind: 'group',
             selected: 'User' | 'Post',
@@ -332,16 +332,16 @@ describe('InferField', () => {
                 User: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        name: StringField;
+                        id: NumberSchema;
+                        name: StringSchema;
                     };
                     name: 'User';
                 };
                 Post: {
                     kind: 'model',
                     of: {
-                        id: NumberField;
-                        title: StringField;
+                        id: NumberSchema;
+                        title: StringSchema;
                         author: { kind: 'ref', of: 'User'; };
                     };
                     name: 'Post';
@@ -349,7 +349,7 @@ describe('InferField', () => {
             };
         };
 
-        type InferredGroup = InferField<TestGroup>;
+        type InferredGroup = InferSchema<TestGroup>;
         type ExpectedGroup = {
             id: number;
             name: string;

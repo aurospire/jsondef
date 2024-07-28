@@ -1,28 +1,28 @@
-import { TupleField } from "../Field";
+import { TupleSchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { FieldValidator } from "./FieldValidator";
+import { SchemaValidator } from "./SchemaValidator";
 import { Issue } from "./Result";
 import { validateBounds } from "./validateBounds";
 
-export const validateTuple = (value: any, field: TupleField, path: string[], context: Context, validate: FieldValidator): ValidationResult => {
+export const validateTuple = (value: any, schema: TupleSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
     if (!Array.isArray(value)) return [{ path, issue: 'value must be a tuple' }];
 
     const issues: Issue[] = [];
 
-    field.of.forEach((item, i) => {
+    schema.of.forEach((item, i) => {
         const result = validate(value[i], item, [...path, i.toString()], context);
 
         if (result !== true) issues.push(...result);
     });
 
-    if (field.rest) {
-        const boundsCheck = validateBounds(value.length - field.of.length, field.rest, 'value length');
+    if (schema.rest) {
+        const boundsCheck = validateBounds(value.length - schema.of.length, schema.rest, 'value length');
 
         if (boundsCheck) return [{ path, issue: boundsCheck }];
 
-        for (let i = field.of.length; i < value.length; i++) {
-            const result = validate(value[i], field.rest, [...path, i.toString()], context);
+        for (let i = schema.of.length; i < value.length; i++) {
+            const result = validate(value[i], schema.rest, [...path, i.toString()], context);
 
             if (result !== true) issues.push(...result);
         }

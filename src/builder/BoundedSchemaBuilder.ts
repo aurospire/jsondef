@@ -1,12 +1,12 @@
-import { BoundedAttributes } from "../Field";
-import { BaseFieldBuilder } from "./BaseFieldBuilder";
+import { BoundedAttributes } from "../Schema";
+import { BaseSchemaBuilder } from "./BaseSchemaBuilder";
 
-export abstract class BoundedFieldBuilder<const Kind extends string, const Optional extends boolean = false>
-    extends BaseFieldBuilder<Kind, Optional> {
+export abstract class BoundedSchemaBuilder<const Kind extends string, const Optional extends boolean = false>
+    extends BaseSchemaBuilder<Kind, Optional> {
 
     #bounds: BoundedAttributes;
 
-    constructor(from?: BoundedFieldBuilder<Kind, Optional>) {
+    constructor(from?: BoundedSchemaBuilder<Kind, Optional>) {
         super(from);
 
         const bounds = from ? from.#bounds : {};
@@ -19,7 +19,7 @@ export abstract class BoundedFieldBuilder<const Kind extends string, const Optio
     get max() { return this.#bounds.max; }
     get xmax() { return this.#bounds.xmax; }
 
-    bound(bounds: BoundedAttributes): BoundedFieldBuilder<Kind, Optional> {
+    bound(bounds: BoundedAttributes): BoundedSchemaBuilder<Kind, Optional> {
         this.validateBounds(bounds);
 
         const builder = this.clone();
@@ -31,5 +31,5 @@ export abstract class BoundedFieldBuilder<const Kind extends string, const Optio
 
     protected abstract validateBounds(bounds: BoundedAttributes): void;
 
-    protected abstract override clone(): BoundedFieldBuilder<Kind, Optional>;
+    protected abstract override clone(): BoundedSchemaBuilder<Kind, Optional>;
 }

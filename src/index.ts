@@ -1,4 +1,4 @@
-export * from './Field';
+export * from './Schema';
 export * from './Infer';
 export * from './builder';
 export * as j from './helpers';
@@ -15,27 +15,27 @@ const combine_files = async () => {
 
     const files = [
         'util/UnionToIntersection',
-        'Field',
+        'Schema',
         'Infer',
-        'builder/BaseFieldBuilder',
-        'builder/NullFieldBuilder',
-        'builder/AnyFieldBuilder',
-        'builder/BooleanFieldBuilder',
-        'builder/BoundedFieldBuilder',
-        'builder/NumberFieldBuilder',
-        'builder/IntegerFieldBuilder',
-        'builder/PositiveBoundedFieldBuilder',
-        'builder/StringFieldBuilder',
-        'builder/LiteralFieldBuilder',
-        'builder/ArrayFieldBuilder',
-        'builder/TupleFieldBuilder',
-        'builder/RecordFieldBuilder',
-        'builder/ObjectFieldBuilder',
-        'builder/ModelFieldBuilder',
-        'builder/CompositeFieldBuilder',
-        'builder/UnionFieldBuilder',
-        'builder/NamespaceFieldBuilder',
-        'builder/RefFieldBuilder',
+        'builder/BaseSchemaBuilder',
+        'builder/NullSchemaBuilder',
+        'builder/AnySchemaBuilder',
+        'builder/BooleanSchemaBuilder',
+        'builder/BoundedSchemaBuilder',
+        'builder/NumberSchemaBuilder',
+        'builder/IntegerSchemaBuilder',
+        'builder/PositiveBoundedSchemaBuilder',
+        'builder/StringSchemaBuilder',
+        'builder/LiteralSchemaBuilder',
+        'builder/ArraySchemaBuilder',
+        'builder/TupleSchemaBuilder',
+        'builder/RecordSchemaBuilder',
+        'builder/ObjectSchemaBuilder',
+        'builder/ModelSchemaBuilder',
+        'builder/CompositeSchemaBuilder',
+        'builder/UnionSchemaBuilder',
+        'builder/NamespaceSchemaBuilder',
+        'builder/RefSchemaBuilder',
         'builder/helpers'
     ];
 

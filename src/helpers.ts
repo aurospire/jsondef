@@ -1,66 +1,66 @@
-import { ArrayField, LiteralField, ModelField, GroupField, ObjectField, RecordField, RefField, TupleField, UnionField } from "./Field";
-import { InferField } from "./Infer";
-import { AnyFieldBuilder } from "./builder/AnyFieldBuilder";
-import { ArrayFieldBuilder } from './builder/ArrayFieldBuilder';
-import { BooleanFieldBuilder } from "./builder/BooleanFieldBuilder";
-import { IntegerFieldBuilder } from "./builder/IntegerFieldBuilder";
-import { LiteralFieldBuilder } from "./builder/LiteralFieldBuilder";
-import { ModelFieldBuilder } from './builder/ModelFieldBuilder';
-import { GroupFieldBuilder } from "./builder/GroupFieldBuilder";
-import { NullFieldBuilder } from "./builder/NullFieldBuilder";
-import { NumberFieldBuilder } from "./builder/NumberFieldBuilder";
-import { ObjectFieldBuilder } from './builder/ObjectFieldBuilder';
-import { RecordFieldBuilder } from './builder/RecordFieldBuilder';
-import { RefFieldBuilder } from './builder/RefFieldBuilder';
-import { RootFieldBuilder } from "./builder/RootFieldBuilder";
-import { StringFieldBuilder } from "./builder/StringFieldBuilder";
-import { ThisFieldBuilder } from "./builder/ThisFieldBuilder";
-import { TupleFieldBuilder } from './builder/TupleFieldBuilder';
-import { UnionFieldBuilder } from './builder/UnionFieldBuilder';
+import { ArraySchema, LiteralSchema, ModelSchema, GroupSchema, ObjectSchema, RecordSchema, RefSchema, TupleSchema, UnionSchema } from "./Schema";
+import { InferSchema } from "./Infer";
+import { AnySchemaBuilder } from "./builder/AnySchemaBuilder";
+import { ArraySchemaBuilder } from './builder/ArraySchemaBuilder';
+import { BooleanSchemaBuilder } from "./builder/BooleanSchemaBuilder";
+import { IntegerSchemaBuilder } from "./builder/IntegerSchemaBuilder";
+import { LiteralSchemaBuilder } from "./builder/LiteralSchemaBuilder";
+import { ModelSchemaBuilder } from './builder/ModelSchemaBuilder';
+import { GroupSchemaBuilder } from "./builder/GroupSchemaBuilder";
+import { NullSchemaBuilder } from "./builder/NullSchemaBuilder";
+import { NumberSchemaBuilder } from "./builder/NumberSchemaBuilder";
+import { ObjectSchemaBuilder } from './builder/ObjectSchemaBuilder';
+import { RecordSchemaBuilder } from './builder/RecordSchemaBuilder';
+import { RefSchemaBuilder } from './builder/RefSchemaBuilder';
+import { RootSchemaBuilder } from "./builder/RootSchemaBuilder";
+import { StringSchemaBuilder } from "./builder/StringSchemaBuilder";
+import { ThisSchemaBuilder } from "./builder/ThisSchemaBuilder";
+import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
+import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 
-const nullField = () => new NullFieldBuilder();
-const anyField = () => new AnyFieldBuilder();
-const thisField = () => new ThisFieldBuilder();
-const rootField = () => new RootFieldBuilder();
-const booleanField = () => new BooleanFieldBuilder();
-const integerField = () => new IntegerFieldBuilder();
-const numberField = () => new NumberFieldBuilder();
-const stringField = () => new StringFieldBuilder();
-const literalField = <const Of extends LiteralField['of']>(of: Of) => new LiteralFieldBuilder<Of>(of);
-const arrayField = <const Of extends ArrayField['of']>(of: Of) => new ArrayFieldBuilder<Of>(of);
+const nullSchema = () => new NullSchemaBuilder();
+const anySchema = () => new AnySchemaBuilder();
+const thisSchema = () => new ThisSchemaBuilder();
+const rootSchema = () => new RootSchemaBuilder();
+const booleanSchema = () => new BooleanSchemaBuilder();
+const integerSchema = () => new IntegerSchemaBuilder();
+const numberSchema = () => new NumberSchemaBuilder();
+const stringSchema = () => new StringSchemaBuilder();
+const literalSchema = <const Of extends LiteralSchema['of']>(of: Of) => new LiteralSchemaBuilder<Of>(of);
+const arraySchema = <const Of extends ArraySchema['of']>(of: Of) => new ArraySchemaBuilder<Of>(of);
 
-function tupleField<const Of extends TupleField['of']>(of: Of): TupleFieldBuilder<Of>;
-function tupleField<const Of extends TupleField['of'], Rest extends TupleField['rest']>(of: Of, rest: Rest): TupleFieldBuilder<Of, Rest>;
-function tupleField<const Of extends TupleField['of'], Rest extends TupleField['rest']>(of: Of, rest?: Rest): TupleFieldBuilder<Of, Rest> { return new TupleFieldBuilder(of, rest); }
+function tupleSchema<const Of extends TupleSchema['of']>(of: Of): TupleSchemaBuilder<Of>;
+function tupleSchema<const Of extends TupleSchema['of'], Rest extends TupleSchema['rest']>(of: Of, rest: Rest): TupleSchemaBuilder<Of, Rest>;
+function tupleSchema<const Of extends TupleSchema['of'], Rest extends TupleSchema['rest']>(of: Of, rest?: Rest): TupleSchemaBuilder<Of, Rest> { return new TupleSchemaBuilder(of, rest); }
 
-const recordField = <const Of extends RecordField['of']>(of: Of): RecordFieldBuilder<Of> => new RecordFieldBuilder<Of>(of);
+const recordSchema = <const Of extends RecordSchema['of']>(of: Of): RecordSchemaBuilder<Of> => new RecordSchemaBuilder<Of>(of);
 
-const objectField = <const Of extends ObjectField['of']>(of: Of) => new ObjectFieldBuilder<Of>(of);
-const modelField = <const Of extends ModelField['of']>(name: string, of: Of) => new ModelFieldBuilder<Of>(of, name);
+const objectSchema = <const Of extends ObjectSchema['of']>(of: Of) => new ObjectSchemaBuilder<Of>(of);
+const modelSchema = <const Of extends ModelSchema['of']>(name: string, of: Of) => new ModelSchemaBuilder<Of>(of, name);
 
-const unionField = <const Of extends UnionField['of']>(of: Of) => new UnionFieldBuilder<Of>(of);
-const refField = <const Of extends RefField['of']>(of: Of) => new RefFieldBuilder<Of>(of);
-const groupField = <const Of extends GroupField['of']>(of: Of) => new GroupFieldBuilder(of);
+const unionSchema = <const Of extends UnionSchema['of']>(of: Of) => new UnionSchemaBuilder<Of>(of);
+const refSchema = <const Of extends RefSchema['of']>(of: Of) => new RefSchemaBuilder<Of>(of);
+const groupSchema = <const Of extends GroupSchema['of']>(of: Of) => new GroupSchemaBuilder(of);
 
 // import from this file as 'j' to use these methods
 // example: j.null();
 export {
-    nullField as null,
-    anyField as any,
-    booleanField as boolean,
-    integerField as integer,
-    numberField as number,
-    stringField as string,
-    literalField as literal,
-    arrayField as array,
-    tupleField as tuple,
-    recordField as record,
-    objectField as object,
-    modelField as model,
-    thisField as this,
-    rootField as root,
-    unionField as union,
-    groupField as group,
-    refField as ref,
-    InferField as infer,
+    nullSchema as null,
+    anySchema as any,
+    booleanSchema as boolean,
+    integerSchema as integer,
+    numberSchema as number,
+    stringSchema as string,
+    literalSchema as literal,
+    arraySchema as array,
+    tupleSchema as tuple,
+    recordSchema as record,
+    objectSchema as object,
+    modelSchema as model,
+    thisSchema as this,
+    rootSchema as root,
+    unionSchema as union,
+    groupSchema as group,
+    refSchema as ref,
+    InferSchema as infer,
 };
