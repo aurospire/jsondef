@@ -3,7 +3,8 @@ import { ValidationResult } from "./Context";
 import { validateBounds } from "./validateBounds";
 
 export const validateInteger = (value: any, schema: IntegerSchema, path: string[]): ValidationResult => {
-    if (typeof value === 'number' && Number.isInteger(value)) {
+    // Should this be .isSafeInteger or .isInteger?
+    if (typeof value === 'number' && Number.isSafeInteger(value)) {
 
         const boundsCheck = validateBounds(value, schema, 'value');
 

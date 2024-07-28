@@ -5,6 +5,7 @@ export type BaseSchema<Kind extends string> = { kind: Kind; } & BaseAttributes;
 export type NullSchema = BaseSchema<'null'>;
 
 export type AnySchema = BaseSchema<'any'>;
+
 export type BooleanSchema = BaseSchema<'boolean'>;
 
 export type BoundedAttributes = {
