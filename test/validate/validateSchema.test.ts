@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -889,4 +889,235 @@ describe('Schema Validation', () => {
             });
         });
     });
+
+    describe('ObjectSchema Validation', () => {
+        describe('Basic Object Structure', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer' }
+                }
+            };
+
+            it('should validate correct object structure', () => {
+                validate(schema, true, [{ name: 'John', age: 30 }]);
+            });
+
+            it('should invalidate incorrect object structure', () => {
+                validate(schema, false, [
+                    { name: 'John', age: '30' },
+                    { name: 'John' },
+                    { age: 30 },
+                    'not an object',
+                    42,
+                    null,
+                    undefined
+                ]);
+            });
+        });
+
+        describe('Optional Properties', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer', isOptional: true }
+                }
+            };
+
+            it('should allow missing optional properties', () => {
+                validate(schema, true, [
+                    { name: 'John', age: 30 },
+                    { name: 'Jane' }
+                ]);
+            });
+
+            it('should invalidate missing required properties', () => {
+                validate(schema, false, [
+                    { age: 25 },
+                    {}
+                ]);
+            });
+        });
+
+        describe('Excess Properties', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer' }
+                }
+            };
+
+            it('should invalidate objects with excess properties', () => {
+                validate(schema, false, [
+                    { name: 'John', age: 30, occupation: 'Developer' },
+                    { name: 'Jane', age: 25, hobbies: ['reading', 'swimming'] }
+                ]);
+            });
+        });
+
+        describe('Nested Object Structures', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    person: {
+                        kind: 'object',
+                        of: {
+                            name: { kind: 'string' },
+                            age: { kind: 'integer' }
+                        }
+                    },
+                    address: {
+                        kind: 'object',
+                        of: {
+                            street: { kind: 'string' },
+                            city: { kind: 'string' }
+                        }
+                    }
+                }
+            };
+
+            it('should validate correct nested object structure', () => {
+                validate(schema, true, [{
+                    person: { name: 'John', age: 30 },
+                    address: { street: 'Main St', city: 'New York' }
+                }]);
+            });
+
+            it('should invalidate incorrect nested object structure', () => {
+                validate(schema, false, [
+                    {
+                        person: { name: 'John', age: '30' },
+                        address: { street: 'Main St', city: 'New York' }
+                    },
+                    {
+                        person: { name: 'Jane' },
+                        address: { street: 'Broadway', city: 'Chicago' }
+                    },
+                    {
+                        person: { name: 'Bob', age: 25 },
+                        address: { street: 123, city: 'Los Angeles' }
+                    }
+                ]);
+            });
+        });
+    });
+
+    describe('ModelSchema Validation', () => {
+        describe('Basic Model Structure', () => {
+            const schema: ModelSchema = {
+                kind: 'model',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer' }
+                }
+            };
+
+            it('should validate correct model structure', () => {
+                validate(schema, true, [{ name: 'John', age: 30 }]);
+            });
+
+            it('should invalidate incorrect model structure', () => {
+                validate(schema, false, [
+                    { name: 'John', age: '30' },
+                    { name: 'John' },
+                    { age: 30 },
+                    'not an model',
+                    42,
+                    null,
+                    undefined
+                ]);
+            });
+        });
+
+        describe('Optional Properties', () => {
+            const schema: ModelSchema = {
+                kind: 'model',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer', isOptional: true }
+                }
+            };
+
+            it('should allow missing optional properties', () => {
+                validate(schema, true, [
+                    { name: 'John', age: 30 },
+                    { name: 'Jane' }
+                ]);
+            });
+
+            it('should invalidate missing required properties', () => {
+                validate(schema, false, [
+                    { age: 25 },
+                    {}
+                ]);
+            });
+        });
+
+        describe('Excess Properties', () => {
+            const schema: ModelSchema = {
+                kind: 'model',
+                of: {
+                    name: { kind: 'string' },
+                    age: { kind: 'integer' }
+                }
+            };
+
+            it('should invalidate models with excess properties', () => {
+                validate(schema, false, [
+                    { name: 'John', age: 30, occupation: 'Developer' },
+                    { name: 'Jane', age: 25, hobbies: ['reading', 'swimming'] }
+                ]);
+            });
+        });
+
+        describe('Nested Model Structures', () => {
+            const schema: ModelSchema = {
+                kind: 'model',
+                of: {
+                    person: {
+                        kind: 'model',
+                        of: {
+                            name: { kind: 'string' },
+                            age: { kind: 'integer' }
+                        }
+                    },
+                    address: {
+                        kind: 'model',
+                        of: {
+                            street: { kind: 'string' },
+                            city: { kind: 'string' }
+                        }
+                    }
+                }
+            };
+
+            it('should validate correct nested model structure', () => {
+                validate(schema, true, [{
+                    person: { name: 'John', age: 30 },
+                    address: { street: 'Main St', city: 'New York' }
+                }]);
+            });
+
+            it('should invalidate incorrect nested model structure', () => {
+                validate(schema, false, [
+                    {
+                        person: { name: 'John', age: '30' },
+                        address: { street: 'Main St', city: 'New York' }
+                    },
+                    {
+                        person: { name: 'Jane' },
+                        address: { street: 'Broadway', city: 'Chicago' }
+                    },
+                    {
+                        person: { name: 'Bob', age: 25 },
+                        address: { street: 123, city: 'Los Angeles' }
+                    }
+                ]);
+            });
+        });
+    });
+
 });
