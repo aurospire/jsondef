@@ -22,10 +22,14 @@ export const validateTuple = (value: any, schema: TupleSchema, path: string[], c
         if (boundsCheck) return [{ path, issue: boundsCheck }];
 
         for (let i = schema.of.length; i < value.length; i++) {
-            const result = validate(value[i], schema.rest, [...path, i.toString()], context);
+            const result = validate(value[i], schema.rest.of, [...path, i.toString()], context);
 
             if (result !== true) issues.push(...result);
         }
+    }
+    else {
+        if (value.length !== schema.of.length)
+            return [{ path, issue: 'value has excess tuple elements' }];
     }
 
     return issues.length ? issues : true;

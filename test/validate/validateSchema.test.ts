@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -578,6 +578,88 @@ describe('Schema Validation', () => {
                         { id: 1, name: 'Item 1', active: true },
                         { id: 2, name: 'Item 2', active: 'yes' }
                     ]
+                ]);
+            });
+        });
+    });
+
+    describe('TupleSchema Validation', () => {
+        describe('Basic Tuple Validation', () => {
+            const schema: TupleSchema = {
+                kind: 'tuple', of: [
+                    { kind: 'string' }, { kind: 'number' }, { kind: 'boolean' }
+                ]
+            };
+
+            it('should pass for valid tuples', () => {
+                validate(schema, true, [
+                    ['hello', 42, true],
+                    ['world', 0, false],
+                    ['', -1, true],
+                ]);
+            });
+
+            it('should fail for non-tuple values', () => {
+                validate(schema, false, [
+                    'not a tuple',
+                    42,
+                    true,
+                    {},
+                    null,
+                    undefined,
+                ]);
+            });
+
+            it('should fail for tuples with incorrect length', () => {
+                validateShow(schema, false, [
+                    ['too short', 42],
+                    ['too long', 42, true, 'extra'],
+                ]);
+            });
+        });
+
+        describe('Tuple with Rest Schema', () => {
+            const schema: TupleSchema = {
+                kind: 'tuple',
+                of: [{ kind: 'string' }, { kind: 'number' }],
+                rest: { kind: 'array', of: { kind: 'boolean' } }
+            };
+
+            it('should pass for valid tuples with rest items', () => {
+                validate(schema, true, [
+                    ['hello', 42],
+                    ['world', 0, true],
+                    ['', -1, false, true, false],
+                ]);
+            });
+
+            it('should fail for tuples with incorrect rest item types', () => {
+                validate(schema, false, [
+                    ['hello', 42, 'not a boolean'],
+                    ['world', 0, true, 42],
+                ]);
+            });
+        });
+
+        describe('Tuple with Bounded Rest Schema', () => {
+            const boundedRestSchema: TupleSchema = {
+                kind: 'tuple',
+                of: [{ kind: 'string' }],
+                rest: { kind: 'array', of: { kind: 'number' }, min: 1, max: 3 }
+            };
+
+            it('should pass for valid bounded rest items', () => {
+                validate(boundedRestSchema, true, [
+                    ['hello', 1],
+                    ['world', 1, 2],
+                    ['test', 1, 2, 3],
+                ]);
+            });
+
+            it('should fail for invalid bounded rest items', () => {
+                validate(boundedRestSchema, false, [
+                    ['hello'],
+                    ['world', 1, 2, 3, 4],
                 ]);
             });
         });
