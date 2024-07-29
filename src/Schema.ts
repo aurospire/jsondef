@@ -101,6 +101,6 @@ export type Schema = BaseSchema<
     | RefSchema['kind']
     | RootSchema['kind']
     | ThisSchema['kind']
->;
+> & Record<string, any>;
 
 export type SchemaObject = { [key: string]: Schema; };

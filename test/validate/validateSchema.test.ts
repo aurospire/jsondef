@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -348,6 +348,10 @@ describe('Schema Validation', () => {
                     '2023-05-15T12:30:45Z',
                     '2023-05-15T12:30:45+01:00',
                     '2023-05-15T12:30:45-01:00',
+                    '2023-05-15T12:30:45+23:59',
+                    '2023-05-15T12:30:45-23:59',
+                    '2023-05-15T12:30:45-2359',
+                    '2023-05-15T12:30:45-23',
                     '2023-05-15T12:30:45.123Z'
                 ]);
                 validate(schema, false, [
@@ -404,6 +408,177 @@ describe('Schema Validation', () => {
                 const schema: StringSchema = { kind: 'string', of: /^[A-Z]{3}-\d{3}$/ };
                 validate(schema, true, ['ABC-123', 'XYZ-789']);
                 validate(schema, false, ['abc-123', 'ABC-1234', 'ABCD-123']);
+            });
+        });
+    });
+
+    describe('ArraySchema Validation', () => {
+
+        describe('Basic Array Validation', () => {
+            const schema: ArraySchema = { kind: 'array', of: { kind: 'any' } };
+
+            it('should pass for valid arrays', () => {
+                validate(schema, true, [
+                    [],
+                    [1, 2, 3],
+                    ['a', 'b', 'c'],
+                    [true, false],
+                    [null, [], {}],
+                    [[1, 2], [3, 4]]
+                ]);
+            });
+
+            it('should fail for non-array values', () => {
+                validate(schema, false, [
+                    null,
+                    undefined,
+                    42,
+                    'string',
+                    true,
+                    {},
+                    new Date(),
+                    /regex/,
+                    new Set(),
+                    new Map()
+                ]);
+            });
+        });
+
+        describe('Array with Specific Item Type', () => {
+            const schema: ArraySchema = { kind: 'array', of: { kind: 'number' } };
+
+            it('should pass for arrays with correct item types', () => {
+                validate(schema, true, [
+                    [],
+                    [1],
+                    [1, 2, 3],
+                    [0, -1, 3.14]
+                ]);
+            });
+
+            it('should fail for arrays with incorrect item types', () => {
+                validate(schema, false, [
+                    ['string'],
+                    [1, 'two', 3],
+                    [true, false],
+                    [null],
+                    [{}],
+                    [[]]
+                ]);
+            });
+        });
+
+        describe('Array Length Constraints', () => {
+            it('should validate arrays with minimum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, min: 2 };
+                validate(schema, true, [[1, 2], [1, 2, 3], [1, 2, 3, 4]]);
+                validate(schema, false, [[], [1]]);
+            });
+
+            it('should validate arrays with maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, max: 3 };
+                validate(schema, true, [[], [1], [1, 2], [1, 2, 3]]);
+                validate(schema, false, [[1, 2, 3, 4], [1, 2, 3, 4, 5]]);
+            });
+
+            it('should validate arrays with exclusive minimum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, xmin: 2 };
+                validate(schema, true, [[1, 2, 3], [1, 2, 3, 4]]);
+                validate(schema, false, [[], [1], [1, 2]]);
+            });
+
+            it('should validate arrays with exclusive maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, xmax: 3 };
+                validate(schema, true, [[], [1], [1, 2]]);
+                validate(schema, false, [[1, 2, 3], [1, 2, 3, 4]]);
+            });
+
+            it('should validate arrays with minimum and maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, min: 2, max: 4 };
+                validate(schema, true, [[1, 2], [1, 2, 3], [1, 2, 3, 4]]);
+                validate(schema, false, [[], [1], [1, 2, 3, 4, 5]]);
+            });
+
+            it('should validate arrays with minimum and exclusive maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, min: 2, xmax: 4 };
+                validate(schema, true, [[1, 2], [1, 2, 3]]);
+                validate(schema, false, [[], [1], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
+            });
+
+            it('should validate arrays with exclusive minimum and maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, xmin: 2, max: 4 };
+                validate(schema, true, [[1, 2, 3], [1, 2, 3, 4]]);
+                validate(schema, false, [[], [1], [1, 2], [1, 2, 3, 4, 5]]);
+            });
+
+            it('should validate arrays with exclusive minimum and exclusive maximum length', () => {
+                const schema: ArraySchema = { kind: 'array', of: { kind: 'any' }, xmin: 2, xmax: 4 };
+                validate(schema, true, [[1, 2, 3]]);
+                validate(schema, false, [[], [1], [1, 2], [1, 2, 3, 4], [1, 2, 3, 4, 5]]);
+            });
+        });
+
+        describe('Nested Array Validation', () => {
+            const schema: ArraySchema = {
+                kind: 'array',
+                of: {
+                    kind: 'array',
+                    of: { kind: 'number' }
+                }
+            };
+
+            it('should pass for valid nested arrays', () => {
+                validate(schema, true, [
+                    [],
+                    [[]],
+                    [[1, 2], [3, 4]],
+                    [[1], [2, 3], [4, 5, 6]]
+                ]);
+            });
+
+            it('should fail for invalid nested arrays', () => {
+                validate(schema, false, [
+                    [1, 2, 3],
+                    [[1, 2], 3],
+                    [[1, 'two'], [3, 4]],
+                    [[1, 2], [3, [4]]]
+                ]);
+            });
+        });
+
+        describe('Array with Complex Item Schema', () => {
+            const schema: ArraySchema = {
+                kind: 'array',
+                of: {
+                    kind: 'object',
+                    of: {
+                        id: { kind: 'number' },
+                        name: { kind: 'string' },
+                        active: { kind: 'boolean' }
+                    }
+                }
+            };
+
+            it('should pass for valid complex arrays', () => {
+                validate(schema, true, [
+                    [],
+                    [{ id: 1, name: 'Item 1', active: true }],
+                    [
+                        { id: 1, name: 'Item 1', active: true },
+                        { id: 2, name: 'Item 2', active: false }
+                    ]
+                ]);
+            });
+
+            it('should fail for invalid complex arrays', () => {
+                validate(schema, false, [
+                    [{ id: '1', name: 'Item 1', active: true }],
+                    [{ id: 1, name: 'Item 1' }],
+                    [
+                        { id: 1, name: 'Item 1', active: true },
+                        { id: 2, name: 'Item 2', active: 'yes' }
+                    ]
+                ]);
             });
         });
     });
