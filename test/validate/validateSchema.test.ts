@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -404,6 +404,12 @@ describe('Schema Validation', () => {
                 ]);
             });
 
+            it('should validate custom regex string pattern', () => {
+                const schema: StringSchema = { kind: 'string', of: '/^[A-Z]{3}-\\d{3}$/' };
+                validate(schema, true, ['ABC-123', 'XYZ-789']);
+                validate(schema, false, ['abc-123', 'ABC-1234', 'ABCD-123']);
+            });
+
             it('should validate custom regex pattern', () => {
                 const schema: StringSchema = { kind: 'string', of: /^[A-Z]{3}-\d{3}$/ };
                 validate(schema, true, ['ABC-123', 'XYZ-789']);
@@ -660,6 +666,225 @@ describe('Schema Validation', () => {
                 validate(boundedRestSchema, false, [
                     ['hello'],
                     ['world', 1, 2, 3, 4],
+                ]);
+            });
+        });
+    });
+
+    describe('RecordSchema Validation', () => {
+        describe('Basic Record Validation', () => {
+            const schema: RecordSchema = { kind: 'record', of: { kind: 'string' } };
+
+            it('should pass for valid records with string values', () => {
+                validate(schema, true, [
+                    { a: 'foo', b: 'bar' },
+                    { x: 'test' },
+                    {}
+                ]);
+            });
+
+            it('should fail for non-object values', () => {
+                validate(schema, false, [
+                    'string',
+                    123,
+                    true,
+                    null,
+                    undefined,
+                    [],
+                    () => { }
+                ]);
+            });
+
+            it('should fail for records with non-string values', () => {
+                validate(schema, false, [
+                    { a: 123 },
+                    { b: true },
+                    { c: null },
+                    { d: {} },
+                    { e: [] }
+                ]);
+            });
+        });
+
+        describe('Record with Number Values', () => {
+            const schema: RecordSchema = { kind: 'record', of: { kind: 'number' } };
+
+            it('should pass for valid records with number values', () => {
+                validate(schema, true, [
+                    { a: 1, b: 2.5 },
+                    { x: 0 },
+                    {}
+                ]);
+            });
+
+            it('should fail for records with non-number values', () => {
+                validate(schema, false, [
+                    { a: '123' },
+                    { b: true },
+                    { c: null },
+                    { d: {} },
+                    { e: [] }
+                ]);
+            });
+        });
+
+        describe('Record with Key Validation', () => {
+            const schema: RecordSchema = {
+                kind: 'record',
+                of: { kind: 'string' },
+                key: '/^[a-z]+$/'
+            };
+
+            it('should pass for records with valid keys', () => {
+                validate(schema, true, [
+                    { abc: 'foo', def: 'bar' },
+                    { x: 'test' },
+                    {}
+                ]);
+            });
+
+            it('should fail for records with invalid keys', () => {
+                validate(schema, false, [
+                    { A: 'foo' },
+                    { '123': 'bar' },
+                    { 'a-b': 'baz' },
+                ]);
+            });
+        });
+
+        describe('Record with Bounded Length', () => {
+            it('should pass for records within min length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, min: 2 };
+                validate(schema, true, [
+                    { a: 'foo', b: 'bar' },
+                    { x: 'test', y: 'example', z: 'extra' }
+                ]);
+            });
+
+            it('should fail for records below min length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, min: 2 };
+                validate(schema, false, [
+                    {},
+                    { a: 'single' }
+                ]);
+            });
+
+            it('should pass for records within max length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, max: 2 };
+                validate(schema, true, [
+                    {},
+                    { a: 'single' },
+                    { x: 'test', y: 'example' }
+                ]);
+            });
+
+            it('should fail for records above max length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, max: 2 };
+                validate(schema, false, [
+                    { a: 'foo', b: 'bar', c: 'baz' },
+                    { w: 'one', x: 'two', y: 'three', z: 'four' }
+                ]);
+            });
+
+            it('should pass for records within xmin length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmin: 1 };
+                validate(schema, true, [
+                    { a: 'foo', b: 'bar' },
+                    { x: 'test', y: 'example', z: 'extra' }
+                ]);
+            });
+
+            it('should fail for records at or below xmin length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmin: 1 };
+                validate(schema, false, [
+                    {},
+                    { a: 'single' }
+                ]);
+            });
+
+            it('should pass for records within xmax length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmax: 3 };
+                validate(schema, true, [
+                    {},
+                    { a: 'single' },
+                    { x: 'test', y: 'example' }
+                ]);
+            });
+
+            it('should fail for records at or above xmax length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmax: 3 };
+                validate(schema, false, [
+                    { a: 'foo', b: 'bar', c: 'baz' },
+                    { w: 'one', x: 'two', y: 'three', z: 'four' }
+                ]);
+            });
+
+            it('should pass for records within or at min and max length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, min: 1, max: 3 };
+                validate(schema, true, [
+                    { a: 'single' },
+                    { x: 'test', y: 'example' },
+                    { i: 'one', j: 'two', k: 'three' }
+                ]);
+            });
+
+            it('should fail for records outside min and max length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, min: 1, max: 3 };
+                validate(schema, false, [
+                    {},
+                    { a: 'foo', b: 'bar', c: 'baz', d: 'qux' }
+                ]);
+            });
+
+            it('should pass for records within xmin and xmax length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmin: 1, xmax: 3 };
+                validate(schema, true, [
+                    { x: 'test', y: 'example' }
+                ]);
+            });
+
+            it('should fail for records at or outside xmin and xmax length', () => {
+                const schema: RecordSchema = { kind: 'record', of: { kind: 'string' }, xmin: 1, xmax: 3 };
+                validate(schema, false, [
+                    {},
+                    { a: 'foo', },
+                    { a: 'foo', b: 'bar', c: 'baz' },
+                    { w: 'one', x: 'two', y: 'three', z: 'four' }
+                ]);
+            });
+        });
+
+        describe('Nested Record Schema', () => {
+            const schema: RecordSchema = {
+                kind: 'record',
+                of: {
+                    kind: 'object',
+                    of: {
+                        name: { kind: 'string' },
+                        age: { kind: 'number' }
+                    }
+                }
+            };
+
+            it('should pass for valid nested records', () => {
+                validate(schema, true, [
+                    {
+                        person1: { name: 'Alice', age: 30 },
+                        person2: { name: 'Bob', age: 25 }
+                    },
+                    {}
+                ]);
+            });
+
+            it('should fail for invalid nested records', () => {
+                validate(schema, false, [
+                    {
+                        person1: { name: 'Alice', age: '30' },
+                        person2: { name: 'Bob' }
+                    },
+                    {
+                        invalid: { foo: 'bar' }
+                    }
                 ]);
             });
         });

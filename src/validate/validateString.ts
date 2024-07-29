@@ -1,7 +1,8 @@
 import { validateBounds } from "./validateBounds";
-import { StringSchema } from "../Schema";
+import { StringSchema, StringSchemaPattern } from "../Schema";
 import { ValidationResult } from "./Context";
 import { Issue } from "./Result";
+import { regexString } from "./regexString";
 
 type StringTester = (value: string, path: string[]) => ValidationResult;
 
@@ -142,7 +143,12 @@ const emailTester: StringTester = (value, path) => {
     return emailRegex.test(value) ? true : [{ path: path, issue: 'value must be a valid email' }];
 };
 
-const stringTesters: Record<string, StringTester> = {
+
+const stringSchemaPatterns = new Set<string>(['date', 'time', 'datetime', 'uuid', 'base64', 'email']);
+
+const isStringPattern = (value: string): value is StringSchemaPattern => stringSchemaPatterns.has(value);
+
+const stringTesters: Record<StringSchemaPattern, StringTester> = {
     date: dateTester,
     time: timeTester,
     datetime: datetimeTester,
@@ -158,11 +164,26 @@ export const validateString = (value: any, schema: StringSchema, path: string[])
 
     if (filter) {
         if (typeof filter === 'string') {
-            const tester = stringTesters[filter];
+            if (isStringPattern(filter)) {
+                const tester = stringTesters[filter];
 
-            const result = tester(value, path);
+                if (tester) {
+                    const result = tester(value, path);
 
-            if (result !== true) return result;
+                    if (result !== true) return result;
+                }
+            }
+            else {
+                const regex = regexString(filter);
+
+                if (regex) {
+                    if (!regex.test(value))
+                        return [{ path, issue: `value must match custom regex: ${regex}` }];
+                }
+                else {
+                    return [{ path, issue: `invalid string filter: ${filter}` }];
+                }
+            }
         }
         else if (filter instanceof RegExp) {
             if (!filter.test(value))

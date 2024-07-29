@@ -35,47 +35,57 @@ export type StringSchemaPattern =
     | 'uuid'
     | 'email'
     | 'base64'
-    | RegexString;
+    ;
 
-export type StringAttributes = { of?: StringSchemaPattern | RegExp; };
+export type StringAttributes = { of?: StringSchemaPattern | RegexString | RegExp; };
 
 export type StringSchema = BaseSchema<'string'> & BoundedAttributes & StringAttributes;
+
 
 export type LiteralAttributes = { of: boolean | number | string; };
 
 export type LiteralSchema = BaseSchema<'literal'> & LiteralAttributes;
 
+
 export type ArrayAttributes = { of: Schema; };
 
 export type ArraySchema = BaseSchema<'array'> & BoundedAttributes & ArrayAttributes;
+
 
 export type TupleAttributes = { of: Schema[]; rest?: ArraySchema; };
 
 export type TupleSchema = BaseSchema<'tuple'> & TupleAttributes;
 
-export type RecordAttributes = { of: Schema; key?: StringSchema; };
+
+export type RecordAttributes = { of: Schema; key?: RegexString | RegExp; };
 
 export type RecordSchema = BaseSchema<'record'> & BoundedAttributes & RecordAttributes;
+
 
 export type UnionAttributes = { of: [Schema, Schema, ...Schema[]]; };
 
 export type UnionSchema = BaseSchema<'union'> & UnionAttributes;
 
+
 export type ObjectAttributes = { of: SchemaObject; };
 
 export type ObjectSchema = BaseSchema<'object'> & ObjectAttributes;
+
 
 export type ModelAttributes = { of: SchemaObject; };
 
 export type ModelSchema = BaseSchema<'model'> & ModelAttributes;
 
+
 export type GroupAttributes = { of: SchemaObject; selected?: string; };
 
 export type GroupSchema = BaseSchema<'group'> & GroupAttributes;
 
+
 export type RefAttributes = { of: string; };
 
 export type RefSchema = BaseSchema<'ref'> & RefAttributes;
+
 
 export type RootSchema = BaseSchema<'root'>;
 

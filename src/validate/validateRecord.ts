@@ -1,10 +1,10 @@
 import { RecordSchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
-import { SchemaValidator } from "./SchemaValidator";
 import { isObject } from "./isObject";
+import { regexString } from "./regexString";
 import { Issue } from "./Result";
+import { SchemaValidator } from "./SchemaValidator";
 import { validateBounds } from "./validateBounds";
-import { validateString } from "./validateString";
 
 export const validateRecord = (value: any, schema: RecordSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
@@ -14,22 +14,30 @@ export const validateRecord = (value: any, schema: RecordSchema, path: string[],
 
     const entries = Object.entries(value);
 
+
     const boundsCheck = validateBounds(entries.length, schema, 'value length');
 
     if (boundsCheck) issues.push({ path, issue: boundsCheck });
 
-    const valueSchema = schema.of || { kind: 'any' };
+
+    let regex: RegExp | undefined;
+
+    if (schema.key) {
+        regex = schema.key instanceof RegExp ? schema.key : regexString(schema.key);
+        
+        if (!regex)
+            issues.push({ path, issue: 'invalid key filter' });
+    }
 
     entries.forEach(([itemKey, itemValue]) => {
         const itemPath = [...path, itemKey];
 
-        if (schema.key) {
-            const keyCheck = validateString(itemKey, schema.key, itemPath);
-
-            if (keyCheck !== true) issues.push(...keyCheck);
+        if (regex) {
+            if (!regex.test(itemKey))
+                issues.push({ path, issue: 'key does not match filter' });
         }
 
-        const valueCheck = validate(itemValue, valueSchema, itemPath, context);
+        const valueCheck = validate(itemValue, schema.of, itemPath, context);
 
         if (valueCheck !== true) issues.push(...valueCheck);
     });
