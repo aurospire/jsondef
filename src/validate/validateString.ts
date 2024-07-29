@@ -5,7 +5,7 @@ import { Issue } from "./Result";
 
 type StringTester = (value: string, path: string[]) => ValidationResult;
 
-const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const daysOfMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 const validateDateParts = (year: string, month: string, day: string, path: string[], issues: Issue[]) => {
     const yearInt = parseInt(year, 10);
@@ -18,7 +18,12 @@ const validateDateParts = (year: string, month: string, day: string, path: strin
     else {
         const leapDay = (monthInt === 2 && (yearInt % 400 === 0 || (yearInt % 100 !== 0 && yearInt % 4 === 0)) ? 1 : 0);
 
-        issues.push({ path, issue: `value must have day between 01 and ${monthDays[monthInt - 1] + leapDay}` });
+        const monthDays = daysOfMonth[monthInt - 1] + leapDay;
+
+        // console.log({ yearInt, monthInt, dayInt, monthDays, leapDay });
+
+        if (dayInt < 1 || dayInt > monthDays)
+            issues.push({ path, issue: `value must have day between 01 and ${monthDays}}` });
     }
 
     return issues;
