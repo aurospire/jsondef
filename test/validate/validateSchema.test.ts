@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema, GroupSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema, GroupSchema, UnionSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -1314,6 +1314,249 @@ describe('Schema Validation', () => {
                         objectOption: 'not an object'
                     }
                 ]);
+            });
+        });
+    });
+
+    describe('Union Schema Validation', () => {
+        describe('Simple Union Types', () => {
+            const unionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'string' },
+                    { kind: 'number' },
+                    { kind: 'boolean' }
+                ]
+            };
+
+            it('should validate values matching any of the union types', () => {
+                validate(unionSchema, true, ['hello', 42, true, false, 3.14]);
+            });
+
+            it('should reject values not matching any union type', () => {
+                validate(unionSchema, false, [null, undefined, [], {}, Symbol('test')]);
+            });
+        });
+
+        describe('Complex Union Types', () => {
+            const complexUnionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'array', of: { kind: 'string' } },
+                    { kind: 'object', of: { name: { kind: 'string' }, age: { kind: 'number' } } },
+                    { kind: 'literal', of: 'special' }
+                ]
+            };
+
+            it('should validate complex union types correctly', () => {
+                validate(complexUnionSchema, true, [
+                    ['a', 'b', 'c'],
+                    { name: 'John', age: 30 },
+                    'special'
+                ]);
+            });
+
+            it('should reject values not matching complex union types', () => {
+                validate(complexUnionSchema, false, [
+                    [1, 2, 3],
+                    { name: 'John', age: '30' },
+                    'not special',
+                    42,
+                    true
+                ]);
+            });
+        });
+
+        describe('Nested Union Types', () => {
+            const nestedUnionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'number' },
+                    {
+                        kind: 'union',
+                        of: [
+                            { kind: 'string' },
+                            { kind: 'boolean' }
+                        ]
+                    }
+                ]
+            };
+
+            it('should validate nested union types correctly', () => {
+                validate(nestedUnionSchema, true, [42, 'hello', true, false, 3.14]);
+            });
+
+            it('should reject values not matching nested union types', () => {
+                validate(nestedUnionSchema, false, [null, undefined, [], {}, Symbol('test')]);
+            });
+        });
+
+        describe('Union with Bounded Types', () => {
+            const boundedUnionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'number', min: 0, max: 100 },
+                    { kind: 'string', min: 5, max: 10 }
+                ]
+            };
+
+            it('should validate values within bounds', () => {
+                validate(boundedUnionSchema, true, [0, 50, 100, 'hello', 'world']);
+            });
+
+            it('should reject values outside bounds', () => {
+                validate(boundedUnionSchema, false, [-1, 101, 'hi', 'this is too long']);
+            });
+        });
+
+        describe('Union with Optional Properties', () => {
+            const optionalUnionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'number' },
+                    {
+                        kind: 'object',
+                        of: {
+                            required: { kind: 'string' },
+                            optional: { kind: 'boolean', isOptional: true }
+                        }
+                    }
+                ]
+            };
+
+            it('should validate objects with optional properties', () => {
+                validate(optionalUnionSchema, true, [
+                    42,
+                    { required: 'hello' },
+                    { required: 'world', optional: true }
+                ]);
+            });
+
+            it('should reject invalid objects or missing required properties', () => {
+                validate(optionalUnionSchema, false, [
+                    { optional: true },
+                    { required: 42 },
+                    { required: 'hello', optional: 'not a boolean' }
+                ]);
+            });
+        });
+
+        describe('Error Accumulation in Union Types', () => {
+            const unionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'number', min: 0, max: 10 },
+                    { kind: 'string', min: 3, max: 5 }
+                ]
+            };
+
+            it('should accumulate errors from all union types', () => {
+                const result = validateSchema('invalid', unionSchema, [], makeContext());
+                expect(Array.isArray(result)).toBe(true);
+                if (Array.isArray(result)) {
+                    expect(result.length).toBeGreaterThanOrEqual(2); // At least one error for each failed union type
+                }
+            });
+        });
+
+        describe('Unions of Literals (Enum-like Unions)', () => {
+            const enumUnionSchema: UnionSchema = {
+                kind: 'union',
+                of: [
+                    { kind: 'literal', of: 'red' },
+                    { kind: 'literal', of: 'green' },
+                    { kind: 'literal', of: 'blue' },
+                    { kind: 'literal', of: 1 },
+                    { kind: 'literal', of: 2 },
+                    { kind: 'literal', of: 3 },
+                    { kind: 'literal', of: true }
+                ]
+            };
+
+            it('should validate values matching any of the literal unions', () => {
+                validate(enumUnionSchema, true, ['red', 'green', 'blue', 1, 2, 3, true]);
+            });
+
+            it('should reject values not matching any literal in the union', () => {
+                validate(enumUnionSchema, false, [
+                    'yellow', 'RED', 'Blue', 0, 4, false, null, undefined, [], {}
+                ]);
+            });
+
+            it('should accumulate errors for invalid values', () => {
+                const result = validateSchema('invalid', enumUnionSchema, [], makeContext());
+                expect(Array.isArray(result)).toBe(true);
+                if (Array.isArray(result)) {
+                    expect(result.length).toBeGreaterThanOrEqual(7); // At least one error for each failed literal match
+                }
+            });
+        });
+
+        describe('Unions of Same Type with Different Bounds or Patterns', () => {
+
+
+            describe('Number Union with Non-overlapping Bounds', () => {
+                const numberUnionSchema: UnionSchema = {
+                    kind: 'union',
+                    of: [
+                        { kind: 'number', min: 0, xmax: 10 },
+                        { kind: 'number', xmin: 10, max: 20 },
+                        { kind: 'number', min: 100, max: 200 }
+                    ]
+                };
+
+                it('should validate numbers within the specified ranges', () => {
+                    validate(numberUnionSchema, true, [0, 5, 9.9, 10.1, 15, 20, 100, 150, 200]);
+                });
+
+                it('should reject numbers outside the specified ranges', () => {
+                    validate(numberUnionSchema, false, [-1, 10, 99, 201]);
+                });
+
+                it('should accumulate errors for invalid values', () => {
+                    const result = validateSchema(50, numberUnionSchema, [], makeContext());
+                    expect(Array.isArray(result)).toBe(true);
+                    if (Array.isArray(result)) {
+                        expect(result.length).toBeGreaterThanOrEqual(3); // At least one error for each failed range check
+                    }
+                });
+            });
+
+            describe('String Union with Different Patterns', () => {
+                const stringUnionSchema: UnionSchema = {
+                    kind: 'union',
+                    of: [
+                        { kind: 'string', of: 'email' },
+                        { kind: 'string', of: 'uuid' },
+                        { kind: 'string', of: /^[A-Z]{3}-\d{3}$/ }
+                    ]
+                };
+
+                it('should validate strings matching any of the patterns', () => {
+                    validate(stringUnionSchema, true, [
+                        'test@example.com',
+                        '123e4567-e89b-12d3-a456-426614174000',
+                        'ABC-123'
+                    ]);
+                });
+
+                it('should reject strings not matching any pattern', () => {
+                    validate(stringUnionSchema, false, [
+                        'not-an-email',
+                        'invalid-uuid',
+                        'ABC-1234',
+                        'abc-123',
+                        'ABC123'
+                    ]);
+                });
+
+                it('should accumulate errors for invalid values', () => {
+                    const result = validateSchema('invalid', stringUnionSchema, [], makeContext());
+                    expect(Array.isArray(result)).toBe(true);
+                    if (Array.isArray(result)) {
+                        expect(result.length).toBeGreaterThanOrEqual(3); // At least one error for each failed pattern match
+                    }
+                });
             });
         });
     });
