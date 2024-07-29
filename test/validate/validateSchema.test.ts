@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema, GroupSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -1120,4 +1120,201 @@ describe('Schema Validation', () => {
         });
     });
 
+    describe('GroupSchema Validation', () => {
+        describe('Basic Group Structure', () => {
+            const groupSchema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    option1: { kind: 'string' },
+                    option2: { kind: 'number' }
+                }
+            };
+
+            it('should validate when all properties are present and correct', () => {
+                validate(groupSchema, true, [
+                    { option1: 'test', option2: 42 }
+                ]);
+            });
+
+            it('should fail when properties are missing', () => {
+                validate(groupSchema, false, [
+                    { option1: 'test' },
+                    { option2: 42 },
+                    {}
+                ]);
+            });
+
+            it('should fail when property types are incorrect', () => {
+                validate(groupSchema, false, [
+                    { option1: 42, option2: 'test' },
+                    { option1: true, option2: [] }
+                ]);
+            });
+
+            it('should fail for non-object values', () => {
+                validate(groupSchema, false, [
+                    'string',
+                    42,
+                    true,
+                    null,
+                    undefined,
+                    [],
+                    () => { }
+                ]);
+            });
+        });
+
+        describe('Group with Selected Option', () => {
+            const groupSchemaWithSelection: GroupSchema = {
+                kind: 'group',
+                of: {
+                    option1: { kind: 'string' },
+                    option2: { kind: 'number' }
+                },
+                selected: 'option1'
+            };
+
+            it('should validate when selected option is present and correct', () => {
+                validate(groupSchemaWithSelection, true, [
+                    'test',
+                    'another string'
+                ]);
+            });
+
+            it('should fail when selected option is incorrect type', () => {
+                validate(groupSchemaWithSelection, false, [
+                    42,
+                    true,
+                    null,
+                    undefined,
+                    [],
+                    {},
+                    () => { }
+                ]);
+            });
+        });
+
+        describe('Group with Invalid Selection', () => {
+            const invalidGroupSchema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    option1: { kind: 'string' },
+                    option2: { kind: 'number' }
+                },
+                selected: 'nonexistent'
+            };
+
+            it('should fail for any value when selection is invalid', () => {
+                validate(invalidGroupSchema, false, [
+                    'test',
+                    42,
+                    true,
+                    null,
+                    undefined,
+                    [],
+                    {},
+                    () => { }
+                ]);
+            });
+        });
+
+        describe('Group with isOptional flag', () => {
+            const groupSchemaWithOptional: GroupSchema = {
+                kind: 'group',
+                of: {
+                    requiredOption: { kind: 'string' },
+                    optionalOption: { kind: 'number', isOptional: true }
+                }
+            };
+
+            it('should ignore isOptional flag and require all properties', () => {
+                validate(groupSchemaWithOptional, true, [
+                    { requiredOption: 'test', optionalOption: 42 }
+                ]);
+
+                validate(groupSchemaWithOptional, false, [
+                    { requiredOption: 'test' },
+                    { optionalOption: 42 },
+                    { requiredOption: 'test', optionalOption: 'not a number' }
+                ]);
+            });
+        });
+
+        describe('Nested Group Schemas', () => {
+            const nestedGroupSchema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    nested: {
+                        kind: 'group',
+                        of: {
+                            option1: { kind: 'string' },
+                            option2: { kind: 'number' }
+                        }
+                    }
+                }
+            };
+
+            it('should validate correct nested structures', () => {
+                validate(nestedGroupSchema, true, [
+                    { nested: { option1: 'test', option2: 42 } }
+                ]);
+            });
+
+            it('should fail for incorrect nested structures', () => {
+                validate(nestedGroupSchema, false, [
+                    { nested: { option1: 'test' } },
+                    { nested: { option2: 42 } },
+                    { nested: {} },
+                    { nested: 'not an object' },
+                    {}
+                ]);
+            });
+        });
+
+        describe('Group with Complex Schemas', () => {
+            const complexGroupSchema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    arrayOption: { kind: 'array', of: { kind: 'string' } },
+                    objectOption: {
+                        kind: 'object',
+                        of: {
+                            prop1: { kind: 'number' },
+                            prop2: { kind: 'boolean' }
+                        }
+                    }
+                }
+            };
+
+            it('should validate correct complex structures', () => {
+                validate(complexGroupSchema, true, [
+                    {
+                        arrayOption: ['test', 'strings'],
+                        objectOption: { prop1: 42, prop2: true }
+                    }
+                ]);
+            });
+
+            it('should fail for incorrect complex structures', () => {
+                validate(complexGroupSchema, false, [
+                    {
+                        arrayOption: ['test', 42],
+                        objectOption: { prop1: 42, prop2: true }
+                    },
+                    {
+                        arrayOption: ['test', 'strings'],
+                        objectOption: { prop1: '42', prop2: true }
+                    },
+                    {
+                        arrayOption: 'not an array',
+                        objectOption: { prop1: 42, prop2: true }
+                    },
+                    {
+                        arrayOption: ['test', 'strings'],
+                        objectOption: 'not an object'
+                    }
+                ]);
+            });
+        });
+    });
 });
