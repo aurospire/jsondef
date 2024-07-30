@@ -23,6 +23,11 @@ export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Opti
 
     get key() { return this.#key; }
 
+
+    length(value: number): RecordSchemaBuilder<Of, Optional> {
+        return this.bound({ min: value, max: value });
+    }
+
     by(key?: RecordSchema['key']): RecordSchemaBuilder<Of, Optional> {
         const builder = this.clone();
 

@@ -25,7 +25,7 @@ export type IntegerSchema = BaseSchema<'integer'> & BoundedAttributes;
 
 export type NumberSchema = BaseSchema<'number'> & BoundedAttributes;
 
-export type StringSchemaPattern =
+export type StringSchemaFormat =
     | 'date'
     | 'time'
     | 'datetime'
@@ -34,7 +34,7 @@ export type StringSchemaPattern =
     | 'base64'
     ;
 
-export type StringAttributes = { of?: StringSchemaPattern | RegexString | RegExp; };
+export type StringAttributes = { of?: StringSchemaFormat | RegexString | RegExp; };
 
 export type StringSchema = BaseSchema<'string'> & BoundedAttributes & StringAttributes;
 

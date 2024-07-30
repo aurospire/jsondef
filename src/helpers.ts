@@ -18,7 +18,7 @@ import { ThisSchemaBuilder } from "./builder/ThisSchemaBuilder";
 import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
 import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 import { validate } from "./validate";
-import { stringifySchema } from "./Stringify";
+import { stringify } from "./Stringify";
 
 const nullSchema = () => new NullSchemaBuilder();
 const anySchema = () => new AnySchemaBuilder();
@@ -66,5 +66,5 @@ export {
     refSchema as ref,
     InferSchema as infer,
     validate,
-    stringifySchema as stringify
+    stringify
 };

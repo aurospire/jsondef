@@ -64,5 +64,5 @@ const combine_files = async (split: boolean) => {
 import * as j from './helpers';
 import { PrettyStringifyFormat } from './Stringify';
 
-const schema = j.string().length(10).date();
-console.log(j.stringify(schema, PrettyStringifyFormat()));
+const schema = j.tuple([j.boolean(), j.integer()], j.array(j.null()).length(10))
+console.log(j.stringify(schema, PrettyStringifyFormat({condensed:true})));
