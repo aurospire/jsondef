@@ -1,4 +1,4 @@
-import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema, GroupSchema, UnionSchema } from '@/Schema';
+import { Schema, NullSchema, AnySchema, BooleanSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, ObjectSchema, ModelSchema, GroupSchema, UnionSchema, ThisSchema, RootSchema, RefSchema } from '@/Schema';
 import { makeContext } from '@/validate/Context';
 import { validateSchema } from '@/validate/validateSchema';
 import { inspect } from 'util';
@@ -1318,7 +1318,7 @@ describe('Schema Validation', () => {
         });
     });
 
-    describe('Union Schema Validation', () => {
+    describe('UnionSchema Validation', () => {
         describe('Simple Union Types', () => {
             const unionSchema: UnionSchema = {
                 kind: 'union',
@@ -1558,6 +1558,147 @@ describe('Schema Validation', () => {
                     }
                 });
             });
+        });
+    });
+
+
+    describe('This Schema Validation', () => {
+        it('should validate correctly within an object schema', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    self: { kind: 'this', isOptional: true },
+                    name: { kind: 'string' }
+                }
+            };
+            validate(schema, true, [{ self: { name: 'John' }, name: 'John' }]);
+        });
+
+        it('should validate correctly within a model schema', () => {
+            const schema: ModelSchema = {
+                kind: 'model',
+                of: {
+                    self: { kind: 'this', isOptional: true },
+                    name: { kind: 'string' }
+                }
+            };
+            validate(schema, true, [{ self: { name: 'John' }, name: 'John' }]);
+        });
+
+        it('should fail validation when not within an object or model schema', () => {
+            const schema: ThisSchema = { kind: 'this' };
+            validate(schema, false, [{ name: 'John' }]);
+        });
+
+        it('should fail validation when within a group schema', () => {
+            const schema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    self: { kind: 'this', isOptional: true },
+                    name: { kind: 'string' }
+                }
+            };
+            validateShow(schema, false, [{ self: { name: 'John' }, name: 'John' }]);
+        });
+    });
+
+    describe('Root Schema Validation', () => {
+        it('should validate correctly within a nested object schema', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    nested: {
+                        kind: 'object',
+                        of: {
+                            age: { kind: 'number' },
+                            root: { kind: 'root', isOptional: true },
+                        }
+                    },
+                }
+            };
+            validate(schema, true, [{ name: 'John', nested: { root: { name: 'Jane', nested: { age: 12 } }, age: 10 }, }]);
+        });
+
+        it('should validate correctly with an embedded model schema', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    nested: {
+                        kind: 'model',
+                        of: {
+                            age: { kind: 'number' },
+                            root: { kind: 'root', isOptional: true },
+                        }
+                    },
+                }
+            };
+            validate(schema, true, [{ name: 'John', nested: { root: { age: 12 }, age: 10 }, }]);
+        });
+
+
+        it('should fail validation when not within an object or model schema', () => {
+            const schema: RootSchema = { kind: 'root' };
+            validate(schema, false, [{ name: 'John' }]);
+        });
+
+        it('should fail validation when within a group schema', () => {
+            const schema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    root: { kind: 'root', isOptional: true },
+                    name: { kind: 'string' }
+                }
+            };
+            validateShow(schema, false, [{ root: { name: 'John' }, name: 'John' }]);
+        });
+    });
+
+    describe('Ref Schema Validation', () => {
+        it('should validate correctly within a group schema', () => {
+            const schema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    Post: {
+                        kind: 'object',
+                        of: {
+                            id: { kind: 'integer' },
+                            author: { kind: 'ref', of: 'User' },
+                        }
+                    },
+                    User: {
+                        kind: 'object',
+                        of: {
+                            name: { kind: 'string' }
+                        }
+                    }
+                },
+                selected: 'Post'
+            };
+
+            validate(schema, true, [{ id: 1, author: { name: 'John' },  }]);
+        });
+
+        it('should fail validation when referenced schema does not exist in group', () => {
+            const schema: GroupSchema = {
+                kind: 'group',
+                of: {
+                    option1: {
+                        kind: 'object',
+                        of: {
+                            user: { kind: 'ref', of: 'NonExistent' },
+                            id: { kind: 'integer' }
+                        }
+                    }
+                }
+            };
+            validate(schema, false, [{ user: { name: 'John' }, id: 1 }]);
+        });
+
+        it('should fail validation when not within a group schema', () => {
+            const schema: RefSchema = { kind: 'ref', of: 'User' };
+            validate(schema, false, [{ name: 'John' }]);
         });
     });
 });

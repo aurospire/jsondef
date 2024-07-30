@@ -17,7 +17,7 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
 
     get of() { return this.#of; }
 
-    pattern(pattern?: StringSchemaPattern | RegExp): StringSchemaBuilder<Optional> {
+    pattern(pattern?: StringSchema['of']): StringSchemaBuilder<Optional> {
         const builder = this.clone();
 
         builder.#of = pattern;

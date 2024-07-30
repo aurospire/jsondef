@@ -71,7 +71,7 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
 
         case "object":
             result = validateObject(value, (schema as ObjectSchema).of, path,
-                makeContext(context.cache, context.global, context.root, schema as ObjectSchema), validateSchema, true);
+                makeContext(context.cache, context.global, context.root || schema as ObjectSchema, schema as ObjectSchema), validateSchema, true);
             break;
 
         case "model":
