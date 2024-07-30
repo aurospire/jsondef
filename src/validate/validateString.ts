@@ -1,6 +1,7 @@
 import { StringSchema, StringSchemaPattern } from "../Schema";
 import { RegexString } from "../util";
 import { ValidationResult } from "./Context";
+import { isStringPattern } from "../isStringPattern";
 import { Issue } from "./Result";
 import { validateBounds } from "./validateBounds";
 
@@ -143,10 +144,6 @@ const emailTester: StringTester = (value, path) => {
     return emailRegex.test(value) ? true : [{ path: path, issue: 'value must be a valid email' }];
 };
 
-
-const stringSchemaPatterns = new Set<string>(['date', 'time', 'datetime', 'uuid', 'base64', 'email']);
-
-const isStringPattern = (value: string): value is StringSchemaPattern => stringSchemaPatterns.has(value);
 
 const stringTesters: Record<StringSchemaPattern, StringTester> = {
     date: dateTester,

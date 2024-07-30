@@ -1,3 +1,4 @@
+import { isStringPattern } from "./isStringPattern";
 import {
     AnySchema, ArraySchema, BooleanSchema, BoundedAttributes, GroupSchema,
     IntegerSchema, LiteralSchema, ModelSchema, NullSchema,
@@ -11,10 +12,29 @@ export type StringifyFormat = {
     indent?: string;
     newline?: string;
     alwaysParenthesis?: boolean;
+    alwaysExplicit?: boolean;
     spaceAfterSemicolon?: boolean;
 };
 
-export const stringifySchema = (schema: Schema, format: StringifyFormat) => {
+export const PrettyStringifyFormat = (format: StringifyFormat = {}): StringifyFormat => ({
+    indent: '  ',
+    newline: '\n',
+    alwaysParenthesis: false,
+    alwaysExplicit: false,
+    spaceAfterSemicolon: true,
+    ...format
+});
+
+export const stringifySchema = (schema: Schema, format: StringifyFormat = {}) => {
+    switch (schema.kind) {
+        case 'null': return stringifyNullSchema(schema as NullSchema, format);
+        case 'any': return stringifyAnySchema(schema as AnySchema, format);
+        case 'boolean': return stringifyBooleanSchema(schema as BooleanSchema, format);
+        case 'integer': return stringifyIntegerSchema(schema as IntegerSchema, format);
+        case 'number': return stringifyNumberSchema(schema as NumberSchema, format);
+        case 'literal': return stringifyLiteralSchema(schema as LiteralSchema, format);
+        case 'string': return stringifyStringSchema(schema as StringSchema, format);
+    }
     // NullSchema;
     // AnySchema;
     // BooleanSchema;
@@ -84,8 +104,12 @@ const stringifyNumberSchema = (schema: NumberSchema, format: StringifyFormat) =>
 };
 
 const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat) => {
-    const bounds = stringifyBounds(schema, format, schema.of === undefined);
+    const bounds = stringifyBounds(schema, format, !format.alwaysExplicit && schema.of === undefined);
 
-    return bounds || format.alwaysParenthesis ? `string(${bounds})` : 'string';
+    let kind = 'string';
+
+    if (typeof schema.of === 'string' && isStringPattern(schema.of))
+        kind = schema.of;
+
+    return bounds || format.alwaysParenthesis ? `${kind}(${bounds})` : `${kind}`;
 };
-

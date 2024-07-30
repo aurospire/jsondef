@@ -18,6 +18,7 @@ import { ThisSchemaBuilder } from "./builder/ThisSchemaBuilder";
 import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
 import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 import { validate } from "./validate";
+import { stringifySchema } from "./Stringify";
 
 const nullSchema = () => new NullSchemaBuilder();
 const anySchema = () => new AnySchemaBuilder();
@@ -37,7 +38,7 @@ function tupleSchema<const Of extends TupleSchema['of'], Rest extends TupleSchem
 const recordSchema = <const Of extends RecordSchema['of']>(of: Of): RecordSchemaBuilder<Of> => new RecordSchemaBuilder<Of>(of);
 
 const objectSchema = <const Of extends ObjectSchema['of']>(of: Of) => new ObjectSchemaBuilder<Of>(of);
-const modelSchema = <const Of extends ModelSchema['of']>(name: string, of: Of) => new ModelSchemaBuilder<Of>(of, name);
+const modelSchema = <const Of extends ModelSchema['of']>(of: Of) => new ModelSchemaBuilder<Of>(of);
 
 const unionSchema = <const Of extends UnionSchema['of']>(of: Of) => new UnionSchemaBuilder<Of>(of);
 const refSchema = <const Of extends RefSchema['of']>(of: Of) => new RefSchemaBuilder<Of>(of);
@@ -65,4 +66,5 @@ export {
     refSchema as ref,
     InferSchema as infer,
     validate,
+    stringifySchema as stringify
 };

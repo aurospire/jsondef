@@ -30,5 +30,5 @@ export class IntegerSchemaBuilder<const Optional extends boolean = false>
 
     override bound(bounds: BoundedAttributes): IntegerSchemaBuilder<Optional> { return super.bound(bounds) as any; }
 
-    protected override clone() { return new IntegerSchemaBuilder<Optional>(); }
+    protected override clone() { return new IntegerSchemaBuilder<Optional>(this); }
 }

@@ -59,3 +59,10 @@ const combine_files = async (split: boolean) => {
 
     nodefs.writeFileSync(output, result);
 };
+
+
+import * as j from './helpers';
+import { PrettyStringifyFormat } from './Stringify';
+
+const schema = j.string().length(10).date();
+console.log(j.stringify(schema, PrettyStringifyFormat()));

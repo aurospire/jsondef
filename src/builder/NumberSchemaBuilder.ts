@@ -28,5 +28,5 @@ export class NumberSchemaBuilder<const Optional extends boolean = false>
 
     override bound(bounds: BoundedAttributes): NumberSchemaBuilder<Optional> { return super.bound(bounds) as any; }
 
-    protected override clone() { return new NumberSchemaBuilder<Optional>(); }
+    protected override clone() { return new NumberSchemaBuilder<Optional>(this); }
 }

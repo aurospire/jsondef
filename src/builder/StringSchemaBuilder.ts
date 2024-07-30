@@ -50,5 +50,5 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
 
     override bound(bounds: BoundedAttributes): StringSchemaBuilder<Optional> { return super.bound(bounds) as any; }
 
-    protected override clone() { return new StringSchemaBuilder<Optional>(); }
+    protected override clone() { return new StringSchemaBuilder<Optional>(this); }
 }

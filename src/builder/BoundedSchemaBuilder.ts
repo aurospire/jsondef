@@ -12,6 +12,7 @@ export abstract class BoundedSchemaBuilder<const Kind extends string, const Opti
         const bounds = from ? from.#bounds : {};
 
         this.#bounds = bounds;
+        console.log(this.#bounds, bounds)
     }
 
     get min() { return this.#bounds.min; }
