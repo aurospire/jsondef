@@ -1,7 +1,6 @@
 import { RecordSchema } from "../Schema";
+import { isObject, RegexString } from "../util";
 import { Context, ValidationResult } from "./Context";
-import { isObject } from "./isObject";
-import { regexString } from "./regexString";
 import { Issue } from "./Result";
 import { SchemaValidator } from "./SchemaValidator";
 import { validateBounds } from "./validateBounds";
@@ -23,8 +22,8 @@ export const validateRecord = (value: any, schema: RecordSchema, path: string[],
     let regex: RegExp | undefined;
 
     if (schema.key) {
-        regex = schema.key instanceof RegExp ? schema.key : regexString(schema.key);
-        
+        regex = schema.key instanceof RegExp ? schema.key : RegexString.toRegExp(schema.key);
+
         if (!regex)
             issues.push({ path, issue: 'invalid key filter' });
     }

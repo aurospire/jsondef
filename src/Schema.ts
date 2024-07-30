@@ -1,3 +1,5 @@
+import { RegexString } from "./util/RegexString";
+
 export type BaseAttributes = { description?: string; isOptional?: boolean; };
 
 export type BaseSchema<Kind extends string> = { kind: Kind; } & BaseAttributes;
@@ -22,11 +24,6 @@ export type BoundedAttributes = {
 export type IntegerSchema = BaseSchema<'integer'> & BoundedAttributes;
 
 export type NumberSchema = BaseSchema<'number'> & BoundedAttributes;
-
-/**
- * Represents a regex string in the format /pattern/flags?
- */
-export type RegexString = `/${string}/${string}`;
 
 export type StringSchemaPattern =
     | 'date'

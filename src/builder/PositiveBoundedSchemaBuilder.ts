@@ -24,3 +24,4 @@ export abstract class PositiveBoundedSchemaBuilder<const Kind extends string, co
             throw new Error('Minimum must be less or equal to Maximum');
     }
 }
+

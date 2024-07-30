@@ -1,7 +1,7 @@
 import { SchemaObject } from "../Schema";
 import { Context, ValidationResult } from "./Context";
 import { SchemaValidator } from "./SchemaValidator";
-import { isObject } from "./isObject";
+import { isObject } from "../util";
 import { Issue } from "./Result";
 
 export const validateObject = (

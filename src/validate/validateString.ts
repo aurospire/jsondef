@@ -1,8 +1,8 @@
-import { validateBounds } from "./validateBounds";
 import { StringSchema, StringSchemaPattern } from "../Schema";
+import { RegexString } from "../util";
 import { ValidationResult } from "./Context";
 import { Issue } from "./Result";
-import { regexString } from "./regexString";
+import { validateBounds } from "./validateBounds";
 
 type StringTester = (value: string, path: string[]) => ValidationResult;
 
@@ -174,7 +174,7 @@ export const validateString = (value: any, schema: StringSchema, path: string[])
                 }
             }
             else {
-                const regex = regexString(filter);
+                const regex = RegexString.toRegExp(filter);
 
                 if (regex) {
                     if (!regex.test(value))

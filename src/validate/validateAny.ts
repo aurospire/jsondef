@@ -1,5 +1,5 @@
 import { ValidationResult } from "./Context";
-import { isObject } from "./isObject";
+import { isObject } from "../util";
 import { Issue } from "./Result";
 
 export const validateAny = (value: any, path: string[]): ValidationResult => {

@@ -1,4 +1,5 @@
-import { BoundedAttributes, RegexString, StringAttributes, StringSchema, StringSchemaPattern } from "../Schema";
+import { BoundedAttributes, StringAttributes, StringSchema, StringSchemaPattern } from "../Schema";
+import { RegexString } from "../util/RegexString";
 import { PositiveBoundedSchemaBuilder } from "./PositiveBoundedSchemaBuilder";
 
 export class StringSchemaBuilder<const Optional extends boolean = false>
@@ -16,6 +17,10 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
     override get kind(): "string" { return 'string'; }
 
     get of() { return this.#of; }
+
+    length(value: number): StringSchemaBuilder<Optional> {
+        return this.bound({ min: value, max: value });
+    }
 
     pattern(pattern?: StringSchema['of']): StringSchemaBuilder<Optional> {
         const builder = this.clone();
