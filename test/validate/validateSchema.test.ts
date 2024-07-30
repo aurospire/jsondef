@@ -1561,8 +1561,7 @@ describe('Schema Validation', () => {
         });
     });
 
-
-    describe('This Schema Validation', () => {
+    describe('ThisSchema Validation', () => {
         it('should validate correctly within an object schema', () => {
             const schema: ObjectSchema = {
                 kind: 'object',
@@ -1602,7 +1601,7 @@ describe('Schema Validation', () => {
         });
     });
 
-    describe('Root Schema Validation', () => {
+    describe('RootSchema Validation', () => {
         it('should validate correctly within a nested object schema', () => {
             const schema: ObjectSchema = {
                 kind: 'object',
@@ -1655,7 +1654,7 @@ describe('Schema Validation', () => {
         });
     });
 
-    describe('Ref Schema Validation', () => {
+    describe('RefSchema Validation', () => {
         it('should validate correctly within a group schema', () => {
             const schema: GroupSchema = {
                 kind: 'group',
@@ -1677,7 +1676,7 @@ describe('Schema Validation', () => {
                 selected: 'Post'
             };
 
-            validate(schema, true, [{ id: 1, author: { name: 'John' },  }]);
+            validate(schema, true, [{ id: 1, author: { name: 'John' }, }]);
         });
 
         it('should fail validation when referenced schema does not exist in group', () => {
@@ -1699,6 +1698,136 @@ describe('Schema Validation', () => {
         it('should fail validation when not within a group schema', () => {
             const schema: RefSchema = { kind: 'ref', of: 'User' };
             validate(schema, false, [{ name: 'John' }]);
+        });
+    });
+
+
+    describe('Caching Mechanism', () => {
+        it('should cache validation results for repeated validations', () => {
+            const schema: StringSchema = { kind: 'string', min: 5 };
+            const value = 'Hello, World!';
+            const context = makeContext();
+
+            // First validation
+            const result1 = validateSchema(value, schema, [], context);
+            expect(result1).toBe(true);
+
+            // Second validation (should use cache)
+            const result2 = validateSchema(value, schema, [], context);
+            expect(result2).toBe(true);
+
+            // Check cache
+            const schemaCache = context.cache.get(schema);
+            expect(schemaCache).toBeDefined();
+            expect(schemaCache!.get(value)).toBe(true);
+        });
+
+        it('should cache validation results for different values of the same schema', () => {
+            const schema: NumberSchema = { kind: 'number', min: 0, max: 100 };
+            const context = makeContext();
+
+            const validValues = [0, 50, 100];
+            const invalidValues = [-1, 101, 'not a number'];
+
+            validValues.forEach(value => {
+                expect(validateSchema(value, schema, [], context)).toBe(true);
+            });
+
+            invalidValues.forEach(value => {
+                expect(validateSchema(value, schema, [], context)).not.toBe(true);
+            });
+
+            const schemaCache = context.cache.get(schema);
+            expect(schemaCache).toBeDefined();
+            expect(schemaCache!.size).toBe(validValues.length + invalidValues.length);
+        });
+    });
+
+    describe('Circular Reference Handling', () => {
+        it('should handle simple circular references using "this" schema', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    this: { kind: 'this', isOptional: true }
+                }
+            };
+
+            type SchemaType = { name: string; this?: SchemaType; };
+
+            const a: SchemaType = { name: 'John' };
+            const b: SchemaType = { name: 'Jill' };
+            a.this = b;
+            b.this = a;
+
+            validate(schema, true, [a, b]);
+        });
+
+        it('should handle deeply nested circular references', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    child: {
+                        kind: 'object',
+                        of: {
+                            name: { kind: 'string' },
+                            child: { kind: 'this', isOptional: true }
+                        },
+                        isOptional: true
+                    }
+                }
+            };
+
+            type SchemaType = {
+                name: string;
+                child?: {
+                    name: string;
+                    child?: SchemaType;
+                };
+            };
+
+            const a: SchemaType = { name: 'Generation 1' };
+            const b: SchemaType = { name: 'Generation 2', child: { name: 'Child of Gen 2' } };
+            const c: SchemaType = { name: 'Generation 3', child: { name: 'Child of Gen 3' } };
+
+            a.child = b.child;
+            b.child!.child = c;
+            c.child!.child = a;
+
+            validate(schema, true, [a, b, c]);
+        });
+
+        it('should handle arrays with circular references', () => {
+            const schema: ObjectSchema = {
+                kind: 'object',
+                of: {
+                    name: { kind: 'string' },
+                    children: {
+                        kind: 'array',
+                        of: { kind: 'this' },
+                        isOptional: true
+                    }
+                }
+            };
+
+            type SchemaType = {
+                name: string;
+                children?: SchemaType[];
+            };
+
+            const family: SchemaType = {
+                name: 'Parent',
+                children: [
+                    { name: 'Child 1' },
+                    { name: 'Child 2' }
+                ]
+            };
+
+            family.children![0].children = [family.children![1]];
+            family.children![1].children = [family];
+
+            validate(schema, true, [family]);
         });
     });
 });

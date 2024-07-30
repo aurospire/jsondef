@@ -26,6 +26,9 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
         context.cache.set(schema, resultCache);
     }
 
+    // Set so if we encounter it again, it will return true
+    resultCache.set(value, true);
+
     let result: ValidationResult;
 
     switch (schema.kind) {
@@ -107,6 +110,7 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
 
     }
 
+    // set with actual result
     resultCache.set(value, result);
 
     return result;
