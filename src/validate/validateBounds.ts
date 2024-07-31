@@ -1,10 +1,13 @@
-import { BoundedAttributes } from "../Schema";
+import { SizedAttributes } from "../Schema";
 
 
-export const validateBounds = (value: number, schema: BoundedAttributes, prefix: string): string | undefined => {
-    const { xmin, min, xmax, max } = schema;
+export const validateBounds = (value: number, schema: SizedAttributes, prefix: string): string | undefined => {
+    const { xmin, min, xmax, max, exact } = schema;
 
     let messages: string[] = [];
+
+    if (exact)
+        return `${prefix} must be exactly ${exact}`;
 
     if (xmin !== undefined && value <= xmin)
         messages.push(`> ${xmin}`);

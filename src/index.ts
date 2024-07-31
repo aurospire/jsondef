@@ -65,14 +65,14 @@ import { inspect } from 'util';
 import * as d from './helpers';
 import { PrettyStringifyFormat } from './Stringify';
 
-const schema = d.object({
+const schema = d.model({
     name: d.string({ max: 100 }),
     grades: d.array(d.integer({ min: 0, max: 100 }), { exact: 5 })
 });
 
 const value = {
     "name": "John Doe",
-    "grades": [85, 92, 78, 95, 88]
+    "grades": [85, 92, 78, 95, 88, 33]
 };
 
 console.log(d.stringify(schema, PrettyStringifyFormat({ normalized: true })));
