@@ -63,7 +63,6 @@ const combine_files = async (split: boolean) => {
 
 import { inspect } from 'util';
 import * as d from './helpers';
-import { PrettyStringifyFormat } from './Stringify';
 
 const schema = d.model({
     name: d.string({ max: 100 }),
@@ -75,8 +74,8 @@ const value = {
     "grades": [85, 92, 78, 95, 88, 33]
 };
 
-console.log(d.stringify(schema, PrettyStringifyFormat({ normalized: true })));
+console.log(d.stringify(schema, { normalized: true }, false));
 console.log();
-console.log(d.stringify(schema, PrettyStringifyFormat({ normalized: false })));
+console.log(d.stringify(schema, { normalized: false }, false));
 
 console.log(inspect(d.validate(value, schema), { depth: null, colors: true }));
