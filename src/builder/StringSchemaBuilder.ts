@@ -18,7 +18,7 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
 
     get of() { return this.#of; }
 
-    length(value: number): StringSchemaBuilder<Optional> {
+    exactly(value: number): StringSchemaBuilder<Optional> {
         return this.bound({ min: value, max: value });
     }
 

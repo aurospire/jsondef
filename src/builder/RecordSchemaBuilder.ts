@@ -24,7 +24,7 @@ export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Opti
     get key() { return this.#key; }
 
 
-    length(value: number): RecordSchemaBuilder<Of, Optional> {
+    exactly(value: number): RecordSchemaBuilder<Of, Optional> {
         return this.bound({ min: value, max: value });
     }
 

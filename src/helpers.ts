@@ -33,7 +33,7 @@ const stringSchema = (bounds?: number | BoundedAttributes) => {
     if (bounds === undefined)
         return builder;
     else if (typeof bounds === 'number')
-        return builder.length(bounds);
+        return builder.exactly(bounds);
     else
         return builder.bound(bounds);
 };
@@ -57,7 +57,7 @@ const arraySchema = <const Of extends ArraySchema['of']>(of: Of, bounds?: number
     if (bounds === undefined)
         return builder;
     else if (typeof bounds === 'number')
-        return builder.length(bounds);
+        return builder.exactly(bounds);
     else
         return builder.bound(bounds);
 };
@@ -72,7 +72,7 @@ const recordSchema = <const Of extends RecordSchema['of']>(of: Of, bounds?: numb
     if (bounds === undefined)
         return builder;
     else if (typeof bounds === 'number')
-        return builder.length(bounds);
+        return builder.exactly(bounds);
     else
         return builder.bound(bounds);
 };

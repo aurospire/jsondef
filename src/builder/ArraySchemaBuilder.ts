@@ -18,7 +18,7 @@ export class ArraySchemaBuilder<const Of extends Schema, const Optional extends 
     get of() { return this.#of; }
 
 
-    length(value: number): ArraySchemaBuilder<Of, Optional> {
+    exactly(value: number): ArraySchemaBuilder<Of, Optional> {
         return this.bound({ min: value, max: value });
     }
 

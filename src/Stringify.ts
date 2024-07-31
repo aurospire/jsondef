@@ -26,33 +26,36 @@ export const PrettyStringifyFormat = (format: StringifyFormat = {}): StringifyFo
 
 const joiner = (format: StringifyFormat) => `,${format.spacing ? ' ' : ''}`;
 
-type Arg = { key?: string, value: string; };
+type Arg = { key?: string, symbol?: string, value: string; };
 
 const stringifyArgs = (args: Arg[], format: StringifyFormat, separator: string = ':'): string => {
     const space = format.spacing ? ' ' : '';
 
-    return args.map(({ key, value }) => {
-        return key ? `${key}${separator}${space}${value}` : value;
+    return args.map(({ key, symbol, value }) => {
+        return key ? `${key}${separator}${space}${value}` : symbol ? `${symbol}${space}${value}` : value;
     }).join(joiner(format));
 };
 
 // type bounds = { min?: number; xmin?: number; xmax?: number; max?: number; }
-const argifyBounds = ({ min, xmin, xmax, max }: BoundedAttributes, symbolic: boolean, lengthArg: 'none' | 'implicit' | 'explicit'): Arg[] => {
-    if (lengthArg !== 'none' && min === max && min !== undefined && xmax === undefined && xmin === undefined)
-        return lengthArg === 'explicit' ? [{ key: 'len', value: min.toString() }] : [{ value: min.toString() }];
+const argifyBounds = ({ min, xmin, xmax, max }: BoundedAttributes, format: StringifyFormat, exactlyArg: boolean): Arg[] => {
+    const normalized = format.normalized;
+    const key = normalized ? 'key' : 'symbol';
+
+    if (exactlyArg && min === max && min !== undefined && xmax === undefined && xmin === undefined)
+        return [{ [key]: normalized ? 'exactly' : '=', value: min.toString() }];
 
     const result: Arg[] = [];
 
     if (xmin !== undefined)
-        result.push({ key: symbolic ? '>' : 'exclusiveMin', value: xmin.toString() });
+        result.push({ [key]: normalized ? 'exclusiveMin' : '>', value: xmin.toString() });
     else if (min !== undefined)
-        result.push({ key: symbolic ? '>=' : 'min', value: min.toString() });
+        result.push({ [key]: normalized ? 'min' : '>=', value: min.toString() });
 
     if (xmax !== undefined)
-        result.push({ key: symbolic ? '<' : 'exclusiveMax', value: xmax.toString() });
+        result.push({ [key]: normalized ? 'exclusiveMax' : '<', value: xmax.toString() });
 
     else if (max !== undefined)
-        result.push({ key: symbolic ? '<' : 'max', value: max.toString() });
+        result.push({ [key]: normalized ? 'max' : '<=', value: max.toString() });
 
 
     return result;
@@ -126,13 +129,13 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
 };
 
 const stringifyIntegerSchema = (schema: IntegerSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, true, 'none');
+    const args = argifyBounds(schema, format, false);
 
     return (format.normalized || args.length) ? `integer(${stringifyArgs(args, format, '')})` : 'integer';
 };
 
 const stringifyNumberSchema = (schema: NumberSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, true, 'none');
+    const args = argifyBounds(schema, format, false);
 
     return (format.normalized || args.length) ? `number(${stringifyArgs(args, format, '')})` : 'number';
 };
@@ -159,9 +162,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
         else
             regex = schema.of;
 
-    const lengthArg = !format.normalized && pattern ? 'implicit' : 'explicit';
-
-    const args = argifyBounds(schema, false, lengthArg);
+    const args = argifyBounds(schema, format, true);
 
     if (format.normalized || (regex && args.length)) {
         if (schema.of)
@@ -182,7 +183,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 //             SCHEMA[LENGTH]
 //             SCHEMA[min?: number, xmin?: number, xmax?: number, max?: number]
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, false, format.normalized ? 'explicit' : 'implicit');
+    const args = argifyBounds(schema, format, true);
 
     const of = stringifySchema(schema.of, format, true, level);
 
@@ -195,7 +196,7 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, leve
     }
 };
 
-// NORMALIZED: record(of: SCHEMA, key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+// NORMALIZED: record(of: SCHEMA, key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number, len?: number)
 // PRETTY:
 //             record<OF>
 //             record<OF>(LENGTH)
@@ -204,7 +205,7 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, leve
 //             record<KEY, OF>(LENGTH)
 //             record<KEY, OF>(BOUNDS)
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, false, !format.normalized ? 'implicit' : 'explicit');
+    const args = argifyBounds(schema, format, true);
 
     if (format.normalized) {
         if (schema.key)
