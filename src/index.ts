@@ -95,4 +95,4 @@ const schema = d.model({
 
 console.log(d.stringify(schema, { full: true }, true));
 console.log();
-console.log(d.stringify(schema, { full: false }, true));
+console.log(d.stringify(schema));

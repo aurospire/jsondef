@@ -11,16 +11,24 @@ import { RegexString } from "./util";
 
 // Types and constants
 export type StringifyFormat = {
-    indent?: string;
-    newline?: string;
-    spacing?: boolean;
-    full?: boolean;
+    indent: string;
+    newline: string;
+    spacing: string;
+    full: boolean;
 };
 
-const prettifyFormat = (format: StringifyFormat): StringifyFormat => ({
+const condensedFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
+    indent: '',
+    spacing: '',
+    newline: '',
+    full: false,
+    ...format
+});
+
+const prettifyFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
     indent: '  ',
+    spacing: ' ',
     newline: '\n',
-    spacing: true,
     full: false,
     ...format
 });
@@ -28,9 +36,9 @@ const prettifyFormat = (format: StringifyFormat): StringifyFormat => ({
 // Main stringify function
 export const stringify = (
     schema: Schema,
-    format: StringifyFormat = {},
-    prettify: boolean = false
-): string => stringifySchema(schema, prettify ? prettifyFormat(format) : format);
+    format: Partial<StringifyFormat> = {},
+    condensed: boolean = false
+): string => stringifySchema(schema, condensed ? condensedFormat(format) : prettifyFormat(format));
 
 // Main schema stringification function
 const stringifySchema = (schema: Schema, format: StringifyFormat, enclosed: boolean = false, level: number = 0): string => {
@@ -56,41 +64,28 @@ const stringifySchema = (schema: Schema, format: StringifyFormat, enclosed: bool
 };
 
 // Helper functions
-const spacer = (format: StringifyFormat) => format.spacing ? ' ' : '';
-
-const joiner = (format: StringifyFormat) => `,${spacer(format)}`;
+const joiner = (format: StringifyFormat) => ',' + format.spacing;
 
 const stringifyString = (value: string, format: StringifyFormat) => `'${JSON.stringify(value).slice(1, -1)}'`;
 
-type Arg = { key?: string, symbol?: string, value: string; };
-
-const stringifyArgs = (args: Arg[], format: StringifyFormat, separator: string = ':'): string => {
-    const space = spacer(format);
-
-    return args.map(({ key, symbol, value }) =>
-        key ? `${key}${separator}${space}${value}` :
-            symbol ? `${symbol}${space}${value}` : value
-    ).join(joiner(format));
-};
-
-const argifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, format: StringifyFormat): Arg[] => {
-    const key = 'symbol';
+const stringifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, format: StringifyFormat): string => {
 
     if (exact !== undefined)
-        return [{ [key]: '=', value: exact.toString() }];
+        return `=${format.spacing}${exact}`;
 
-    const result: Arg[] = [];
+    const results: string[] = [];
 
     if (xmin !== undefined)
-        result.push({ [key]: '>', value: xmin.toString() });
+        results.push(`>${format.spacing}${xmin}`);
     else if (min !== undefined)
-        result.push({ [key]: '>=', value: min.toString() });
-    if (xmax !== undefined)
-        result.push({ [key]: '<', value: xmax.toString() });
-    else if (max !== undefined)
-        result.push({ [key]: '<=', value: max.toString() });
+        results.push(`>=${format.spacing}${min}`);
 
-    return result;
+    if (xmax !== undefined)
+        results.push(`<${format.spacing}${xmax}`);
+    else if (max !== undefined)
+        results.push(`<=${format.spacing}${max}`);
+
+    return results.join(joiner(format));
 };
 
 // Schema-specific stringification functions
@@ -121,11 +116,9 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
 };
 
 const stringifyNumbericSchema = (schemaType: string, schema: IntegerSchema | NumberSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, format);
+    const bounds = stringifyBounds(schema, format);
 
-    return (format.full || args.length)
-        ? `${schemaType}(${stringifyArgs(args, format, '')})`
-        : schemaType;
+    return (format.full || bounds.length) ? `${schemaType}(${bounds})` : schemaType;
 };
 
 const stringifyIntegerSchema = (schema: IntegerSchema, format: StringifyFormat): string => stringifyNumbericSchema('integer', schema, format);
@@ -134,61 +127,48 @@ const stringifyNumberSchema = (schema: NumberSchema, format: StringifyFormat): s
 
 
 const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): string => {
-    let regex: RegexString | undefined;
+    const bounds = stringifyBounds(schema, format);
 
-    let pattern: StringSchemaFormat | undefined;
+    const kind = schema.of?.toString() ?? 'string';
 
-    if (schema.of) {
-        if (schema.of instanceof RegExp)
-            regex = schema.of.toString() as RegexString;
-        else if (isStringFormat(schema.of))
-            pattern = schema.of;
-        else
-            regex = schema.of;
-    }
-
-    const args = argifyBounds(schema, format);
-
-    const kind = regex ?? pattern ?? 'string';
-
-    return (format.full || args.length) ? `${kind}(${stringifyArgs(args, format)})` : kind;
+    return format.full || bounds.length ? `${kind}(${bounds})` : kind;
 
 };
 
+// SCHEMA[SIZE...]
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, format);
+    const bounds = stringifyBounds(schema, format);
 
     const of = stringifySchema(schema.of, format, true, level);
 
-    return `${of}[${stringifyArgs(args, format)}]`;
+    return `${of}[${bounds}]`;
 };
 
-// A[string](= 10)
+// record<V>(SIZE...) | record<K|V>(SIZE...)
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, format);
-
-    const of = stringifySchema(schema.of, format, false, level);
+    const bounds = stringifyBounds(schema, format);
 
     const key = schema.key ? stringifyStringSchema(schema.key, format) : '';
+
+    const of = stringifySchema(schema.of, format, false, level);
 
     const params = key ? [key, of] : [of];
 
     const head = `record<${params.join(joiner(format))}>`;
 
-    return args.length ? `${head}(${stringifyArgs(args, format)})` : head;
+    return format.full || bounds.length ? `${head}(${bounds})` : head;
 };
 
+// [SCHEMAS..., ...REST]
 const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, level: number): string => {
-    const ofs = schema.of.map(item => stringifySchema(item, format, false)).join(joiner(format));
+    const schemas = schema.of.map(item => stringifySchema(item, format, false));
 
     const rest = schema.rest ? stringifyArraySchema(schema.rest, format, level) : undefined;
 
-    const args: Arg[] = [{ value: ofs }];
-
     if (rest)
-        args.push({ value: `...${rest}` });
+        schemas.push(`...${rest}`);
 
-    return `[${stringifyArgs(args, format)}]`;
+    return `[${schemas.join(joiner(format))}]`;
 };
 
 const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {
@@ -200,28 +180,26 @@ const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, leve
 };
 
 const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, title: string, level: number, optionals: boolean): string => {
-    const { indent = '', newline = '' } = format;
     const open = '{';
     const close = '}';
-    const space = spacer(format);
     const optional = optionals ? '?:' : ':';
 
     const lines: string[] = [title + open];
 
     for (const [key, value] of Object.entries(object)) {
-        const stringified = stringifySchema(value, format, false, level + 1);
+        const schema = stringifySchema(value, format, false, level + 1);
 
-        const fixedKey = key.match(/[ \r\n]/) ? `'${JSON.stringify(key).slice(1, -1)}'` : key;
+        const fixedKey = key.match(/[ \r\n]/) ? stringifyString(key, format) : key;
 
-        lines.push(`${indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : ':'}${space}${stringified},`);
+        lines.push(`${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : ':'}${format.spacing}${schema},`);
     }
 
     if (lines.length > 1)
-        lines.push(`${indent.repeat(level)}${close}`);
+        lines.push(`${format.indent.repeat(level)}${close}`);
     else
         lines[0] += close;
 
-    return lines.join(newline);
+    return lines.join(format.newline);
 };
 
 const stringifyObjectSchema = (schema: ObjectSchema, format: StringifyFormat, level: number): string => {
@@ -229,13 +207,13 @@ const stringifyObjectSchema = (schema: ObjectSchema, format: StringifyFormat, le
 };
 
 const stringifyModelSchema = (schema: ModelSchema, format: StringifyFormat, level: number): string => {
-    const title = 'model' + spacer(format);
+    const title = 'model' + format.spacing;
 
     return stringifyStructSchema(schema.of, format, title, level, true);
 };
 
 const stringifyGroupSchema = (schema: GroupSchema, format: StringifyFormat, level: number): string => {
-    const title = (schema.selected ? `select ${schema.selected} of ` : '') + 'group' + spacer(format);
+    const title = (schema.selected ? `select ${schema.selected} of ` : '') + 'group' + format.spacing;
 
     return stringifyStructSchema(schema.of, format, title, level, false);
 };
