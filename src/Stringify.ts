@@ -185,23 +185,34 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat): str
 };
 
 // NORMALIZED: record(of: SCHEMA, key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
-// PRETTY:     SCHEMA{}
-//             SCHEMA{LENGTH}
-//             SCHEMA{key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number}
+// PRETTY:     
+//             record<SCHEMA>
+//             record<SCHEMA>()
+//             record<SCHEMA>(length)
+//             record<SCHEMA>(min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+//             record<KEY,SCHEMA>
+//             record<KEY,SCHEMA>()
+//             record<KEY,SCHEMA>(length)
+//             record<KEY,SCHEMA>(min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, !format.normalized && !schema.key ? 'implicit' : 'explicit');
-
-    if (schema.key)
-        args.unshift({ key: 'key', value: !format.normalized ? schema.key.toString() : `"${schema.key.toString()}"` });
+    const args = argifyBounds(schema, format.normalized ? 'explicit' : 'implicit');
 
     const of = stringifySchema(schema.of, format, true);
 
-    if (!format.normalized) {
-        return `${of}{${stringifyArgs(args, format)}}`;
+    if (format.normalized) {
+        if (schema.key)
+            args.unshift({ key: 'key', value: `"${schema.key.toString()}"` });
+
+        args.unshift({ key: 'of', value: of });
+
+        return `record(${stringifyArgs(args, format)})`;
     }
     else {
-        args.unshift({ key: 'of', value: of });
-        return `array(${stringifyArgs(args, format)})`;
+        const params = schema.key ? [schema.key.toString(), of] : [of];
+
+        const lead = `record<${params.join(joiner(format))}>`;
+
+        return args.length ? lead + `(${stringifyArgs(args, format)})` : lead;
     }
 };
 
