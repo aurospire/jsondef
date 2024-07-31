@@ -28,31 +28,31 @@ const joiner = (format: StringifyFormat) => `,${format.spacing ? ' ' : ''}`;
 
 type Arg = { key?: string, value: string; };
 
-const stringifyArgs = (args: Arg[], format: StringifyFormat): string => {
+const stringifyArgs = (args: Arg[], format: StringifyFormat, separator: string = ':'): string => {
     const space = format.spacing ? ' ' : '';
 
     return args.map(({ key, value }) => {
-        return key ? `${key}:${space}${value}` : value;
+        return key ? `${key}${separator}${space}${value}` : value;
     }).join(joiner(format));
 };
 
 // type bounds = { min?: number; xmin?: number; xmax?: number; max?: number; }
-const argifyBounds = ({ min, xmin, xmax, max }: BoundedAttributes, lengthArg: 'none' | 'implicit' | 'explicit'): Arg[] => {
+const argifyBounds = ({ min, xmin, xmax, max }: BoundedAttributes, symbolic: boolean, lengthArg: 'none' | 'implicit' | 'explicit'): Arg[] => {
     if (lengthArg !== 'none' && min === max && min !== undefined && xmax === undefined && xmin === undefined)
-        return lengthArg === 'explicit' ? [{ key: 'length', value: min.toString() }] : [{ value: min.toString() }];
+        return lengthArg === 'explicit' ? [{ key: 'len', value: min.toString() }] : [{ value: min.toString() }];
 
-    let result: Arg[] = [];
+    const result: Arg[] = [];
 
     if (xmin !== undefined)
-        result.push({ key: 'xmin', value: xmin.toString() });
+        result.push({ key: symbolic ? '>' : 'exclusiveMin', value: xmin.toString() });
     else if (min !== undefined)
-        result.push({ key: 'min', value: min.toString() });
+        result.push({ key: symbolic ? '>=' : 'min', value: min.toString() });
 
     if (xmax !== undefined)
-        result.push({ key: 'xmax', value: xmax.toString() });
+        result.push({ key: symbolic ? '<' : 'exclusiveMax', value: xmax.toString() });
 
     else if (max !== undefined)
-        result.push({ key: 'max', value: max.toString() });
+        result.push({ key: symbolic ? '<' : 'max', value: max.toString() });
 
 
     return result;
@@ -115,15 +115,15 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
 };
 
 const stringifyIntegerSchema = (schema: IntegerSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, 'none');
+    const args = argifyBounds(schema, true, 'none');
 
-    return (format.normalized || args.length) ? `integer(${stringifyArgs(args, format)})` : 'integer';
+    return (format.normalized || args.length) ? `integer(${stringifyArgs(args, format, '')})` : 'integer';
 };
 
 const stringifyNumberSchema = (schema: NumberSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, 'none');
+    const args = argifyBounds(schema, true, 'none');
 
-    return (format.normalized || args.length) ? `number(${stringifyArgs(args, format)})` : 'number';
+    return (format.normalized || args.length) ? `number(${stringifyArgs(args, format, '')})` : 'number';
 };
 
 // NORMALIZED: string(of?: pattern, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
@@ -150,7 +150,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 
     const lengthArg = !format.normalized && pattern ? 'implicit' : 'explicit';
 
-    const args = argifyBounds(schema, lengthArg);
+    const args = argifyBounds(schema, false, lengthArg);
 
     if (format.normalized || (regex && args.length)) {
         if (schema.of)
@@ -171,7 +171,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 //             SCHEMA[LENGTH]
 //             SCHEMA[min?: number, xmin?: number, xmax?: number, max?: number]
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, format.normalized ? 'explicit' : 'implicit');
+    const args = argifyBounds(schema, false, format.normalized ? 'explicit' : 'implicit');
 
     const of = stringifySchema(schema.of, format, true);
 
@@ -185,34 +185,23 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat): str
 };
 
 // NORMALIZED: record(of: SCHEMA, key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
-// PRETTY:     
-//             record<SCHEMA>
-//             record<SCHEMA>()
-//             record<SCHEMA>(length)
-//             record<SCHEMA>(min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
-//             record<KEY,SCHEMA>
-//             record<KEY,SCHEMA>()
-//             record<KEY,SCHEMA>(length)
-//             record<KEY,SCHEMA>(min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+// PRETTY:     SCHEMA{}
+//             SCHEMA{LENGTH}
+//             SCHEMA{key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number}
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, format.normalized ? 'explicit' : 'implicit');
+    const args = argifyBounds(schema, false, !format.normalized && !schema.key ? 'implicit' : 'explicit');
+
+    if (schema.key)
+        args.unshift({ key: 'key', value: !format.normalized ? schema.key.toString() : `"${schema.key.toString()}"` });
 
     const of = stringifySchema(schema.of, format, true);
 
-    if (format.normalized) {
-        if (schema.key)
-            args.unshift({ key: 'key', value: `"${schema.key.toString()}"` });
-
-        args.unshift({ key: 'of', value: of });
-
-        return `record(${stringifyArgs(args, format)})`;
+    if (!format.normalized) {
+        return `${of}{${stringifyArgs(args, format)}}`;
     }
     else {
-        const params = schema.key ? [schema.key.toString(), of] : [of];
-
-        const lead = `record<${params.join(joiner(format))}>`;
-
-        return args.length ? lead + `(${stringifyArgs(args, format)})` : lead;
+        args.unshift({ key: 'of', value: of });
+        return `array(${stringifyArgs(args, format)})`;
     }
 };
 
@@ -274,7 +263,7 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, le
         result += indent.repeat(level + 1) + key + (value.isOptional ? optional : ':') + space + stringified + ',' + newline;
     }
 
-    result += indent.repeat(level) + close + newline;
+    result += indent.repeat(level) + close;
 
     return result;
 };

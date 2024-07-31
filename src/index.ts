@@ -66,10 +66,14 @@ import { PrettyStringifyFormat } from './Stringify';
 
 const schema = j.object({
     a: j.boolean(),
-    b: j.array(j.number()).optional(),
+    b: j.array(j.number()).length(2).optional(),
     c: j.tuple([j.string(), j.string().date()]),
-    d: j.record(j.integer().bound({min:2})).by(/^[ABCD]/i).bound({min: 3})
+    d: j.record(j.integer().bound({ min: 2 })).bound({ xmax: 3 }),
+    e: j.record(j.integer().bound({ min: 2 })).by(/^[ABCD]/i).bound({ min: 3 }),
+    f: j.object({
+        x: j.union([j.literal('A'), j.literal('B')]),
+        y: j.array(j.union([j.literal('M'), j.literal('N')]))
+    })
 });
 
 console.log(j.stringify(schema, PrettyStringifyFormat({ normalized: false })));
-    
