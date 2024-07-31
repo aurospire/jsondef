@@ -59,7 +59,7 @@ export type RecordAttributes = { of: Schema; key?: RegexString | RegExp; };
 export type RecordSchema = BaseSchema<'record'> & BoundedAttributes & RecordAttributes;
 
 
-export type UnionAttributes = { of: [Schema, Schema, ...Schema[]]; };
+export type UnionAttributes = { of: Schema[]; };
 
 export type UnionSchema = BaseSchema<'union'> & UnionAttributes;
 
@@ -79,13 +79,15 @@ export type GroupAttributes = { of: SchemaObject; selected?: string; };
 export type GroupSchema = BaseSchema<'group'> & GroupAttributes;
 
 
+// Refers to Schemas in Ancestor group
 export type RefAttributes = { of: string; };
 
 export type RefSchema = BaseSchema<'ref'> & RefAttributes;
 
-
+// Refers to top level Object or closest Model
 export type RootSchema = BaseSchema<'root'>;
 
+// Refers to current Object or Model
 export type ThisSchema = BaseSchema<'this'>;
 
 // Making Schema a BaseSchema with certain kinds speeds up (and prevents recursion errors)

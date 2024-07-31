@@ -1,7 +1,7 @@
 export * from './Schema';
 export * from './Infer';
 export * from './builder';
-export * as j from './helpers';
+export * as d from './helpers';
 
 
 const combine_files = async (split: boolean) => {
@@ -61,19 +61,36 @@ const combine_files = async (split: boolean) => {
 };
 
 
-import * as j from './helpers';
+import * as d from './helpers';
 import { PrettyStringifyFormat } from './Stringify';
 
-const schema = j.object({
-    a: j.boolean(),
-    b: j.array(j.number()).length(2).optional(),
-    c: j.tuple([j.string(), j.string().date()]),
-    d: j.record(j.integer().bound({ min: 2 })).bound({ xmax: 3 }),
-    e: j.record(j.integer().bound({ min: 2 })).by(/^[ABCD]/i).bound({ min: 3 }),
-    f: j.object({
-        x: j.union([j.literal('A'), j.literal('B')]),
-        y: j.array(j.union([j.literal('M'), j.literal('N')]))
+const schema = d.group({
+    UserRole: d.enum(['admin', 'user', 'guest']),
+    Address: d.model({
+        street: d.string(),
+        city: d.string(),
+        postal: d.regex(/^[A-Z0-9]{5,10}$/),
+    }),
+    User: d.model({
+        id: d.uuid(),
+        name: d.string(100),
+        age: d.number({ min: 0, max: 120 }),
+        role: d.ref('UserRole'),
+        email: d.email(),
+        address: d.ref('Address'),
+        settings: d.object({
+            theme: d.enum(['dark', 'light']),
+            notifications: d.boolean(),
+            tags: d.array(d.string()).bound({ max: 10 })
+        }),
+        contacts: d.array(d.object({
+            type: d.enum(['email', 'phone']),
+            value: d.string()
+        }))
     })
 });
 
-console.log(j.stringify(schema, PrettyStringifyFormat({ normalized: false })));
+console.log(d.stringify(schema, PrettyStringifyFormat({ normalized: true })));
+console.log();
+console.log(d.stringify(schema, PrettyStringifyFormat({ normalized: false })));
+

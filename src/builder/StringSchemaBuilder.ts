@@ -38,6 +38,8 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
 
     uuid(): StringSchemaBuilder<Optional> { return this.pattern('uuid'); }
 
+    base64(): StringSchemaBuilder<Optional> { return this.pattern('base64'); }
+
     email(): StringSchemaBuilder<Optional> { return this.pattern('email'); }
 
     regex(pattern: RegExp | RegexString): StringSchemaBuilder<Optional> { return this.pattern(pattern); }

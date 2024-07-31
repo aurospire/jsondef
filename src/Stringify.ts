@@ -68,22 +68,22 @@ const stringifySchema = (schema: Schema, format: StringifyFormat, enclosed: bool
         case 'this': return stringifyThisSchema(schema as ThisSchema, format);
         case 'root': return stringifyRootSchema(schema as RootSchema, format);
         case 'ref': return stringifyRefSchema(schema as RefSchema, format);
+
         case 'integer': return stringifyIntegerSchema(schema as IntegerSchema, format);
         case 'number': return stringifyNumberSchema(schema as NumberSchema, format);
         case 'literal': return stringifyLiteralSchema(schema as LiteralSchema, format);
         case 'string': return stringifyStringSchema(schema as StringSchema, format);
 
-        case 'array': return stringifyArraySchema(schema as ArraySchema, format);
-        case 'tuple': return stringifyTupleSchema(schema as TupleSchema, format);
-        case 'record': return stringifyRecordSchema(schema as RecordSchema, format);
+        case 'array': return stringifyArraySchema(schema as ArraySchema, format, level);
+        case 'tuple': return stringifyTupleSchema(schema as TupleSchema, format, level);
+        case 'record': return stringifyRecordSchema(schema as RecordSchema, format, level);
 
-        case 'union': return stringifyUnionSchema(schema as UnionSchema, format, enclosed);
+        case 'union': return stringifyUnionSchema(schema as UnionSchema, format, level, enclosed);
 
         case 'object': return stringifyObjectSchema(schema as ObjectSchema, format, level);
-        // ModelSchema;
-        // GroupSchema;
+        case 'model': return stringifyModelSchema(schema as ModelSchema, format, level);
+        case 'group': return stringifyGroupSchema(schema as GroupSchema, format, level);
     }
-    return '';
 };
 
 const stringifyNullSchema = (schema: NullSchema, format: StringifyFormat): string => {
@@ -110,8 +110,19 @@ const stringifyRefSchema = (schema: RefSchema, format: StringifyFormat): string 
     return format.normalized ? `ref(${stringifyArgs([{ key: 'of', value: schema.of }], format)})` : `${schema.of}`;
 };
 
+const stringifyString = (value: string, format: StringifyFormat) => {
+    const escaped = JSON.stringify(value);
+    return format.normalized ? escaped : `'${escaped.slice(1, -1)}'`;
+};
+
 const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat): string => {
-    return JSON.stringify(schema.of);
+    switch (typeof schema.of) {
+        case 'number':
+        case 'boolean':
+            return schema.of.toString();
+        case 'string':
+            return stringifyString(schema.of, format);
+    }
 };
 
 const stringifyIntegerSchema = (schema: IntegerSchema, format: StringifyFormat): string => {
@@ -154,7 +165,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 
     if (format.normalized || (regex && args.length)) {
         if (schema.of)
-            args.unshift({ key: 'of', value: `"${regex ?? pattern!}"` });
+            args.unshift({ key: 'of', value: stringifyString(regex ?? pattern!, format) });
 
         return `string(${stringifyArgs(args, format)})`;
     }
@@ -170,10 +181,10 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 // PRETTY:     SCHEMA[]
 //             SCHEMA[LENGTH]
 //             SCHEMA[min?: number, xmin?: number, xmax?: number, max?: number]
-const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat): string => {
+const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
     const args = argifyBounds(schema, false, format.normalized ? 'explicit' : 'implicit');
 
-    const of = stringifySchema(schema.of, format, true);
+    const of = stringifySchema(schema.of, format, true, level);
 
     if (format.normalized) {
         args.unshift({ key: 'of', value: of });
@@ -185,33 +196,44 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat): str
 };
 
 // NORMALIZED: record(of: SCHEMA, key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
-// PRETTY:     SCHEMA{}
-//             SCHEMA{LENGTH}
-//             SCHEMA{key?: REGEXSTRING, min?: number, xmin?: number, xmax?: number, max?: number}
-const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, false, !format.normalized && !schema.key ? 'implicit' : 'explicit');
+// PRETTY:
+//             record<OF>
+//             record<OF>(LENGTH)
+//             record<OF>(bounds)
+//             record<KEY, OF>
+//             record<KEY, OF>(LENGTH)
+//             record<KEY, OF>(BOUNDS)
+const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
+    const args = argifyBounds(schema, false, !format.normalized ? 'implicit' : 'explicit');
 
-    if (schema.key)
-        args.unshift({ key: 'key', value: !format.normalized ? schema.key.toString() : `"${schema.key.toString()}"` });
+    if (format.normalized) {
+        if (schema.key)
+            args.unshift({ key: 'key', value: `"${schema.key.toString()}"` });
 
-    const of = stringifySchema(schema.of, format, true);
+        const of = stringifySchema(schema.of, format, true, level);
 
-    if (!format.normalized) {
-        return `${of}{${stringifyArgs(args, format)}}`;
+        args.unshift({ key: 'of', value: of });
+
+        return `record(${stringifyArgs(args, format)})`;
     }
     else {
-        args.unshift({ key: 'of', value: of });
-        return `array(${stringifyArgs(args, format)})`;
+        const of = stringifySchema(schema.of, format, false, level);
+
+        const params = schema.key ? [schema.key.toString(), of] : [of];
+
+        const head = `record<${params.join(joiner(format))}>`;
+
+        return args.length ? `${head}(${stringifyArgs(args, format)})` : head;
     }
 };
 
 // NORMALIZED: tuple(of: [SCHEMAs], rest: REST)
 // PRETTY:    [SCHEMAS]
 //            [SCHEMAS, ...REST]
-const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat): string => {
+const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, level: number): string => {
     const ofs = schema.of.map(item => stringifySchema(item, format, false)).join(joiner(format));
 
-    const rest = schema.rest ? stringifyArraySchema(schema.rest, format) : undefined;
+    const rest = schema.rest ? stringifyArraySchema(schema.rest, format, level) : undefined;
 
     if (!format.normalized) {
         const args: Arg[] = [{ value: ofs }];
@@ -234,7 +256,7 @@ const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat): str
 
 // NORMALIZED: union(of: [])
 // PRETTY:     X | Y | .. | Z
-const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, enclosed: boolean): string => {
+const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {
     const items = schema.of.map(item => stringify(item, format));
 
     if (!format.normalized) {
@@ -269,5 +291,21 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, le
 };
 
 const stringifyObjectSchema = (schema: ObjectSchema, format: StringifyFormat, level: number): string => {
-    return stringifyStructSchema(schema.of, format, level, true);
+    const struct = stringifyStructSchema(schema.of, format, level, true);
+
+    return (format.normalized ? 'object' : '') + struct;
+};
+
+const stringifyModelSchema = (schema: ModelSchema, format: StringifyFormat, level: number): string => {
+    const struct = stringifyStructSchema(schema.of, format, level, true);
+
+    return (format.normalized ? 'model' : 'model' + (format.spacing ? ' ' : '')) + struct;
+};
+
+const stringifyGroupSchema = (schema: GroupSchema, format: StringifyFormat, level: number): string => {
+    const struct = stringifyStructSchema(schema.of, format, level, false);
+
+    const selected = schema.selected ? `select ${schema.selected} of ` : '';
+
+    return (format.normalized ? 'group' : selected + 'group' + (format.spacing ? ' ' : '')) + struct;
 };
