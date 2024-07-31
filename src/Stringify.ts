@@ -3,7 +3,7 @@ import {
     AnySchema, ArraySchema, BooleanSchema, BoundedAttributes, GroupSchema,
     IntegerSchema, LiteralSchema, ModelSchema, NullSchema,
     NumberSchema, ObjectSchema, RecordSchema, RefSchema,
-    RootSchema, Schema, SchemaObject, StringSchema, StringSchemaFormat, ThisSchema,
+    RootSchema, Schema, SchemaObject, SizedAttributes, StringSchema, StringSchemaFormat, ThisSchema,
     TupleSchema, UnionSchema
 } from "./Schema";
 import { RegexString } from "./util";
@@ -37,12 +37,12 @@ const stringifyArgs = (args: Arg[], format: StringifyFormat, separator: string =
 };
 
 // type bounds = { min?: number; xmin?: number; xmax?: number; max?: number; }
-const argifyBounds = ({ min, xmin, xmax, max }: BoundedAttributes, format: StringifyFormat, exactlyArg: boolean): Arg[] => {
+const argifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, format: StringifyFormat): Arg[] => {
     const normalized = format.normalized;
     const key = normalized ? 'key' : 'symbol';
 
-    if (exactlyArg && min === max && min !== undefined && xmax === undefined && xmin === undefined)
-        return [{ [key]: normalized ? 'exactly' : '=', value: min.toString() }];
+    if (exact !== undefined)
+        return [{ [key]: normalized ? 'exactly' : '=', value: exact.toString() }];
 
     const result: Arg[] = [];
 
@@ -129,25 +129,25 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
 };
 
 const stringifyIntegerSchema = (schema: IntegerSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, format, false);
+    const args = argifyBounds(schema, format);
 
     return (format.normalized || args.length) ? `integer(${stringifyArgs(args, format, '')})` : 'integer';
 };
 
 const stringifyNumberSchema = (schema: NumberSchema, format: StringifyFormat): string => {
-    const args = argifyBounds(schema, format, false);
+    const args = argifyBounds(schema, format);
 
     return (format.normalized || args.length) ? `number(${stringifyArgs(args, format, '')})` : 'number';
 };
 
-// NORMALIZED: string(of?: pattern, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+// NORMALIZED: string(of?: pattern, min?: number, xmin?: number, xmax?: number, max?: number, len?: number)
 // PRETTY:    
 //           string
 //           string(LENGTH) - same as string(length: number) same as string(min: number; max: number) - where min === max
 //           date|time|datetime|uuid|base64|email
 //           date|time|datetime|uuid|base64|email()
 //           date|time|datetime|uuid|base64|email(number)
-//           date|time|datetime|uuid|base64|email(min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+//           date|time|datetime|uuid|base64|email(min?: number, xmin?: number, xmax?: number, max?: number, len?: number)
 //           REGEXSTRING - /{pattern}/{flags} - only when no bounds, otherwise Normalized
 const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): string => {
     let regex: RegexString | undefined;
@@ -162,7 +162,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
         else
             regex = schema.of;
 
-    const args = argifyBounds(schema, format, true);
+    const args = argifyBounds(schema, format);
 
     if (format.normalized || (regex && args.length)) {
         if (schema.of)
@@ -178,12 +178,12 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 };
 
 
-// NORMALIZED: array(of: SCHEMA, min?: number, xmin?: number, xmax?: number, max?: number, length?: number)
+// NORMALIZED: array(of: SCHEMA, min?: number, xmin?: number, xmax?: number, max?: number, len?: number)
 // PRETTY:     SCHEMA[]
 //             SCHEMA[LENGTH]
 //             SCHEMA[min?: number, xmin?: number, xmax?: number, max?: number]
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, format, true);
+    const args = argifyBounds(schema, format);
 
     const of = stringifySchema(schema.of, format, true, level);
 
@@ -205,7 +205,7 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, leve
 //             record<KEY, OF>(LENGTH)
 //             record<KEY, OF>(BOUNDS)
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
-    const args = argifyBounds(schema, format, true);
+    const args = argifyBounds(schema, format);
 
     if (format.normalized) {
         if (schema.key)

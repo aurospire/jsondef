@@ -25,6 +25,10 @@ export type IntegerSchema = BaseSchema<'integer'> & BoundedAttributes;
 
 export type NumberSchema = BaseSchema<'number'> & BoundedAttributes;
 
+export type SizedAttributes = BoundedAttributes & {
+    exact?: number;
+};
+
 export type StringSchemaFormat =
     | 'date'
     | 'time'
@@ -36,7 +40,7 @@ export type StringSchemaFormat =
 
 export type StringAttributes = { of?: StringSchemaFormat | RegexString | RegExp; };
 
-export type StringSchema = BaseSchema<'string'> & BoundedAttributes & StringAttributes;
+export type StringSchema = BaseSchema<'string'> & SizedAttributes & StringAttributes;
 
 
 export type LiteralAttributes = { of: boolean | number | string; };
@@ -46,7 +50,7 @@ export type LiteralSchema = BaseSchema<'literal'> & LiteralAttributes;
 
 export type ArrayAttributes = { of: Schema; };
 
-export type ArraySchema = BaseSchema<'array'> & BoundedAttributes & ArrayAttributes;
+export type ArraySchema = BaseSchema<'array'> & SizedAttributes & ArrayAttributes;
 
 
 export type TupleAttributes = { of: Schema[]; rest?: ArraySchema; };
@@ -56,7 +60,7 @@ export type TupleSchema = BaseSchema<'tuple'> & TupleAttributes;
 
 export type RecordAttributes = { of: Schema; key?: RegexString | RegExp; };
 
-export type RecordSchema = BaseSchema<'record'> & BoundedAttributes & RecordAttributes;
+export type RecordSchema = BaseSchema<'record'> & SizedAttributes & RecordAttributes;
 
 
 export type UnionAttributes = { of: Schema[]; };

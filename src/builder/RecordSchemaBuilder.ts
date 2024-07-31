@@ -1,8 +1,8 @@
 import { BoundedAttributes, RecordSchema } from "../Schema";
-import { PositiveBoundedSchemaBuilder } from "./PositiveBoundedSchemaBuilder";
+import { SizedSchemaBuilder } from "./SizedSchemaBuilder";
 
 export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Optional extends boolean = false>
-    extends PositiveBoundedSchemaBuilder<'record', Optional>
+    extends SizedSchemaBuilder<'record', Optional>
     implements RecordSchema {
 
     #of: Of;
@@ -23,10 +23,6 @@ export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Opti
 
     get key() { return this.#key; }
 
-
-    exactly(value: number): RecordSchemaBuilder<Of, Optional> {
-        return this.bound({ min: value, max: value });
-    }
 
     by(key?: RecordSchema['key']): RecordSchemaBuilder<Of, Optional> {
         const builder = this.clone();

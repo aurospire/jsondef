@@ -7,7 +7,7 @@ export * from './BoundedSchemaBuilder';
 export * from './NumberSchemaBuilder';
 export * from './IntegerSchemaBuilder';
 
-export * from './PositiveBoundedSchemaBuilder';
+export * from './SizedSchemaBuilder';
 export * from './StringSchemaBuilder';
 
 export * from './LiteralSchemaBuilder';

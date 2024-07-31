@@ -1,8 +1,8 @@
 import { ArraySchema, BoundedAttributes, Schema } from "../Schema";
-import { PositiveBoundedSchemaBuilder } from "./PositiveBoundedSchemaBuilder";
+import { SizedSchemaBuilder } from "./SizedSchemaBuilder";
 
 export class ArraySchemaBuilder<const Of extends Schema, const Optional extends boolean = false>
-    extends PositiveBoundedSchemaBuilder<'array', Optional>
+    extends SizedSchemaBuilder<'array', Optional>
     implements ArraySchema {
 
     #of: Of;
@@ -17,10 +17,6 @@ export class ArraySchemaBuilder<const Of extends Schema, const Optional extends 
 
     get of() { return this.#of; }
 
-
-    exactly(value: number): ArraySchemaBuilder<Of, Optional> {
-        return this.bound({ min: value, max: value });
-    }
 
     override optional(): ArraySchemaBuilder<Of, true> { return super.optional() as any; }
 
