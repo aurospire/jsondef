@@ -307,5 +307,5 @@ const stringifyGroupSchema = (schema: GroupSchema, format: StringifyFormat, leve
 
     const selected = schema.selected ? `select ${schema.selected} of ` : '';
 
-    return (format.normalized ? 'group' : selected + 'group' + (format.spacing ? ' ' : '')) + struct;
+    return selected + (format.normalized ? 'group' : 'group' + (format.spacing ? ' ' : '')) + struct;
 };

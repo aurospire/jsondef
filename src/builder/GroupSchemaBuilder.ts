@@ -32,7 +32,7 @@ export class GroupSchemaBuilder<
     select<Key extends (string & keyof Of) | undefined>(key: Key): GroupSchemaBuilder<Of, Key, Optional> {
         const builder = this.clone();
 
-        this.#selected = key as any;
+        builder.#selected = key as any;
 
         return builder as any;
     }
