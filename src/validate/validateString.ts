@@ -154,8 +154,8 @@ const stringTesters: Record<StringSchemaFormat, StringTester> = {
     email: emailTester
 };
 
-export const validateString = (value: any, schema: StringSchema, path: string[]): ValidationResult => {
-    if (typeof value !== 'string') return [{ path, issue: 'value must be string.' }];
+export const validateString = (value: any, schema: StringSchema, path: string[], prefix: string = 'value'): ValidationResult => {
+    if (typeof value !== 'string') return [{ path, issue: `${prefix} must be string.` }];
 
     const { of: filter } = schema;
 
@@ -175,24 +175,24 @@ export const validateString = (value: any, schema: StringSchema, path: string[])
 
                 if (regex) {
                     if (!regex.test(value))
-                        return [{ path, issue: `value must match custom regex: ${regex}` }];
+                        return [{ path, issue: `${prefix}  must match custom regex: ${regex}` }];
                 }
                 else {
-                    return [{ path, issue: `invalid string filter: ${filter}` }];
+                    return [{ path, issue: `invalid ${prefix} string filter: ${filter}` }];
                 }
             }
         }
         else if (filter instanceof RegExp) {
             if (!filter.test(value))
-                return [{ path, issue: `value must match custom regex: ${filter}` }];
+                return [{ path, issue: `${prefix}  must match custom regex: ${filter}` }];
 
         }
         else {
-            return [{ path, issue: `invalid string filter ${filter}` }];
+            return [{ path, issue: `invalid ${prefix} string filter ${filter}` }];
         }
     }
 
-    const boundsCheck = validateBounds(value.length, schema, 'value length');
+    const boundsCheck = validateBounds(value.length, schema, `${prefix} length`);
 
     return boundsCheck ? [{ path, issue: boundsCheck }] : true;
 };

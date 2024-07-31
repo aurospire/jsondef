@@ -1,4 +1,4 @@
-import { BoundedAttributes, RecordSchema } from "../Schema";
+import { RecordSchema, SizedAttributes } from "../Schema";
 import { SizedSchemaBuilder } from "./SizedSchemaBuilder";
 
 export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Optional extends boolean = false>
@@ -36,7 +36,7 @@ export class RecordSchemaBuilder<const Of extends RecordSchema['of'], const Opti
 
     override required(): RecordSchemaBuilder<Of, false> { return super.required() as any; }
 
-    override bound(bounds: BoundedAttributes): RecordSchemaBuilder<Of, Optional> { return super.bound(bounds) as any; }
+    override size(size: SizedAttributes): RecordSchemaBuilder<Of, Optional> { return super.size(size) as any; }
 
     protected override clone() { return new RecordSchemaBuilder<Of, Optional>(this); }
 }

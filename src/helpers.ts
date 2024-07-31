@@ -28,27 +28,27 @@ const rootSchema = () => new RootSchemaBuilder();
 const booleanSchema = () => new BooleanSchemaBuilder();
 const integerSchema = (bounds?: BoundedAttributes) => bounds ? new IntegerSchemaBuilder().bound(bounds) : new IntegerSchemaBuilder();
 const numberSchema = (bounds?: BoundedAttributes) => bounds ? new NumberSchemaBuilder().bound(bounds) : new NumberSchemaBuilder();
-const stringSchema = (bounds?: SizedAttributes) => bounds ? new StringSchemaBuilder().bound(bounds) : new StringSchemaBuilder();
-const dateSchema = () => new StringSchemaBuilder().date();
-const timeSchema = () => new StringSchemaBuilder().time();
-const datetimeSchema = () => new StringSchemaBuilder().datetime();
-const uuidSchema = () => new StringSchemaBuilder().uuid();
-const base64Schema = () => new StringSchemaBuilder().base64();
-const emailSchema = () => new StringSchemaBuilder().email();
-const regexSchema = (pattern: RegexString | RegExp) => new StringSchemaBuilder().regex(pattern);
+const stringSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().size(size) : new StringSchemaBuilder();
+const dateSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().date().size(size) : new StringSchemaBuilder().date();
+const timeSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().time().size(size) : new StringSchemaBuilder().time();
+const datetimeSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().datetime().size(size) : new StringSchemaBuilder().datetime();
+const uuidSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().uuid().size(size) : new StringSchemaBuilder().uuid();
+const base64Schema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().base64().size(size) : new StringSchemaBuilder().base64();
+const emailSchema = (size?: SizedAttributes) => size ? new StringSchemaBuilder().email().size(size) : new StringSchemaBuilder().email();
+const regexSchema = (pattern: RegexString | RegExp, size?: SizedAttributes) => size ? new StringSchemaBuilder().regex(pattern).size(size) : new StringSchemaBuilder().regex(pattern);
 
 const literalSchema = <const Of extends LiteralSchema['of']>(of: Of) => new LiteralSchemaBuilder<Of>(of);
 
 type EnumMapper<Enum extends LiteralSchema['of'][]> = Enum extends LiteralSchema['of'][] ? { [K in keyof Enum]: LiteralSchemaBuilder<Enum[K]> } : never;
 const enumSchema = <const Enum extends LiteralSchema['of'][]>(values: Enum) => new UnionSchemaBuilder<EnumMapper<Enum>>(values.map(item => literalSchema(item)) as any);
 
-const arraySchema = <const Of extends ArraySchema['of']>(of: Of, bounds?: SizedAttributes) => bounds ? new ArraySchemaBuilder<Of>(of).bound(bounds) : new ArraySchemaBuilder<Of>(of);
+const arraySchema = <const Of extends ArraySchema['of']>(of: Of, size?: SizedAttributes) => size ? new ArraySchemaBuilder<Of>(of).size(size) : new ArraySchemaBuilder<Of>(of);
 
 function tupleSchema<const Of extends TupleSchema['of']>(of: Of): TupleSchemaBuilder<Of>;
 function tupleSchema<const Of extends TupleSchema['of'], Rest extends TupleSchema['rest']>(of: Of, rest: Rest): TupleSchemaBuilder<Of, Rest>;
 function tupleSchema<const Of extends TupleSchema['of'], Rest extends TupleSchema['rest']>(of: Of, rest?: Rest): TupleSchemaBuilder<Of, Rest> { return new TupleSchemaBuilder(of, rest); }
 
-const recordSchema = <const Of extends RecordSchema['of']>(of: Of, bounds?: SizedAttributes) =>  (bounds === undefined) ? new RecordSchemaBuilder<Of>(of) : new RecordSchemaBuilder<Of>(of).bound(bounds);
+const recordSchema = <const Of extends RecordSchema['of']>(of: Of, size?: SizedAttributes) => (size === undefined) ? new RecordSchemaBuilder<Of>(of) : new RecordSchemaBuilder<Of>(of).size(size);
 
 const objectSchema = <const Of extends ObjectSchema['of']>(of: Of) => new ObjectSchemaBuilder<Of>(of);
 const modelSchema = <const Of extends ModelSchema['of']>(of: Of) => new ModelSchemaBuilder<Of>(of);

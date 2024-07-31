@@ -47,7 +47,7 @@ export class StringSchemaBuilder<const Optional extends boolean = false>
 
     override required(): StringSchemaBuilder<false> { return super.required() as any; }
 
-    override bound(bounds: BoundedAttributes): StringSchemaBuilder<Optional> { return super.bound(bounds) as any; }
+    override size(size: BoundedAttributes): StringSchemaBuilder<Optional> { return super.size(size) as any; }
 
     protected override clone() { return new StringSchemaBuilder<Optional>(this); }
 }

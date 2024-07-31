@@ -14,14 +14,14 @@ export type StringifyFormat = {
     indent?: string;
     newline?: string;
     spacing?: boolean;
-    normalized?: boolean;
+    full?: boolean;
 };
 
 const prettifyFormat = (format: StringifyFormat): StringifyFormat => ({
     indent: '  ',
     newline: '\n',
     spacing: true,
-    normalized: false,
+    full: false,
     ...format
 });
 
@@ -60,8 +60,7 @@ const spacer = (format: StringifyFormat) => format.spacing ? ' ' : '';
 
 const joiner = (format: StringifyFormat) => `,${spacer(format)}`;
 
-const stringifyString = (value: string, format: StringifyFormat) =>
-    format.normalized ? JSON.stringify(value) : `'${JSON.stringify(value).slice(1, -1)}'`;
+const stringifyString = (value: string, format: StringifyFormat) => `'${JSON.stringify(value).slice(1, -1)}'`;
 
 type Arg = { key?: string, symbol?: string, value: string; };
 
@@ -75,28 +74,27 @@ const stringifyArgs = (args: Arg[], format: StringifyFormat, separator: string =
 };
 
 const argifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, format: StringifyFormat): Arg[] => {
-    const normalized = format.normalized;
-    const key = normalized ? 'key' : 'symbol';
+    const key = 'symbol';
 
     if (exact !== undefined)
-        return [{ [key]: normalized ? 'exactly' : '=', value: exact.toString() }];
+        return [{ [key]: '=', value: exact.toString() }];
 
     const result: Arg[] = [];
 
     if (xmin !== undefined)
-        result.push({ [key]: normalized ? 'exclusiveMin' : '>', value: xmin.toString() });
+        result.push({ [key]: '>', value: xmin.toString() });
     else if (min !== undefined)
-        result.push({ [key]: normalized ? 'min' : '>=', value: min.toString() });
+        result.push({ [key]: '>=', value: min.toString() });
     if (xmax !== undefined)
-        result.push({ [key]: normalized ? 'exclusiveMax' : '<', value: xmax.toString() });
+        result.push({ [key]: '<', value: xmax.toString() });
     else if (max !== undefined)
-        result.push({ [key]: normalized ? 'max' : '<=', value: max.toString() });
+        result.push({ [key]: '<=', value: max.toString() });
 
     return result;
 };
 
 // Schema-specific stringification functions
-const stringifySimpleSchema = (name: string, format: StringifyFormat): string => format.normalized ? `${name}()` : name;
+const stringifySimpleSchema = (name: string, format: StringifyFormat): string => format.full ? `${name}()` : name;
 
 const stringifyNullSchema = (schema: NullSchema, format: StringifyFormat): string => stringifySimpleSchema('null', format);
 
@@ -109,10 +107,7 @@ const stringifyThisSchema = (schema: ThisSchema, format: StringifyFormat): strin
 const stringifyRootSchema = (schema: RootSchema, format: StringifyFormat): string => stringifySimpleSchema('root', format);
 
 
-const stringifyRefSchema = (schema: RefSchema, format: StringifyFormat): string =>
-    format.normalized
-        ? `ref(${stringifyArgs([{ key: 'of', value: schema.of }], format)})`
-        : `${schema.of}`;
+const stringifyRefSchema = (schema: RefSchema, format: StringifyFormat): string => `${schema.of}`;
 
 
 const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat): string => {
@@ -128,7 +123,7 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
 const stringifyNumbericSchema = (schemaType: string, schema: IntegerSchema | NumberSchema, format: StringifyFormat): string => {
     const args = argifyBounds(schema, format);
 
-    return (format.normalized || args.length)
+    return (format.full || args.length)
         ? `${schemaType}(${stringifyArgs(args, format, '')})`
         : schemaType;
 };
@@ -154,17 +149,10 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 
     const args = argifyBounds(schema, format);
 
-    if (format.normalized || (regex && args.length)) {
-        if (schema.of)
-            args.unshift({ key: 'of', value: stringifyString(regex ?? pattern!, format) });
+    const kind = regex ?? pattern ?? 'string';
 
-        return `string(${stringifyArgs(args, format)})`;
-    }
-    else {
-        const kind = regex ?? pattern ?? 'string';
+    return (format.full || args.length) ? `${kind}(${stringifyArgs(args, format)})` : kind;
 
-        return args.length ? `${kind}(${stringifyArgs(args, format)})` : kind;
-    }
 };
 
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
@@ -172,38 +160,22 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, leve
 
     const of = stringifySchema(schema.of, format, true, level);
 
-    if (format.normalized) {
-        args.unshift({ key: 'of', value: of });
-
-        return `array(${stringifyArgs(args, format)})`;
-    }
-    else {
-        return `${of}[${stringifyArgs(args, format)}]`;
-    }
+    return `${of}[${stringifyArgs(args, format)}]`;
 };
 
+// A[string](= 10)
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
     const args = argifyBounds(schema, format);
 
-    if (format.normalized) {
-        if (schema.key)
-            args.unshift({ key: 'key', value: `"${schema.key.toString()}"` });
+    const of = stringifySchema(schema.of, format, false, level);
 
-        const of = stringifySchema(schema.of, format, true, level);
+    const key = schema.key ? stringifyStringSchema(schema.key, format) : '';
 
-        args.unshift({ key: 'of', value: of });
+    const params = key ? [key, of] : [of];
 
-        return `record(${stringifyArgs(args, format)})`;
-    }
-    else {
-        const of = stringifySchema(schema.of, format, false, level);
+    const head = `record<${params.join(joiner(format))}>`;
 
-        const params = schema.key ? [schema.key.toString(), of] : [of];
-
-        const head = `record<${params.join(joiner(format))}>`;
-
-        return args.length ? `${head}(${stringifyArgs(args, format)})` : head;
-    }
+    return args.length ? `${head}(${stringifyArgs(args, format)})` : head;
 };
 
 const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, level: number): string => {
@@ -211,41 +183,26 @@ const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, leve
 
     const rest = schema.rest ? stringifyArraySchema(schema.rest, format, level) : undefined;
 
-    if (!format.normalized) {
-        const args: Arg[] = [{ value: ofs }];
+    const args: Arg[] = [{ value: ofs }];
 
-        if (rest)
-            args.push({ value: `...${rest}` });
+    if (rest)
+        args.push({ value: `...${rest}` });
 
-        return `[${stringifyArgs(args, format)}]`;
-    }
-    else {
-        const args: Arg[] = [{ key: 'of', value: `[${ofs}]` }];
-
-        if (rest)
-            args.push({ key: 'rest', value: rest });
-
-        return `tuple(${stringifyArgs(args, format)})`;
-    }
+    return `[${stringifyArgs(args, format)}]`;
 };
 
 const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {
     const items = schema.of.map(item => stringify(item, format));
 
-    if (!format.normalized) {
-        const itemString = items.join(format.spacing ? ' | ' : '|');
+    const itemString = items.join(format.spacing ? ' | ' : '|');
 
-        return enclosed ? `(${itemString})` : itemString;
-    }
-    else {
-        return `union(${stringifyArgs([{ key: 'of', value: `[${items.join(joiner(format))}]` }], format)})`;
-    }
+    return enclosed ? `(${itemString})` : itemString;
 };
 
 const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, title: string, level: number, optionals: boolean): string => {
     const { indent = '', newline = '' } = format;
-    const open = format.normalized ? '(' : '{';
-    const close = format.normalized ? ')' : '}';
+    const open = '{';
+    const close = '}';
     const space = spacer(format);
     const optional = optionals ? '?:' : ':';
 
@@ -259,15 +216,16 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, ti
         lines.push(`${indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : ':'}${space}${stringified},`);
     }
 
-    lines.push(`${indent.repeat(level)}${close}`);
+    if (lines.length > 1)
+        lines.push(`${indent.repeat(level)}${close}`);
+    else
+        lines[0] += close;
 
     return lines.join(newline);
 };
 
 const stringifyObjectSchema = (schema: ObjectSchema, format: StringifyFormat, level: number): string => {
-    const title = format.normalized ? 'object' : '';
-
-    return stringifyStructSchema(schema.of, format, title, level, true);
+    return stringifyStructSchema(schema.of, format, '', level, true);
 };
 
 const stringifyModelSchema = (schema: ModelSchema, format: StringifyFormat, level: number): string => {

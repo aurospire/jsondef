@@ -1,4 +1,4 @@
-import { ArraySchema, BoundedAttributes, Schema } from "../Schema";
+import { ArraySchema, Schema, SizedAttributes } from "../Schema";
 import { SizedSchemaBuilder } from "./SizedSchemaBuilder";
 
 export class ArraySchemaBuilder<const Of extends Schema, const Optional extends boolean = false>
@@ -22,8 +22,7 @@ export class ArraySchemaBuilder<const Of extends Schema, const Optional extends 
 
     override required(): ArraySchemaBuilder<Of, false> { return super.required() as any; }
 
-    override bound(bounds: BoundedAttributes): ArraySchemaBuilder<Of, Optional> { return super.bound(bounds) as any; }
-
+    override size(size: SizedAttributes): ArraySchemaBuilder<Of, Optional> { return super.size(size) as any; }
 
     protected override clone() { return new ArraySchemaBuilder<Of, Optional>(this); }
 }

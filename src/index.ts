@@ -65,17 +65,34 @@ import { inspect } from 'util';
 import * as d from './helpers';
 
 const schema = d.model({
-    name: d.string({ max: 100 }),
-    grades: d.array(d.integer({ min: 0, max: 100 }), { exact: 5 })
+    a: d.any(),
+    b: d.null(),
+    c: d.boolean(),
+    d0: d.literal(true),
+    d1: d.literal(1),
+    d2: d.literal('A'),
+    d3: d.array(d.enum(['A', 'B', 1, 2, true, false])).size({ exact: 10 }),
+    e0: d.string(),
+    e1: d.date(),
+    e2: d.time(),
+    e3: d.datetime(),
+    e4: d.uuid(),
+    e5: d.email(),
+    e6: d.base64(),
+    e7: d.regex(/abc/i),
+    e8: d.string({ exact: 1, min: 1, max: 10, xmin: 0, xmax: 11 }),
+    e9: d.string({ min: 1, max: 10, xmin: 0, xmax: 11 }),
+    eA: d.string({ min: 1, max: 10, xmin: 0 }),
+    eB: d.string({ min: 1, xmin: 0 }),
+    eC: d.string({ min: 1, }),
+    eD: d.string({ max: 1, }),
+    eE: d.email({ max: 10 }),
+    eF: d.regex(/a/, { max: 10 }),
+    ff: d.group({
+        a: d.array(d.object({}), { max: 10 })
+    }).select('a')
 });
 
-const value = {
-    "name": "John Doe",
-    "grades": [85, 92, 78, 95, 88, 33]
-};
-
-console.log(d.stringify(schema, { normalized: true }, false));
+console.log(d.stringify(schema, { full: true }, true));
 console.log();
-console.log(d.stringify(schema, { normalized: false }, false));
-
-console.log(inspect(d.validate(value, schema), { depth: null, colors: true }));
+console.log(d.stringify(schema, { full: false }, true));

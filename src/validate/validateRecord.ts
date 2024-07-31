@@ -4,6 +4,7 @@ import { Context, ValidationResult } from "./Context";
 import { Issue } from "./Result";
 import { SchemaValidator } from "./SchemaValidator";
 import { validateBounds } from "./validateBounds";
+import { validateString } from "./validateString";
 
 export const validateRecord = (value: any, schema: RecordSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
@@ -21,19 +22,15 @@ export const validateRecord = (value: any, schema: RecordSchema, path: string[],
 
     let regex: RegExp | undefined;
 
-    if (schema.key) {
-        regex = schema.key instanceof RegExp ? schema.key : RegexString.toRegExp(schema.key);
-
-        if (!regex)
-            issues.push({ path, issue: 'invalid key filter' });
-    }
 
     entries.forEach(([itemKey, itemValue]) => {
         const itemPath = [...path, itemKey];
 
-        if (regex) {
-            if (!regex.test(itemKey))
-                issues.push({ path, issue: 'key does not match filter' });
+        if (schema.key) {
+            const keycheck = validateString(itemKey, schema.key, path, 'key');
+
+            if (keycheck !== true)
+                issues.push(...keycheck);
         }
 
         const valueCheck = validate(itemValue, schema.of, itemPath, context);

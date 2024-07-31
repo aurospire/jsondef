@@ -58,7 +58,7 @@ export type TupleAttributes = { of: Schema[]; rest?: ArraySchema; };
 export type TupleSchema = BaseSchema<'tuple'> & TupleAttributes;
 
 
-export type RecordAttributes = { of: Schema; key?: RegexString | RegExp; };
+export type RecordAttributes = { of: Schema; key?: StringSchema; };
 
 export type RecordSchema = BaseSchema<'record'> & SizedAttributes & RecordAttributes;
 

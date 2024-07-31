@@ -20,12 +20,12 @@ export abstract class SizedSchemaBuilder<const Kind extends string, const  Optio
     get max() { return this.#bounds.max; }
     get xmax() { return this.#bounds.xmax; }
 
-    bound(bounds: SizedAttributes): SizedSchemaBuilder<Kind, Optional> {
-        this.validateBounds(bounds);
+    size(size: SizedAttributes): SizedSchemaBuilder<Kind, Optional> {
+        this.validateBounds(size);
 
         const builder = this.clone();
 
-        builder.#bounds = { ...bounds };
+        builder.#bounds = { ...size };
 
         return builder;
     }
