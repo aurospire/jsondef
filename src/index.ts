@@ -64,7 +64,9 @@ const combine_files = async (split: boolean) => {
 import { inspect } from 'util';
 import * as d from './helpers';
 
-const schema = d.model({
+const schema = d.array(d.integer({min:-1, xmax:10}).describe('Hello')).describe('Goodbye')
+
+d.model({
     a: d.any(),
     b: d.null(),
     c: d.boolean(),
@@ -72,7 +74,7 @@ const schema = d.model({
     d1: d.literal(1),
     d2: d.literal('A'),
     d3: d.array(d.enum(['A', 'B', 1, 2, true, false])).size({ exact: 10 }),
-    e0: d.string(),
+    e0: d.string().describe('A string'),
     e1: d.date(),
     e2: d.time(),
     e3: d.datetime(),
@@ -93,6 +95,6 @@ const schema = d.model({
     z: d.group({
         a: d.array(d.object({}), { max: 10 })
     }).select('a')
-});
+}).describe('Is a cool model');
 
 console.log(d.stringify(schema));

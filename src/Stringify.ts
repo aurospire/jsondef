@@ -31,10 +31,16 @@ export const stringify = (
     schema: Schema,
     format: Partial<StringifyFormat> = {},
     condensed: boolean = false
-): string => stringifySchema(schema, condensed ? condensedFormat(format) : prettifyFormat(format));
+): string => {
+    const stringifyFormat = condensed ? condensedFormat(format) : prettifyFormat(format);
+
+    const description = schema.description ? stringifyDescription(schema.description, stringifyFormat) : '';
+
+    return description + stringifyFormat.newline + stringifySchema(schema, stringifyFormat);
+};
 
 // Main schema stringification function
-const stringifySchema = (schema: Schema, format: StringifyFormat, enclosed: boolean = false, level: number = 0): string => {
+const stringifySchema = (schema: Schema, format: StringifyFormat, level: number = 0, enclosed: boolean = false): string => {
     switch (schema.kind) {
         case 'null': return 'null';
         case 'any': return 'any';
@@ -59,7 +65,11 @@ const stringifySchema = (schema: Schema, format: StringifyFormat, enclosed: bool
 // Helper functions
 const joiner = (format: StringifyFormat) => ',' + format.spacing;
 
-const stringifyString = (value: string, format: StringifyFormat) => `'${JSON.stringify(value).slice(1, -1)}'`;
+const stringifyString = (value: string) => `'${JSON.stringify(value).slice(1, -1)}'`;
+
+const stringifyDescription = (value: string, format: StringifyFormat): string => {
+    return `/*${format.spacing}${value}${format.spacing}*/`;
+};
 
 // exact: =; min: > | >=, max; < | <=
 // (exact NUMBER) | (min NUMBER) | (max NUMBER) | (min NUMBER, max NUMBER)
@@ -91,7 +101,7 @@ const stringifyLiteralSchema = (schema: LiteralSchema, format: StringifyFormat):
         case 'boolean':
             return schema.of.toString();
         case 'string':
-            return stringifyString(schema.of, format);
+            return stringifyString(schema.of);
     }
 };
 
@@ -112,7 +122,7 @@ const stringifyStringSchema = (schema: StringSchema, format: StringifyFormat): s
 
 // SCHEMA[SIZE...]
 const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, level: number): string => {
-    const of = stringifySchema(schema.of, format, true, level);
+    const of = stringifySchema(schema.of, format, level, true);
 
     const bounds = stringifyBounds(schema, format);
 
@@ -123,7 +133,7 @@ const stringifyArraySchema = (schema: ArraySchema, format: StringifyFormat, leve
 const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, level: number): string => {
     const key = schema.key ? stringifyStringSchema(schema.key, format) : '';
 
-    const of = stringifySchema(schema.of, format, false, level);
+    const of = stringifySchema(schema.of, format, level, false);
 
     const bounds = stringifyBounds(schema, format);
 
@@ -136,7 +146,7 @@ const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, le
 
 // [SCHEMAS..., ...REST]
 const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, level: number): string => {
-    const schemas = schema.of.map(item => stringifySchema(item, format, false, level + 1));
+    const schemas = schema.of.map(item => stringifySchema(item, format, level + 1, false));
 
     const rest = schema.rest ? stringifyArraySchema(schema.rest, format, level) : undefined;
 
@@ -147,7 +157,7 @@ const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, leve
 };
 
 const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {
-    const items = schema.of.map(item => stringify(item, format));
+    const items = schema.of.map(item => stringifySchema(item, format, level, enclosed));
 
     const itemString = items.join(`${format.spacing}|${format.spacing}`);
 
@@ -163,11 +173,15 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, ti
     const lines: string[] = [title + open];
 
     for (const [key, value] of Object.entries(object)) {
-        const schema = stringifySchema(value, format, false, level + 1);
+        const schema = stringifySchema(value, format, level + 1, false);
 
-        const fixedKey = key.match(/[ \r\n]/) ? stringifyString(key, format) : key;
+        const fixedKey = key.match(/[ \r\n]/) ? stringifyString(key) : key;
 
-        lines.push(`${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : required}${format.spacing}${schema},`);
+        const description = value.description ? `${format.indent.repeat(level + 1)}${stringifyDescription(value.description, format)}` : '';
+
+        const property = `${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : required}${format.spacing}${schema},`;
+
+        lines.push(description ? [description, property].join(format.newline) : property);
     }
 
     if (lines.length > 1)
