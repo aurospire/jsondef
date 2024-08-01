@@ -88,11 +88,11 @@ const schema = d.model({
     eD: d.string({ max: 1, }),
     eE: d.email({ max: 10 }),
     eF: d.regex(/a/, { max: 10 }),
-    ff: d.group({
+    f: d.integer({min: 12}),
+    g: d.number({max: Math.PI}),
+    z: d.group({
         a: d.array(d.object({}), { max: 10 })
     }).select('a')
 });
 
-console.log(d.stringify(schema, { full: true }, true));
-console.log();
 console.log(d.stringify(schema));
