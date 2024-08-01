@@ -34,7 +34,7 @@ export const stringify = (
 ): string => {
     const stringifyFormat = condensed ? condensedFormat(format) : prettifyFormat(format);
 
-    return stringifyFormat.newline + stringifySchema(schema, stringifyFormat);
+    return stringifySchema(schema, stringifyFormat);
 };
 
 // Main schema stringification function

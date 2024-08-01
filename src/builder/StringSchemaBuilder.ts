@@ -1,4 +1,4 @@
-import { BoundedAttributes, StringAttributes, StringSchema, StringSchemaFormat } from "../Schema";
+import { BoundedAttributes, StringAttributes, StringSchema, StringFormat } from "../Schema";
 import { RegexString } from "../util/RegexString";
 import { SizedSchemaBuilder } from "./SizedSchemaBuilder";
 

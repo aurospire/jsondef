@@ -1,7 +1,7 @@
-import { StringSchema, StringSchemaFormat } from "../Schema";
+import { StringSchema, StringFormat } from "../Schema";
 import { RegexString } from "../util";
 import { ValidationResult } from "./Context";
-import { isStringFormat } from "../isStringFormat";
+import { isStringFormat } from "./StringFormat";
 import { Issue } from "./Result";
 import { validateBounds } from "./validateBounds";
 
@@ -145,7 +145,7 @@ const emailTester: StringTester = (value, path) => {
 };
 
 
-const stringTesters: Record<StringSchemaFormat, StringTester> = {
+const stringTesters: Record<StringFormat, StringTester> = {
     date: dateTester,
     time: timeTester,
     datetime: datetimeTester,

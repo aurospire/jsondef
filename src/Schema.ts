@@ -29,7 +29,7 @@ export type SizedAttributes = BoundedAttributes & {
     exact?: number;
 };
 
-export type StringSchemaFormat =
+export type StringFormat =
     | 'date'
     | 'time'
     | 'datetime'
@@ -38,7 +38,7 @@ export type StringSchemaFormat =
     | 'base64'
     ;
 
-export type StringAttributes = { of?: StringSchemaFormat | RegexString | RegExp; };
+export type StringAttributes = { of?: StringFormat | RegexString | RegExp; };
 
 export type StringSchema = BaseSchema<'string'> & SizedAttributes & StringAttributes;
 

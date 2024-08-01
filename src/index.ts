@@ -15,24 +15,8 @@ const combine_files = async (split: boolean) => {
 
     const files = [
         'Schema.ts',
-        'validate/Context.ts',
-        'validate/SchemaValidator.ts',
-        'validate/isObject.ts',
-        'validate/Result.ts',
-        'validate/validateAny.ts',
-        'validate/validateBounds.ts',
-        'validate/validateInteger.ts',
-        'validate/validateNumber.ts',
-        'validate/validateString.ts',
-        'validate/validateArray.ts',
-        'validate/validateTuple.ts',
-        'validate/validateRecord.ts',
-        'validate/validateUnion.ts',
-        'validate/validateObject.ts',
-        'validate/validateGroup.ts',
-        'validate/validateRef.ts',
-        'validate/validateSchema.ts',
-        'validate/validate.ts',
+        'Infer.ts',
+        'Stringify.ts',
     ];
 
     const log = (...data: string[]) => {
@@ -59,3 +43,5 @@ const combine_files = async (split: boolean) => {
 
     nodefs.writeFileSync(output, result);
 };
+
+combine_files(true);
