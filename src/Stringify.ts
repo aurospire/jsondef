@@ -164,24 +164,26 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, ti
     const required = ':';
     const optional = optionals ? '?:' : ':';
 
-    const lines: string[] = [title + open];
+    const header = title + open;
 
-    for (const [key, value] of Object.entries(object)) {
+    const props = Object.entries(object).map(([key, value]) => {
         const schema = stringifySchema(value, format, level + 1, false);
 
         const fixedKey = key.match(/[ \r\n]/) ? stringifyString(key) : key;
 
-        const property = `${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : required}${format.spacing}${schema},`;
+        const property = `${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : required}${format.spacing}${schema}`;
 
-        lines.push(property);
-    }
+        return property;
+    });
 
-    if (lines.length > 1)
-        lines.push(`${format.indent.repeat(level)}${close}`);
-    else
-        lines[0] += close;
+    if (props.length === 0)
+        return header + close;
 
-    return lines.join(format.newline);
+    return [
+        header,
+        props.join(',' + format.newline),
+        format.indent.repeat(level) + close
+    ].join(format.newline);
 };
 
 const stringifyObjectSchema = (schema: ObjectSchema, format: StringifyFormat, level: number): string => {
