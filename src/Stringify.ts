@@ -10,14 +10,12 @@ export type StringifyFormat = {
     indent: string;
     newline: string;
     spacing: string;
-    comments: boolean;
 };
 
 const condensedFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
     indent: '',
     spacing: '',
     newline: '',
-    comments: false,
     ...format
 });
 
@@ -25,7 +23,6 @@ const prettifyFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
     indent: '  ',
     spacing: ' ',
     newline: '\n',
-    comments: false,
     ...format
 });
 
@@ -37,9 +34,7 @@ export const stringify = (
 ): string => {
     const stringifyFormat = condensed ? condensedFormat(format) : prettifyFormat(format);
 
-    const description = (format.comments && schema.description) ? stringifyDescription(schema.description, stringifyFormat) : '';
-
-    return description + stringifyFormat.newline + stringifySchema(schema, stringifyFormat);
+    return stringifyFormat.newline + stringifySchema(schema, stringifyFormat);
 };
 
 // Main schema stringification function
@@ -69,10 +64,6 @@ const stringifySchema = (schema: Schema, format: StringifyFormat, level: number 
 const joiner = (format: StringifyFormat) => ',' + format.spacing;
 
 const stringifyString = (value: string) => `'${JSON.stringify(value).slice(1, -1)}'`;
-
-const stringifyDescription = (value: string, format: StringifyFormat): string => {
-    return `/*${format.spacing}${value}${format.spacing}*/`;
-};
 
 // exact: =; min: > | >=, max; < | <=
 // (exact NUMBER) | (min NUMBER) | (max NUMBER) | (min NUMBER, max NUMBER)
@@ -180,13 +171,9 @@ const stringifyStructSchema = (object: SchemaObject, format: StringifyFormat, ti
 
         const fixedKey = key.match(/[ \r\n]/) ? stringifyString(key) : key;
 
-        const description = (format.comments && value.description)
-            ? `${format.indent.repeat(level + 1)}${stringifyDescription(value.description, format)}`
-            : '';
-
         const property = `${format.indent.repeat(level + 1)}${fixedKey}${value.isOptional ? optional : required}${format.spacing}${schema},`;
 
-        lines.push(description ? [description, property].join(format.newline) : property);
+        lines.push(property);
     }
 
     if (lines.length > 1)
@@ -214,13 +201,3 @@ const stringifyGroupSchema = (schema: GroupSchema, format: StringifyFormat, leve
 
     return stringifyStructSchema(schema.of, format, title, level, false);
 };
-// SOME NOTES
-// 1. the defined subtypes of a string are a subset of json schema's format. they are not implementation dependent, and they use the subtype as the type name
-// - ex: { kind: 'string', of: /ABC/ } => /ABC/, { kind: 'string', of: 'date' } => date
-// 2. the custom key of a record can only be a string type - not a literal union (just use an object/model if you need literal keys)
-// 3. LOCAL scope is set by ObjectSchema or ModelSchema
-// 4. ROOT scope is set by a root level ObjectSchema or ModelSchema at any level
-// 5. GLOBAL namespace is set by a GroupSchema, each of the properties is a referable identifier
-// 6. ThisSchema refers to the LOCAL scope (if exists) for recursion
-// 7. RootSchema refers to the ROOT scope (if exists) for recursion
-// 8. RefSchema refers to an identifier in the GLOBAL namespace (if exists)
