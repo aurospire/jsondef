@@ -1,0 +1,124 @@
+grammar Jsondef = SchemaUnion Eof;
+
+rule SchemaUnion = [Or] Schema { Or Schema };
+rule Schema = 
+    | NullSchema
+    | AnySchema
+    | BooleanSchema
+    | ThisSchema
+    | RootSchema    
+    | LiteralSchema
+    | IntegerSchema
+    | NumberSchema
+    | StringSchema
+    | ArraySchema
+    | TupleSchema
+    | RecordSchema
+    | ObjectSchema
+    | ModelSchema
+    | SelectSchema
+    | GroupSchema
+    | RefSchema;
+
+rule NullSchema = NullToken [Open Close];
+rule AnySchema = AnyToken [Open Close];
+rule BooleanSchema = BooleanToken [Open Close];
+rule ThisSchema = ThisToken [Open Close];
+rule RootSchema = RootToken [Open Close];
+
+rule LiteralSchema = Boolean | String | Number;
+rule IntegerSchema = IntegerToken [Open [IntegerBounds] Close];
+rule NumberSchema = NumberToken [Open [RealBounds] Close];
+
+rule StringSchema = StringKind [Open [Size] Close];
+
+rule ArraySchema = (Schema | Open SchemaUnion Close) ArrayOpen [Size] ArrayClose;
+rule TupleSchema = ArrayOpen [SchemaUnion {Comma SchemaUnion} [Elipses ArraySchema] [Comma]] ArrayClose;
+rule RecordSchema = RecordToken AngleOpen [StringSchema Comma] SchemaUnion AngleClose [Open [Size] Close];
+
+rule ObjectSchema = ObjectOpen ObjectItem { Comma ObjectItem } [Comma] ObjectClose;
+rule ModelSchema = ModelToken ObjectSchema;
+rule GroupSchema = GroupToken ObjectOpen GroupItem (Comma GroupItem) [Comma] ObjectClose;
+rule SelectSchema = SelectToken (Identifier | String) OfToken GroupSchema;
+
+rule ObjectItem = (Identifier | String) (RequiredIs | OptionalIs) SchemaUnion;
+rule GroupItem = (Identifier | String) Required SchemaUnion;
+
+rule Min = GreaterThan | GreaterThanOrEqual;
+rule Max = LessThan | LessThanOrEqual;
+
+rule IntegerBounds = Min Integer Comma Max Integer | Max Integer Comma Min Integer | Min Integer | Max Integer;
+rule RealBounds = Min Real Comma Max Real | Max Real Comma Min Real | Min Real | Max Real;
+rule Size = Exactly Number | Min Number Comma Max Number | Max Number Comma Min Number | Min Number | Max Number;
+
+rule StringKind = StringToken | DatetimeToken | DateToken | TimeToken | UuidToken | Base64Token | EmailToken | Regex;
+
+rule Boolean = TrueToken | FalseToken;
+
+token NullToken = 'null';
+token AnyToken = 'any';
+token BooleanToken = 'boolean';
+token ThisToken = 'this';
+token RootToken = 'root';
+token IntegerToken = 'integer';
+token NumberToken = 'number';
+token RecordToken = 'record';
+token ModelToken = 'model';
+token GroupToken = 'group';
+token SelectToken = 'select';
+token OfToken = 'of';
+token StringToken = 'string';
+token DatetimeToken = 'datetime';
+token DateToken = 'date';
+token TimeToken = 'time';
+token UuidToken = 'uuid';
+token Base64Token = 'base64';
+token EmailToken = 'email';
+
+token RequiredIs = ':';
+token OptionalIs = '?:';
+
+token GreaterThanOrEqual '>=';
+token LessThanOrEqual = '<=';
+
+token GenericOpen | LessThan = '<';
+
+token GenericClose | GreaterThan = '>';
+
+token TrueToken = 'true';
+token FalseToken = 'false';
+
+
+token Or = '|';
+token Exactly = '=';
+token Open = '(';
+token Close = ')';
+token ArrayOpen = '[';
+token ArrayClose = ']';
+token ObjectOpen = '{';
+token ObjectClose = '}';
+token Comma = ',';
+token Rest = '...'
+
+token Identifier = ('_' | Letter) {'_' | LetterOrDigit};
+token Number = Digit+;
+token Integer = ['-'] Digit+;
+token Real = Integer ['.' Number] ['e'|'E' ['+'|'-'] Number];
+token String = '\'' {Char | Escape} '\'';
+token Escape = '\\' ('x' HexDigit HexDigit | 'n' | 'r' | 't' | '\\' | '\'' | '"' | '0');
+token Regex = '/' RegexBody '/' {RegexFlag};
+token RegexBody = Char | RegexEscape {Char | RegexEscape};
+token RegexEscape = '\\' Any;
+
+token Eof = '\0';
+
+// Character Sets Definitions
+charset RegexFlag = 'i' + 'g' + 'm' + 's' + 'u' + 'y';
+charset Upper = 'A' to 'Z';
+charset Lower = 'a' to 'z';
+charset Letter = Upper + Lower;
+charset LetterOrDigit = Letter + Digit;
+charset Digit = '0' to '9';
+charset HexDigit = Digit + 'A' to 'F' + 'a' to 'f';
+charset Any = ' ' to '\x7F';
+charset Char = Any + '\t' - '\\';
