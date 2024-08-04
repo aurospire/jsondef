@@ -57,6 +57,10 @@ const unionSchema = <const Of extends UnionSchema['of']>(of: Of) => new UnionSch
 const refSchema = <const Of extends RefSchema['of']>(of: Of) => new RefSchemaBuilder<Of>(of);
 const groupSchema = <const Of extends GroupSchema['of']>(of: Of) => new GroupSchemaBuilder(of);
 
+const summary = () => {
+    // TODO: Return a brief summary how jsondef works
+}
+
 // import from this file as 'd' to use these methods
 // example: d.null();
 export {
@@ -87,5 +91,6 @@ export {
     refSchema as ref,
     InferSchema as infer,
     validate,
-    stringify
+    stringify,
+    summary
 };
