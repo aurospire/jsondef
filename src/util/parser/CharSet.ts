@@ -1,70 +1,75 @@
-type CharRange = { lower: string; upper: string; result: boolean; };
+export type CharRange = { min: string; max: string; };
 
 export class CharSet {
-    #ranges: CharRange[] = [];
+    #trues: CharRange[] = [];
+    #falses: CharRange[] = [];
 
     constructor() { }
 
 
-    and(set: string | { lower: string; upper: string; } | CharSet): CharSet {
-        let ranges: CharRange[];
-
-        if (typeof set === 'string')
-            ranges = [{ lower: set, upper: set, result: true }];
-        else if (set instanceof CharSet)
-            ranges = set.#ranges;
-
-        else
-            ranges = [{ ...set, result: true }];
-
-
+    #union(trues: CharRange[], falses: CharRange[]): CharSet {
         const charset = new CharSet();
 
-        charset.#ranges = [...this.#ranges, ...ranges];
+        charset.#trues = [...this.#trues, ...trues];
+
+        charset.#falses = [...this.#falses, ...falses];
 
         return charset;
     }
 
-    andNot(set: string | { lower: string; upper: string; } | CharSet): CharSet {
-        let ranges: CharRange[];
-
-        if (typeof set === 'string')
-            ranges = [{ lower: set, upper: set, result: false }];
-        else if (set instanceof CharSet)
-            ranges = set.#ranges.map(range => ({ lower: range.lower, upper: range.upper, result: !range.result }));
-
+    and(set: string | CharRange | CharSet): CharSet {
+        if (set instanceof CharSet)
+            return this.#union(set.#trues, set.#falses);
+        else if (typeof set === 'string')
+            return this.#union([{ min: set, max: set }], []);
         else
-            ranges = [{ ...set, result: false }];
+            return this.#union([set], []);
+    }
 
-
-        const charset = new CharSet();
-
-        charset.#ranges = [...this.#ranges, ...ranges];
-
-        return charset;
+    andNot(set: string | CharRange | CharSet): CharSet {
+        if (set instanceof CharSet)
+            return this.#union(set.#falses, set.#trues);
+        else if (typeof set === 'string')
+            return this.#union([], [{ min: set, max: set }]);
+        else
+            return this.#union([], [set]);
     }
 
     has(value: string): boolean {
-        for (const range of this.#ranges)
-            if ((value >= range.lower && value <= range.upper) === range.result)
-                return true;
+        let result = false;
 
-        return false;
+        for (const range of this.#trues) {
+            if (value >= range.min && value <= range.max) {
+                result = true;
+                break;
+            }
+        }
+
+        if (result) {
+            for (const range of this.#falses) {
+                if (value >= range.min && value <= range.max) {
+                    result = false;
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
 
     static #empty = new CharSet();
 
     static char(value: string): CharSet { return this.#empty.and(value); }
 
-    static range(value: { lower: string; upper: string; }): CharSet { return this.#empty.and(value); }
+    static range(value: { min: string; max: string; }): CharSet { return this.#empty.and(value); }
 
 
-    static #upper = this.range({ lower: 'A', upper: 'Z' });
-    static #lower = this.range({ lower: 'a', upper: 'z' });
+    static #upper = this.range({ min: 'A', max: 'Z' });
+    static #lower = this.range({ min: 'a', max: 'z' });
     static #letter = this.#upper.and(this.#lower);
-    static #digit = this.range({ lower: '0', upper: '9' });
-    static #binary = this.range({ lower: '0', upper: '1' });
-    static #hex = this.#digit.and({ lower: 'A', upper: 'F' }).and({ lower: 'a', upper: 'f' });
+    static #digit = this.range({ min: '0', max: '9' });
+    static #binary = this.range({ min: '0', max: '1' });
+    static #hex = this.#digit.and({ min: 'A', max: 'F' }).and({ min: 'a', max: 'f' });
     static #letterOrDigit = this.#letter.and(this.#digit);
     static #space = this.char(' ').and('\t');
     static #newline = this.char('\n').and('\r');
@@ -79,7 +84,7 @@ export class CharSet {
     static get Hex() { return this.#hex; }
     static get LetterOrDigit() { return this.#letterOrDigit; }
     static get Space() { return this.#space; }
-    static get NewLine() { return this.#space; }
+    static get NewLine() { return this.#newline; }
     static get Null() { return this.#null; }
     static get Ending() { return this.#ending; }
 }
