@@ -1,162 +1,213 @@
-import { Scanner, scanner } from '@/util/parser/Scanner';
+import { ArrayScanner, StringScanner, scanner } from '@/util/parser/Scanner';
 
-describe('Scanner', () => {
-    describe('String Scanner', () => {
-        let strScanner: Scanner<string, string>;
+describe('ArrayScanner', () => {
+    it('should initialize correctly with empty array', () => {
+        const s = new ArrayScanner([]);
+        expect(s.isEnd).toBe(true);
+        expect(s.position).toBe(0);
+        expect(s.peek()).toBe(undefined);
+    });
 
-        beforeEach(() => {
-            strScanner = scanner('Hello, World!', '');
-        });
+    it('should initialize correctly with non-empty array', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        expect(s.isEnd).toBe(false);
+        expect(s.position).toBe(0);
+        expect(s.peek()).toBe(1);
+    });
 
-        test('constructor and initial state', () => {
-            expect(strScanner.isEnd).toBe(false);
-            expect(strScanner.start).toBe(0);
-            expect(strScanner.position).toBe(0);
-        });
+    it('should peek correctly', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        expect(s.peek()).toBe(1);
+        expect(s.peek(1)).toBe(2);
+        expect(s.peek(2)).toBe(3);
+        expect(s.peek(3)).toBe(undefined);
+        expect(s.peek(4)).toBe(undefined);
+    });
 
-        test('peek', () => {
-            expect(strScanner.peek()).toBe('H');
-            expect(strScanner.peek(1)).toBe('e');
-            expect(strScanner.peek(100)).toBe('');
-        });
+    it('should consume correctly', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.consume();
+        expect(s.position).toBe(1);
+        expect(s.peek()).toBe(2);
+        s.consume(2);
+        expect(s.position).toBe(3);
+        expect(s.peek()).toBe(undefined);
+    });
 
-        test('consume', () => {
-            strScanner.consume(2);
-            expect(strScanner.position).toBe(2);
-            expect(strScanner.peek()).toBe('l');
-        });
+    it('should clamp consume to array length', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.consume(5);
+        expect(s.position).toBe(3);
+        expect(s.isEnd).toBe(true);
+    });
 
-        test('mark and commit', () => {
-            strScanner.mark();
-            strScanner.consume(5);
-            expect(strScanner.position).toBe(5);
-            strScanner.commit();
-            expect(strScanner.position).toBe(5);
-            expect(strScanner.start).toBe(0);
-        });
+    it('should mark and rollback correctly', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.consume();
+        s.mark();
+        s.consume(2);
+        expect(s.position).toBe(3);
+        s.rollback();
+        expect(s.position).toBe(1);
+        s.rollback();
+        expect(s.position).toBe(0);
+    });
 
-        test('mark and rollback', () => {
-            strScanner.mark();
-            strScanner.consume(5);
-            expect(strScanner.position).toBe(5);
-            strScanner.rollback();
-            expect(strScanner.position).toBe(0);
-        });
+    it('should rollback to 0 when no marks', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.consume(2);
+        s.rollback();
+        expect(s.position).toBe(0);
+        s.rollback();
+        expect(s.position).toBe(0);
+    });
 
-        test('extract', () => {
-            strScanner.consume(5);
-            expect(strScanner.extract()).toBe('Hello');
-        });
+    it('should commit correctly', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.mark();
+        s.consume();
+        s.commit();
+        expect(s.position).toBe(1);
+        s.commit();
+        expect(s.position).toBe(1);
+        s.rollback();
+        expect(s.position).toBe(0);
+    });
 
-        test('is', () => {
-            expect(strScanner.is('H')).toBe(true);
-            expect(strScanner.is('h')).toBe(false);
-            expect(strScanner.is('e', 1)).toBe(true);
-        });
-
-        test('isIn', () => {
-            const vowels = new Set(['a', 'e', 'i', 'o', 'u']);
-            expect(strScanner.isIn(vowels)).toBe(false);
-            expect(strScanner.isIn(vowels, 1)).toBe(true);
-        });
-
-        test('isEnd', () => {
-            expect(strScanner.isEnd).toBe(false);
-            strScanner.consume(13);
-            expect(strScanner.isEnd).toBe(true);
+    it('should extract correctly', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        s.mark();
+        s.consume(2);
+        const piece = s.extract(1);
+        expect(piece).toEqual({
+            id: 1,
+            mark: { position: 0 },
+            value: [1, 2],
         });
     });
 
-    describe('Array Scanner', () => {
-        let arrScanner: Scanner<number, number[]>;
+    it('should check if current value is in a set', () => {
+        const s = new ArrayScanner([1, 2, 3]);
+        const set = new Set([1, 3]);
+        expect(s.isIn(set)).toBe(true);
+        s.consume();
+        expect(s.isIn(set)).toBe(false);
+        s.consume(2);
+        expect(s.isIn(set)).toBe(false);
+    });
+});
 
-        beforeEach(() => {
-            arrScanner = scanner([1, 2, 3, 4, 5], NaN);
-        });
+describe('StringScanner', () => {
+    it('should initialize correctly with empty string', () => {
+        const s = new StringScanner('');
+        expect(s.isEnd).toBe(true);
+        expect(s.position).toBe(0);
+        expect(s.peek()).toBe('\0');
+    });
 
-        test('constructor and initial state', () => {
-            expect(arrScanner.isEnd).toBe(false);
-            expect(arrScanner.start).toBe(0);
-            expect(arrScanner.position).toBe(0);
-        });
+    it('should initialize correctly with non-empty string', () => {
+        const s = new StringScanner('abc');
+        expect(s.isEnd).toBe(false);
+        expect(s.position).toBe(0);
+        expect(s.peek()).toBe('a');
+    });
 
-        test('peek', () => {
-            expect(arrScanner.peek()).toBe(1);
-            expect(arrScanner.peek(1)).toBe(2);
-            expect(arrScanner.peek(100)).toBeNaN();
-        });
+    it('should peek correctly', () => {
+        const s = new StringScanner('abc');
+        expect(s.peek()).toBe('a');
+        expect(s.peek(1)).toBe('b');
+        expect(s.peek(2)).toBe('c');
+        expect(s.peek(3)).toBe('\0');
+        expect(s.peek(4)).toBe('\0');
+    });
 
-        test('consume', () => {
-            arrScanner.consume(2);
-            expect(arrScanner.position).toBe(2);
-            expect(arrScanner.peek()).toBe(3);
-        });
+    it('should consume correctly', () => {
+        const s = new StringScanner('abc');
+        s.consume();
+        expect(s.position).toBe(1);
+        s.consume(2);
+        expect(s.position).toBe(3);
+    });
 
-        test('mark and commit', () => {
-            arrScanner.mark();
-            arrScanner.consume(3);
-            expect(arrScanner.position).toBe(3);
-            arrScanner.commit();
-            expect(arrScanner.position).toBe(3);
-            expect(arrScanner.start).toBe(0);
-        });
+    it('should clamp consume to string length', () => {
+        const s = new StringScanner('abc');
+        s.consume(5);
+        expect(s.position).toBe(3);
+        expect(s.isEnd).toBe(true);
+    });
 
-        test('mark and rollback', () => {
-            arrScanner.mark();
-            arrScanner.consume(3);
-            expect(arrScanner.position).toBe(3);
-            arrScanner.rollback();
-            expect(arrScanner.position).toBe(0);
-        });
+    it('should mark and rollback correctly', () => {
+        const s = new StringScanner('abc');
+        s.consume();
+        s.mark();
+        s.consume(2);
+        expect(s.position).toBe(3);
+        s.rollback();
+        expect(s.position).toBe(1);
+    });
 
-        test('extract', () => {
-            arrScanner.consume(3);
-            expect(arrScanner.extract()).toEqual([1, 2, 3]);
-        });
+    it('should rollback to 0 when no marks', () => {
+        const s = new StringScanner('abc');
+        s.consume(2);
+        s.rollback();
+        expect(s.position).toBe(0);
+    });
 
-        test('is', () => {
-            expect(arrScanner.is(1)).toBe(true);
-            expect(arrScanner.is(2)).toBe(false);
-            expect(arrScanner.is(2, 1)).toBe(true);
-        });
+    it('should commit correctly', () => {
+        const s = new StringScanner('abc');
+        s.mark();
+        s.consume();
+        s.commit();
+        expect(s.position).toBe(1);
+        s.rollback();
+        expect(s.position).toBe(0);
+    });
 
-        test('isIn', () => {
-            const oddNumbers = new Set([1, 3, 5]);
-            expect(arrScanner.isIn(oddNumbers)).toBe(true);
-            expect(arrScanner.isIn(oddNumbers, 1)).toBe(false);
-        });
-
-        test('isEnd', () => {
-            expect(arrScanner.isEnd).toBe(false);
-            arrScanner.consume(5);
-            expect(arrScanner.isEnd).toBe(true);
-            expect(arrScanner.peek()).toBeNaN();
+    it('should extract correctly', () => {
+        const s = new StringScanner('abc');
+        s.mark();
+        s.consume(2);
+        const piece = s.extract(1);
+        expect(piece).toEqual({
+            id: 1,
+            mark: { position: 0, line: 0, column: 0 },
+            value: 'ab',
         });
     });
 
-    describe('scanner helper function', () => {
-        test('string scanner without end character', () => {
-            const s = scanner('test');
-            expect(s.peek()).toBe('t');
-            expect(s.peek(100)).toBe(undefined);
-        });
+    it('should handle line and column correctly', () => {
+        const s = new StringScanner('a\nbc\r\nc');
+        expect(s.getMark()).toEqual({ position: 0, line: 0, column: 0 });
+        s.consume();
+        expect(s.getMark()).toEqual({ position: 1, line: 0, column: 1 });
+        s.consume();
+        expect(s.getMark()).toEqual({ position: 2, line: 1, column: 0 });
+        s.consume();
+        expect(s.getMark()).toEqual({ position: 3, line: 1, column: 1 });
+        s.consume();
+        expect(s.getMark()).toEqual({ position: 4, line: 1, column: 2 });
+        s.consume(2);
+        expect(s.getMark()).toEqual({ position: 6, line: 2, column: 0 });
+        s.consume();
+        expect(s.getMark()).toEqual({ position: 7, line: 2, column: 1 });
+        expect(s.isEnd).toBe(true);
+    });
 
-        test('string scanner with end character', () => {
-            const s = scanner('test', '');
-            expect(s.peek()).toBe('t');
-            expect(s.peek(100)).toBe('');
-        });
+    it('should handle complex line and column scenarios', () => {
+        const s = new StringScanner(`a\n\r\n\rb\r\n\n`);
+        s.consume(8);
+        expect(s.getMark()).toEqual({ position: 8, line: 4, column: 0 });
+    });
+});
 
-        test('array scanner without end value', () => {
-            const s = scanner([1, 2, 3]);
-            expect(s.peek()).toBe(1);
-            expect(s.peek(100)).toBe(undefined);
-        });
+describe('scanner factory function', () => {
+    it('should create ArrayScanner for arrays', () => {
+        const s = scanner([1, 2, 3]);
+        expect(s).toBeInstanceOf(ArrayScanner);
+    });
 
-        test('array scanner with end value', () => {
-            const s = scanner([1, 2, 3], 0);
-            expect(s.peek()).toBe(1);
-            expect(s.peek(100)).toBe(0);
-        });
+    it('should create StringScanner for strings', () => {
+        const s = scanner('abc');
+        expect(s).toBeInstanceOf(StringScanner);
     });
 });

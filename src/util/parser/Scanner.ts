@@ -4,80 +4,146 @@ export interface Indexable<T, S extends Indexable<T, S>> {
     [index: number]: T | undefined;
 }
 
-export class Scanner<T, S extends Indexable<T, S>> {
-    #data: S;
-    #eof: T;
-    #marks: number[];
+export type Mark = { position: number; };
 
-    constructor(data: S, end: T) {
+export type Piece<S, M extends Mark> = {
+    id: number;
+    mark: M;
+    value: S;
+};
+
+export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M extends Mark = Mark> {
+    #data: S;
+    #marks: M[];
+
+    constructor(data: S) {
         this.#data = data;
-        this.#eof = end;
-        this.#marks = [0];
+        this.#marks = [this.initialMark()];
     }
+
+    protected abstract get ending(): P;
+
+    protected abstract initialMark(): M;
+
+    protected abstract onConsume(data: S, mark: M, count: number): void;
+
+    protected get<K extends keyof M>(key: K): M[K] { return this.#marks.at(-1)![key]; }
 
     get isEnd(): boolean {
         return this.position >= this.#data.length;
     }
 
-    get start(): number {
-        return this.#marks[this.#marks.length - 2] ?? 0;
-    }
-
     get position(): number {
-        return this.#marks[this.#marks.length - 1];
+        return this.#marks.at(-1)!.position;
     }
 
-    set #position(value: number) {
-        this.#marks[this.#marks.length - 1] = Math.min(value, this.#data.length);
-    }
-
-    peek(offset: number = 0): T {
-        return this.#data[this.position + offset] ?? this.#eof;
+    peek(offset: number = 0): P {
+        return this.#data[this.position + offset] ?? this.ending;
     }
 
     consume(count: number = 1) {
-        if (count > 0) {
-            this.#position = this.position + count;
-        }
+        const mark = this.#marks.at(-1)!;
+
+        // Clamp count
+        count = (mark.position + count > this.#data.length) ? this.#data.length - mark.position : count;
+
+        if (count > 0)
+            this.onConsume(this.#data, mark, count);
     }
 
 
+    getMark(offset: number = 0): M {
+        const result = this.#marks.at(-1 - offset);
+
+        return result ? { ...result } : this.initialMark();
+    }
+
     mark() {
-        this.#marks.push(this.position);
+        this.#marks.push(this.getMark());
     }
 
     commit() {
         if (this.#marks.length > 1) {
-            const current = this.#marks.pop()!;
-            this.#position = current;
+            const last = this.#marks.pop()!;
+
+            this.#marks[this.#marks.length - 1] = last;
         }
     }
 
     rollback() {
         if (this.#marks.length === 1)
-            this.#position = 0;
-
+            this.#marks = [this.initialMark()];
         else
             this.#marks.pop();
     }
 
-    extract(): S {
-        return this.#data.slice(this.start, this.position);
-    }
+    extract(id: number): Piece<S, M> {
+        const start = this.#marks.at(-2)?.position ?? 0;
 
+        return {
+            id,
+            mark: this.getMark(1),
+            value: this.#data.slice(start, this.position)
+        };
+    }
 
     is(value: T, offset: number = 0): boolean { return this.peek(offset) === value; }
 
-    isIn(set: { has: (value: T) => boolean; }, offset: number = 0): boolean { return set.has(this.peek(offset)); }
+    // Should work, even if P isn't T
+    isIn(set: { has: (value: T) => boolean; }, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
 }
 
-// Helper function overloads
-export function scanner(data: string): Scanner<string | undefined, string>;
-export function scanner(data: string, end: string): Scanner<string, string>;
+export class ArrayScanner<T> extends Scanner<T | undefined, T, Array<T>> {
+    constructor(items: Array<T>) { super(items); }
 
-export function scanner<T>(data: T[]): Scanner<T | undefined, (T | undefined)[]>;
-export function scanner<T>(data: T[], ending: T): Scanner<T, T[]>;
+    protected override get ending() { return undefined; }
 
-export function scanner<T, S extends Indexable<any, S>>(data: S, end?: T): Scanner<any, S> {
-    return (end !== undefined) ? new Scanner(data, end) : new Scanner(data, undefined);
+    protected override initialMark(): Mark { return { position: 0 }; }
+
+    protected override onConsume(data: Array<T>, mark: Mark, count: number): void { mark.position += count; }
+};
+
+
+export type StringMark = Mark & { line: number, column: number; };
+
+export class StringScanner extends Scanner<string, string, string, StringMark> {
+
+    constructor(value: string) { super(value); }
+
+    protected get line() { return this.get('line'); }
+
+    protected get column() { return this.get('column'); }
+
+    protected override get ending(): string { return '\0'; }
+
+    protected override initialMark(): StringMark { return { position: 0, line: 0, column: 0 }; }
+
+    protected override onConsume(data: string, mark: StringMark, count: number): void {
+        let { position, line, column } = mark;
+
+        for (let i = 0; i < count; i++) {
+            const current = data[position++];
+
+            const newline = current === '\n' || (current === '\r' && data[position] !== '\n');
+
+            if (newline) {
+                line++;
+                column = 0;
+            }
+            else {
+                column++;
+            }
+        }
+
+        mark.position = position;
+        mark.line = line;
+        mark.column = column;
+    }
 }
+
+
+type ScannerType<S extends string | unknown[]> = S extends Array<infer T> ? ArrayScanner<T> : StringScanner;
+
+export const scanner = <S extends string | unknown[]>(data: S): ScannerType<S> => {
+    return (typeof data === 'string' ? new StringScanner(data) : new ArrayScanner(data)) as ScannerType<S>;
+};
