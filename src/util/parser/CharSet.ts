@@ -44,7 +44,7 @@ export class CharSet {
         return charset;
     }
 
-    includes(value: string) {
+    has(value: string): boolean {
         for (const range of this.#ranges)
             if ((value >= range.lower && value <= range.upper) === range.result)
                 return true;

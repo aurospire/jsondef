@@ -1,11 +1,17 @@
-import { CharSet } from './CharSet';
+export interface Indexable<T, S extends Indexable<T, S>> {
+    length: number;
+    slice(start?: number, end?: number): S;
+    [index: number]: T | undefined;
+}
 
-export class Scanner {
-    #data: string;
+export class Scanner<T, S extends Indexable<T, S>> {
+    #data: S;
+    #eof: T;
     #marks: number[];
 
-    constructor(data: string) {
+    constructor(data: S, end: T) {
         this.#data = data;
+        this.#eof = end;
         this.#marks = [0];
     }
 
@@ -25,8 +31,8 @@ export class Scanner {
         this.#marks[this.#marks.length - 1] = Math.min(value, this.#data.length);
     }
 
-    peek(offset: number = 0): string {
-        return this.#data[this.position + offset] ?? '\0';
+    peek(offset: number = 0): T {
+        return this.#data[this.position + offset] ?? this.#eof;
     }
 
     consume(count: number = 1) {
@@ -55,12 +61,23 @@ export class Scanner {
             this.#marks.pop();
     }
 
-    extract(): string {
+    extract(): S {
         return this.#data.slice(this.start, this.position);
     }
 
 
-    is(value: string, offset: number = 0): boolean { return this.peek(offset) === value; }
+    is(value: T, offset: number = 0): boolean { return this.peek(offset) === value; }
 
-    isIn(set: CharSet, offset: number = 0): boolean { return set.includes(this.peek(offset)); }
+    isIn(set: { has: (value: T) => boolean; }, offset: number = 0): boolean { return set.has(this.peek(offset)); }
+}
+
+// Helper function overloads
+export function scanner(data: string): Scanner<string | undefined, string>;
+export function scanner(data: string, end: string): Scanner<string, string>;
+
+export function scanner<T>(data: T[]): Scanner<T | undefined, (T | undefined)[]>;
+export function scanner<T>(data: T[], ending: T): Scanner<T, T[]>;
+
+export function scanner<T, S extends Indexable<any, S>>(data: S, end?: T): Scanner<any, S> {
+    return (end !== undefined) ? new Scanner(data, end) : new Scanner(data, undefined);
 }
