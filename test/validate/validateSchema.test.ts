@@ -617,7 +617,7 @@ describe('Schema Validation', () => {
             });
 
             it('should fail for tuples with incorrect length', () => {
-                validateShow(schema, false, [
+                validate(schema, false, [
                     ['too short', 42],
                     ['too long', 42, true, 'extra'],
                 ]);
@@ -732,7 +732,7 @@ describe('Schema Validation', () => {
             const schema: RecordSchema = {
                 kind: 'record',
                 of: { kind: 'string' },
-                key: '/^[a-z]+$/'
+                key: { kind: 'string', of: '/^[a-z]+$/' }
             };
 
             it('should pass for records with valid keys', () => {
@@ -1597,7 +1597,7 @@ describe('Schema Validation', () => {
                     name: { kind: 'string' }
                 }
             };
-            validateShow(schema, false, [{ self: { name: 'John' }, name: 'John' }]);
+            validate(schema, false, [{ self: { name: 'John' }, name: 'John' }]);
         });
     });
 
@@ -1650,7 +1650,7 @@ describe('Schema Validation', () => {
                     name: { kind: 'string' }
                 }
             };
-            validateShow(schema, false, [{ root: { name: 'John' }, name: 'John' }]);
+            validate(schema, false, [{ root: { name: 'John' }, name: 'John' }]);
         });
     });
 
