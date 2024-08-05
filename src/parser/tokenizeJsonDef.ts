@@ -1,7 +1,7 @@
 import { CharSet, makeScanner, StringScanner } from "../util/parser";
 import { JsonDefTypes } from "./JsonDefTypes";
 
-const anySet = CharSet.range({ min: ' ', max: '\x7F' });
+const anySet = CharSet.range({ min: ' ', max: '\x7E' });
 const charSet = anySet.and('\t').andNot('\'\\');
 const charEscapeSet = CharSet.chars('nrt\\\'"0');
 const regexCharSet = anySet.and('\t').andNot('/\\');
@@ -140,6 +140,11 @@ export function* tokenizeJsonDef(data: string) {
                     id = scanRegex(scanner);
                 }
 
+                // Invalid Token
+                else {
+                    scanner.consume();
+                }
+
                 break;
             }
         }
@@ -199,10 +204,9 @@ const scanExponent = (scanner: StringScanner): number => {
 const scanString = (scanner: StringScanner): number => {
     scanner.consume();
 
-    let id: number = JsonDefTypes.Invalid;
+    while (true) {
 
-    while (id === JsonDefTypes.Invalid) {
-        console.log(scanner.position);
+        // Valid Char
         if (scanner.isIn(charSet)) {
             scanner.consume();
         }
@@ -222,25 +226,26 @@ const scanString = (scanner: StringScanner): number => {
                 for (let i = 0; i < 2; i++) {
                     if (scanner.isHex())
                         scanner.consume();
-                    else {
-                        id = JsonDefTypes.InvalidString;
-                    }
+                    else
+                        return JsonDefTypes.InvalidString;
                 }
             }
             else {
-                id = JsonDefTypes.InvalidString;
+                return JsonDefTypes.InvalidString;
             }
         }
+
+        // End Quote
         else if (scanner.is('\'')) {
             scanner.consume();
-            id = JsonDefTypes.String;
+            return JsonDefTypes.String;
         }
+
+        // Error
         else {
-            id = JsonDefTypes.InvalidString;
+            return JsonDefTypes.InvalidString;
         }
     }
-
-    return id;
 };
 
 const scanRegex = (scanner: StringScanner): number => {

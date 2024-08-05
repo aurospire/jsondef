@@ -1,11 +1,11 @@
 import { inspect } from 'util';
-import { tokenizeJsonDef } from "./parser/tokenizeJsonDef";
 import { JsonDefTypes } from './parser/JsonDefTypes';
+import { tokenizeJsonDef } from "./parser/tokenizeJsonDef";
 
-export * from './Schema';
-export * from './Infer';
 export * from './builder';
 export * as d from './helpers';
+export * from './Infer';
+export * from './Schema';
 
 
 const combine_files = async (split: boolean) => {
@@ -67,4 +67,19 @@ const combine_files = async (split: boolean) => {
 //     console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
 // }
 
-combine_files(true)
+const value = "'unclosed string 'invalid escape \\0'";
+
+let i = 0;
+for (const token of tokenizeJsonDef(value)) {
+    const { id, mark: { position: pos, line: ln, column: col }, value } = token;
+    const obj = {
+        id: id,
+        name: JsonDefTypes.names(id).join('|'),
+        pos,
+        ln,
+        col,
+        value
+    };
+    console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
+    if (i++ > 20) break
+}

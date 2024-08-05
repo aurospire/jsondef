@@ -50,7 +50,7 @@ export class CharSet {
     constructor() { }
 
 
-    // TODO: Optimize with overlapping or reducing
+    // TODO: Optimize with overlapping or reducing 
     #union(trueSet: Set<string>, trueRanges: CharRange[], falseSet: Set<string>, falseRanges: CharRange[]): CharSet {
         const charset = new CharSet();
 
@@ -83,7 +83,7 @@ export class CharSet {
         else if (typeof set === 'string')
             return this.#union(new Set<string>(set), [], emptySet, []);
         else
-            return this.#union(emptySet, [set], emptySet, []);
+            return this.#union(emptySet, [{ min: set.min[0] ?? '\0', max: set.max[0] ?? '\0' }], emptySet, []);
     }
 
     andNot(set: string | CharRange | CharSet): CharSet {
@@ -92,7 +92,7 @@ export class CharSet {
         else if (typeof set === 'string')
             return this.#union(emptySet, [], new Set<string>(set), [],);
         else
-            return this.#union(emptySet, [], emptySet, [set]);
+            return this.#union(emptySet, [], emptySet, [{ min: set.min[0] ?? '\0', max: set.max[0] ?? '\0' }]);
     }
 
     has(value: string): boolean {
