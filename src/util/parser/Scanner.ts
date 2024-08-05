@@ -101,6 +101,7 @@ export class ArrayScanner<T> extends Scanner<T | undefined, T, Array<T>> {
     protected override onConsume(data: Array<T>, mark: Mark, count: number): void { mark.position += count; }
 };
 
+export type Token = Segment<string, StringMark> & { id: number; };
 
 export type StringMark = Mark & { line: number, column: number; };
 
@@ -112,7 +113,7 @@ export class StringScanner extends Scanner<string, string, string, StringMark> {
 
     protected get column() { return this.get('column'); }
 
-    protected override get ending(): string { return '\0'; }
+    protected override get ending(): string { return ''; }
 
     protected override initialMark(): StringMark { return { position: 0, line: 0, column: 0 }; }
 
@@ -137,11 +138,13 @@ export class StringScanner extends Scanner<string, string, string, StringMark> {
         mark.line = line;
         mark.column = column;
     }
+
+    token(id: number): Token { return { id, ...this.extract() }; }
 }
 
 
 type ScannerType<S extends string | unknown[]> = S extends Array<infer T> ? ArrayScanner<T> : StringScanner;
 
-export const scanner = <S extends string | unknown[]>(data: S): ScannerType<S> => {
+export const makeScanner = <S extends string | unknown[]>(data: S): ScannerType<S> => {
     return (typeof data === 'string' ? new StringScanner(data) : new ArrayScanner(data)) as ScannerType<S>;
 };

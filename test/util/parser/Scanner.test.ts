@@ -1,4 +1,4 @@
-import { ArrayScanner, StringScanner, scanner } from '@/util/parser/Scanner';
+import { ArrayScanner, StringScanner, makeScanner } from '@/util/parser/Scanner';
 
 describe('ArrayScanner', () => {
     it('should initialize correctly with empty array', () => {
@@ -101,7 +101,7 @@ describe('StringScanner', () => {
         const s = new StringScanner('');
         expect(s.isEnd).toBe(true);
         expect(s.position).toBe(0);
-        expect(s.peek()).toBe('\0');
+        expect(s.peek()).toBe('');
     });
 
     it('should initialize correctly with non-empty string', () => {
@@ -116,8 +116,8 @@ describe('StringScanner', () => {
         expect(s.peek()).toBe('a');
         expect(s.peek(1)).toBe('b');
         expect(s.peek(2)).toBe('c');
-        expect(s.peek(3)).toBe('\0');
-        expect(s.peek(4)).toBe('\0');
+        expect(s.peek(3)).toBe('');
+        expect(s.peek(4)).toBe('');
     });
 
     it('should consume correctly', () => {
@@ -198,14 +198,14 @@ describe('StringScanner', () => {
     });
 });
 
-describe('scanner factory function', () => {
+describe('makeScanner factory function', () => {
     it('should create ArrayScanner for arrays', () => {
-        const s = scanner([1, 2, 3]);
+        const s = makeScanner([1, 2, 3]);
         expect(s).toBeInstanceOf(ArrayScanner);
     });
 
     it('should create StringScanner for strings', () => {
-        const s = scanner('abc');
+        const s = makeScanner('abc');
         expect(s).toBeInstanceOf(StringScanner);
     });
 });

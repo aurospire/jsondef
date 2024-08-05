@@ -2,6 +2,7 @@ import { makeEnum } from "../util";
 
 
 export const JsondefTypes = makeEnum(
+    'Invalid',
     'NullToken',
     'AnyToken',
     'BooleanToken',

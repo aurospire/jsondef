@@ -1,55 +1,73 @@
 export type CharRange = { min: string; max: string; };
 
+const emptySet = new Set<string>();
+
 export class CharSet {
-    #trues: CharRange[] = [];
-    #falses: CharRange[] = [];
+    #trueSet: Set<string> = emptySet;
+    #falseSet: Set<string> = emptySet;
+    #trueRanges: CharRange[] = [];
+    #falseRanges: CharRange[] = [];
 
     constructor() { }
 
 
-    #union(trues: CharRange[], falses: CharRange[]): CharSet {
+    #union(trueSet: Set<string>, falseSet: Set<string>, trueRanges: CharRange[], falseRanges: CharRange[]): CharSet {
         const charset = new CharSet();
 
-        charset.#trues = [...this.#trues, ...trues];
+        charset.#trueSet = this.#trueSet.union(trueSet);
 
-        charset.#falses = [...this.#falses, ...falses];
+        charset.#falseSet = this.#falseSet.union(falseSet);
+
+        charset.#trueRanges = [...this.#trueRanges, ...trueRanges];
+
+        charset.#falseRanges = [...this.#falseRanges, ...falseRanges];
 
         return charset;
     }
 
     and(set: string | CharRange | CharSet): CharSet {
         if (set instanceof CharSet)
-            return this.#union(set.#trues, set.#falses);
+            return this.#union(set.#trueSet, set.#falseSet, set.#trueRanges, set.#falseRanges);
         else if (typeof set === 'string')
-            return this.#union([{ min: set, max: set }], []);
+            return this.#union(new Set<string>(set), emptySet, [], []);
         else
-            return this.#union([set], []);
+            return this.#union(emptySet, emptySet, [set], []);
     }
 
     andNot(set: string | CharRange | CharSet): CharSet {
         if (set instanceof CharSet)
-            return this.#union(set.#falses, set.#trues);
+            return this.#union(set.#falseSet, set.#trueSet, set.#falseRanges, set.#trueRanges);
         else if (typeof set === 'string')
-            return this.#union([], [{ min: set, max: set }]);
+            return this.#union(emptySet, new Set<string>([set]), [], []);
         else
-            return this.#union([], [set]);
+            return this.#union(emptySet, emptySet, [], [set]);
     }
 
     has(value: string): boolean {
         let result = false;
 
-        for (const range of this.#trues) {
-            if (value >= range.min && value <= range.max) {
-                result = true;
-                break;
+        if (this.#trueSet.has(value)) {
+            result = true;
+        }
+        else {
+            for (const range of this.#trueRanges) {
+                if (value >= range.min && value <= range.max) {
+                    result = true;
+                    break;
+                }
             }
         }
 
         if (result) {
-            for (const range of this.#falses) {
-                if (value >= range.min && value <= range.max) {
-                    result = false;
-                    break;
+            if (this.#falseSet.has(value)) {
+                result = false;
+            }
+            else {
+                for (const range of this.#falseRanges) {
+                    if (value >= range.min && value <= range.max) {
+                        result = false;
+                        break;
+                    }
                 }
             }
         }
@@ -73,6 +91,7 @@ export class CharSet {
     static #letterOrDigit = this.#letter.and(this.#digit);
     static #space = this.char(' ').and('\t');
     static #newline = this.char('\n').and('\r');
+    static #whitespace = this.#space.and(this.#newline);
     static #null = this.char('\0');
     static #ending = this.#newline.and(this.#null);
 
@@ -85,6 +104,7 @@ export class CharSet {
     static get LetterOrDigit() { return this.#letterOrDigit; }
     static get Space() { return this.#space; }
     static get NewLine() { return this.#newline; }
+    static get Whitespace() { return this.#whitespace; }
     static get Null() { return this.#null; }
     static get Ending() { return this.#ending; }
 }
