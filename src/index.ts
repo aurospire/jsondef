@@ -52,6 +52,7 @@ const combine_files = async (split: boolean) => {
 for (const token of lexJsonDef(`|=()[]{},. ..  ...
     : ?:< <= >>= -12424 1242142 2121e23 123.233 21.31e+12 24.-12 32.1e-12 -
         _aHASs _ _12312 root this model null '' 'Hello' 'H\\x99' '\\r\\n\t\\0\\'\"   \\\\'
+    // /Hello/ /[Hell]/ /\\/a/img
 `)) {
     const { id, mark: { position: pos, line: ln, column: col }, value } = token;
     const obj = {

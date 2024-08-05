@@ -5,6 +5,7 @@ import { JsondefTypes } from "./JsondefTypes";
 const anySet = CharSet.range({ min: ' ', max: '\x7F' });
 const charSet = anySet.and('\t').andNot('\'\\');
 const charEscapeSet = CharSet.chars('nrt\\\'"0');
+const regexCharSet = anySet.and('\t').andNot('/\\');
 const regexFlagsSet = CharSet.chars('igmsuy');
 const realSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
@@ -108,7 +109,7 @@ export function* lexJsonDef(data: string) {
             }
 
             default: {
-                // Identifier
+                // Keyword | Identifier
                 if (scanner.is('_') || scanner.isLetter()) {
                     scanner.consume();
 
@@ -117,64 +118,26 @@ export function* lexJsonDef(data: string) {
 
                     id = keywords.get(scanner.captured()) ?? JsondefTypes.Identifier;
                 }
+
                 // Number|Integer|Real
                 else if (scanner.isDigit()) {
-                    const result = scanNumber(scanner, JsondefTypes.Number);
-
-                    if (result !== undefined) id = result;
+                    id = scanNumber(scanner, JsondefTypes.Number);
                 }
                 else if (scanner.is('-')) {
                     scanner.consume();
 
-                    if (scanner.isDigit()) {
-                        const result = scanNumber(scanner, JsondefTypes.Integer);
-
-                        if (result !== undefined) id = result;
-                    }
+                    if (scanner.isDigit())
+                        id = scanNumber(scanner, JsondefTypes.Integer);
                 }
+
                 // String
                 else if (scanner.is('\'')) {
-                    scanner.consume();
-
-                    while (id === JsondefTypes.Invalid) {
-                        if (scanner.isIn(charSet)) {
-                            scanner.consume();
-                        }
-                        // Escapes
-                        else if (scanner.is('\\')) {
-                            scanner.consume();
-
-                            if (scanner.isIn(charEscapeSet)) {
-                                scanner.consume();
-                            }
-                            // \xXX
-                            else if (scanner.is('x')) {
-                                scanner.consume();
-
-                                for (let i = 0; i < 2; i++) {
-                                    if (scanner.isHex())
-                                        scanner.consume();
-                                    else {
-                                        id = JsondefTypes.InvalidString;
-                                    }
-                                }
-                            }
-                            else {
-                                id = JsondefTypes.InvalidString;
-                            }
-                        }
-                        else if (scanner.is('\'')) {
-                            scanner.consume();
-                            id = JsondefTypes.String;
-                        }
-                        else {
-                            id = JsondefTypes.InvalidString;
-                        }
-                    }
+                    id = scanString(scanner);
                 }
+
                 // Regex
                 else if (scanner.is('/')) {
-
+                    id = scanRegex(scanner);
                 }
 
                 break;
@@ -189,7 +152,7 @@ export function* lexJsonDef(data: string) {
     }
 }
 
-const scanNumber = (scanner: StringScanner, id: number): number | undefined => {
+const scanNumber = (scanner: StringScanner, id: number): number => {
     scanner.consume();
 
     while (scanner.isDigit())
@@ -230,4 +193,87 @@ const scanExponent = (scanner: StringScanner): number => {
         scanner.consume();
 
     return JsondefTypes.Real;
+};
+
+const scanString = (scanner: StringScanner): number => {
+    scanner.consume();
+
+    let id: number = JsondefTypes.Invalid;
+
+    while (id === JsondefTypes.Invalid) {
+        if (scanner.isIn(charSet)) {
+            scanner.consume();
+        }
+        // Escapes
+        else if (scanner.is('\\')) {
+            scanner.consume();
+
+            if (scanner.isIn(charEscapeSet)) {
+                scanner.consume();
+            }
+            // \xXX
+            else if (scanner.is('x')) {
+                scanner.consume();
+
+                for (let i = 0; i < 2; i++) {
+                    if (scanner.isHex())
+                        scanner.consume();
+                    else {
+                        id = JsondefTypes.InvalidString;
+                    }
+                }
+            }
+            else {
+                id = JsondefTypes.InvalidString;
+            }
+        }
+        else if (scanner.is('\'')) {
+            scanner.consume();
+            id = JsondefTypes.String;
+        }
+        else {
+            id = JsondefTypes.InvalidString;
+        }
+    }
+
+    return id;
+};
+
+const scanRegex = (scanner: StringScanner): number => {
+    scanner.consume();
+
+    let started = false;
+
+    while (true) {
+        if (scanner.isIn(regexCharSet)) {
+            started = true;
+
+            scanner.consume();
+        }
+        else if (scanner.is('\\')) {
+            started = true;
+
+            scanner.consume();
+
+            if (scanner.isIn(anySet))
+                scanner.consume();
+        }
+        else if (scanner.is('/')) {
+            scanner.consume();
+            
+            if (started)
+                break;
+            else
+                return JsondefTypes.InvalidRegex;
+
+        }
+        else {
+            return JsondefTypes.InvalidRegex;
+        }
+    }
+
+    while (scanner.isIn(regexFlagsSet))
+        scanner.consume();
+
+    return JsondefTypes.Regex;
 };

@@ -103,8 +103,9 @@ token Integer = ['-'] Digit+;
 token Real = Integer ['.' Number] ['e'|'E' ['+'|'-'] Number];
 token String = '\'' {Char | Escape} '\'';
 subtoken Escape = '\\' ('x' HexDigit HexDigit | 'n' | 'r' | 't' | '\\' | '\'' | '"' | '0');
+
 token Regex = '/' RegexBody '/' {RegexFlag};
-subtoken RegexBody = Char | RegexEscape {Char | RegexEscape};
+subtoken RegexBody = RegexChar | RegexEscape {RegexChar | RegexEscape};
 subtoken RegexEscape = '\\' Any;
 
 token Eof = '\0';
@@ -119,3 +120,4 @@ charset Digit = '0' to '9';
 charset HexDigit = Digit + 'A' to 'F' + 'a' to 'f';
 charset Any = ' ' to '\x7F';
 charset Char = Any + '\t' - '\\' - '\'';
+charset RegexChar = Any + '\t' - '\\' - '/';
