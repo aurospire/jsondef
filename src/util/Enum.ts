@@ -4,17 +4,17 @@ type _Flatten<Types extends Array<string | string[]>> = Types extends Array<stri
 
 export type Flatten<Types extends Array<string | string[]>> = _Flatten<Types>[number];
 
-export type TokenTypeEnum<Types extends Array<string | string[]>> = Record<Flatten<Types> extends string ? Flatten<Types> : never, number>;
+export type EnumNames<Types extends Array<string | string[]>> = Record<Flatten<Types> extends string ? Flatten<Types> : never, number>;
 
 
-export class TokenType<const Types extends Array<string | string[]>> {
-    #ids = new Map<Flatten<Types>, number>;
+export class Enum<const Names extends Array<string | string[]>> {
+    #ids = new Map<Flatten<Names>, number>;
 
-    #names = new Map<number, Flatten<Types>[]>();
+    #names = new Map<number, Flatten<Names>[]>();
 
     #types: Record<string, number> = {};
 
-    constructor(types: Types) {
+    constructor(types: Names) {
 
         for (let i = 0; i < types.length; i++) {
             let type = types[i];
@@ -36,23 +36,23 @@ export class TokenType<const Types extends Array<string | string[]>> {
         Object.assign(this, this.#types);
     }
 
-    id(name: Flatten<Types>): number {
+    id(name: Flatten<Names>): number {
         return this.#ids.get(name) ?? -1;
     }
 
-    names(id: number): Flatten<Types>[] {
+    names(id: number): Flatten<Names>[] {
         return this.#names.get(id) ?? [];
     }
 
-    matches(id: number, name: Flatten<Types>): boolean {
+    matches(id: number, name: Flatten<Names>): boolean {
         return this.#ids.get(name) === id;
     }
 
-    get types(): TokenTypeEnum<Types> { return this.#types as any; }
+    get types(): EnumNames<Names> { return this.#types as any; }
 }
 
-export const tokenTypes = <const Types extends Array<string | string[]>>(...types: Types): TokenType<Types> & TokenTypeEnum<Types> => {
-    const result = new TokenType(types);
+export const makeEnum = <const Types extends Array<string | string[]>>(...types: Types): Enum<Types> & EnumNames<Types> => {
+    const result = new Enum(types);
 
-    return result as TokenType<Types> & TokenTypeEnum<Types>;
+    return result as Enum<Types> & EnumNames<Types>;
 };

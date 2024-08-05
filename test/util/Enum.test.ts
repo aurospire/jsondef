@@ -1,10 +1,10 @@
-import { TokenType, tokenTypes, Flatten, TokenTypeEnum } from '@/util/parser/TokenType';
+import { Enum, makeEnum, Flatten, EnumNames } from '@/util/Enum';
 import { expectType } from 'jestype';
 
-describe('TokenType', () => {
+describe('Enum', () => {
     describe('constructor', () => {
-        it('should create a TokenType instance with correct mappings', () => {
-            const tokenType = new TokenType(['A', ['B', 'C'], 'D']);
+        it('should create a Enum instance with correct mappings', () => {
+            const tokenType = new Enum(['A', ['B', 'C'], 'D']);
 
             expect(tokenType.id('A')).toBe(0);
             expect(tokenType.id('B')).toBe(1);
@@ -17,12 +17,12 @@ describe('TokenType', () => {
         });
 
         it('should throw an error for duplicate names', () => {
-            expect(() => new TokenType(['A', ['B', 'A']])).toThrow('Name A already defined');
+            expect(() => new Enum(['A', ['B', 'A']])).toThrow('Name A already defined');
         });
     });
 
     describe('id method', () => {
-        const tokenType = new TokenType(['A', ['B', 'C'], 'D']);
+        const tokenType = new Enum(['A', ['B', 'C'], 'D']);
 
         it('should return correct id for existing names', () => {
             expect(tokenType.id('A')).toBe(0);
@@ -37,7 +37,7 @@ describe('TokenType', () => {
     });
 
     describe('names method', () => {
-        const tokenType = new TokenType(['A', ['B', 'C'], 'D']);
+        const tokenType = new Enum(['A', ['B', 'C'], 'D']);
 
         it('should return correct names for existing ids', () => {
             expect(tokenType.names(0)).toEqual(['A']);
@@ -51,7 +51,7 @@ describe('TokenType', () => {
     });
 
     describe('matches method', () => {
-        const tokenType = new TokenType(['A', ['B', 'C'], 'D']);
+        const tokenType = new Enum(['A', ['B', 'C'], 'D']);
 
         it('should return true for matching id and name', () => {
             expect(tokenType.matches(0, 'A')).toBe(true);
@@ -69,7 +69,7 @@ describe('TokenType', () => {
 
     describe('types getter', () => {
         it('should return an object with correct type mappings', () => {
-            const tokenType = new TokenType(['A', ['B', 'C'], 'D']);
+            const tokenType = new Enum(['A', ['B', 'C'], 'D']);
             expect(tokenType.types).toEqual({
                 A: 0,
                 B: 1,
@@ -80,9 +80,9 @@ describe('TokenType', () => {
     });
 });
 
-describe('tokenTypes helper function', () => {
-    it('should create a TokenType instance with correct type information', () => {
-        const tokens = tokenTypes('A', ['B', 'C'], 'D');
+describe('makeEnum helper function', () => {
+    it('should create a Enum instance with correct type information', () => {
+        const tokens = makeEnum('A', ['B', 'C'], 'D');
 
         expect(tokens.A).toBe(0);
         expect(tokens.B).toBe(1);
@@ -101,9 +101,9 @@ describe('Type tests', () => {
         expectType<TestFlatten>().toBe<'A' | 'B' | 'C' | 'D'>();
     });
 
-    it('should create correct TokenTypeEnum', () => {
-        type TestTokenTypeEnum = TokenTypeEnum<['A', ['B', 'C'], 'D']>;
-        expectType<TestTokenTypeEnum>().toBe<{
+    it('should create correct EnumNames', () => {
+        type TestEnumNames = EnumNames<['A', ['B', 'C'], 'D']>;
+        expectType<TestEnumNames>().toBe<{
             A: number;
             B: number;
             C: number;
