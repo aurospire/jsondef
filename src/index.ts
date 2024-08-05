@@ -1,6 +1,6 @@
 import { inspect } from 'util';
-import { lexJsonDef } from './parser';
-import { JsondefTypes } from './parser/JsondefTypes';
+import { tokenizeJsonDef } from "./parser/tokenizeJsonDef";
+import { JsonDefTypes } from './parser/JsonDefTypes';
 
 export * from './Schema';
 export * from './Infer';
@@ -18,9 +18,10 @@ const combine_files = async (split: boolean) => {
     let result = '';
 
     const files = [
-        'Schema.ts',
-        'Infer.ts',
-        'Stringify.ts',
+        'util/parser/CharSet.ts',
+        'util/parser/Scanner.ts',
+        'parser/JsonDefTypes.ts',
+        'parser/lexJsonDef.ts'
     ];
 
     const log = (...data: string[]) => {
@@ -49,19 +50,21 @@ const combine_files = async (split: boolean) => {
 };
 
 
-for (const token of lexJsonDef(`|=()[]{},. ..  ...
-    : ?:< <= >>= -12424 1242142 2121e23 123.233 21.31e+12 24.-12 32.1e-12 -
-        _aHASs _ _12312 root this model null '' 'Hello' 'H\\x99' '\\r\\n\t\\0\\'\"   \\\\'
-    // /Hello/ /[Hell]/ /\\/a/img
-`)) {
-    const { id, mark: { position: pos, line: ln, column: col }, value } = token;
-    const obj = {
-        id: id,
-        name: JsondefTypes.names(id).join('|'),
-        pos,
-        ln,
-        col,
-        value
-    };
-    console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
-}
+// for (const token of lexJsonDef(`|=()[]{},. ..  ...
+//     : ?:< <= >>= -12424 1242142 2121e23 123.233 21.31e+12 24.-12 32.1e-12 -
+//         _aHASs _ _12312 root this model null '' 'Hello' 'H\\x99' '\\r\\n\t\\0\\'\"   \\\\'
+//     // /Hello/ /[Hell]/ /\\/a/img
+// `)) {
+//     const { id, mark: { position: pos, line: ln, column: col }, value } = token;
+//     const obj = {
+//         id: id,
+//         name: JsondefTypes.names(id).join('|'),
+//         pos,
+//         ln,
+//         col,
+//         value
+//     };
+//     console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
+// }
+
+combine_files(true)
