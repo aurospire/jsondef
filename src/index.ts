@@ -66,20 +66,3 @@ const combine_files = async (split: boolean) => {
 //     };
 //     console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
 // }
-
-const value = "'unclosed string 'invalid escape \\0'";
-
-let i = 0;
-for (const token of tokenizeJsonDef(value)) {
-    const { id, mark: { position: pos, line: ln, column: col }, value } = token;
-    const obj = {
-        id: id,
-        name: JsonDefTypes.names(id).join('|'),
-        pos,
-        ln,
-        col,
-        value
-    };
-    console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
-    if (i++ > 20) break
-}

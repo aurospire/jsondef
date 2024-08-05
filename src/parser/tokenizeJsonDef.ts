@@ -6,7 +6,7 @@ const charSet = anySet.andNot('\'\\');
 const charEscapeSet = CharSet.chars('nrt\\\'"0');
 const regexCharSet = anySet.andNot('/\\');
 const regexFlagsSet = CharSet.chars('igmsuy');
-const realSet = CharSet.chars('eE');
+const exponentSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
 
 const keywords = new Map<string, number>([
@@ -172,13 +172,13 @@ const scanNumber = (scanner: StringScanner, id: number): number => {
         while (scanner.isDigit())
             scanner.consume();
 
-        if (scanner.isIn(realSet))
+        if (scanner.isIn(exponentSet))
             return scanExponent(scanner);
 
         else
             return JsonDefTypes.Real;
     }
-    else if (scanner.isIn(realSet)) {
+    else if (scanner.isIn(exponentSet)) {
         return scanExponent(scanner);
     }
     else {
