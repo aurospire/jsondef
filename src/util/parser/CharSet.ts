@@ -2,77 +2,101 @@ export type CharRange = { min: string; max: string; };
 
 const emptySet = new Set<string>();
 
+type Checker = (value: string) => boolean;
+
+const matchRange = (value: string, ranges: CharRange[]) => {
+    for (const range of ranges)
+        if (value >= range.min && value <= range.max)
+            return true;
+
+    return false;
+};
+
+type CheckerMaker = (
+    trueSet: Set<string>, trueRanges: CharRange[],
+    falseSet: Set<string>, falseRanges: CharRange[]
+) => Checker;
+
+const checkers: Record<string, CheckerMaker> = {
+    'A': (trueSet, trueRanges, falseSet, falseRanges) => (value) => trueSet.has(value),
+    'B': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges),
+    'C': (trueSet, trueRanges, falseSet, falseRanges) => (value) => !falseSet.has(value),
+    'D': (trueSet, trueRanges, falseSet, falseRanges) => (value) => !matchRange(value, falseRanges),
+
+    'AB': (trueSet, trueRanges, falseSet, falseRanges) => (value) => (trueSet.has(value) || matchRange(value, trueRanges)),
+    'AC': (trueSet, trueRanges, falseSet, falseRanges) => (value) => trueSet.has(value) ? !falseSet.has(value) : false,
+    'AD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => trueSet.has(value) ? !matchRange(value, falseRanges) : false,
+
+    'BC': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !falseSet.has(value) : false,
+    'BD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !matchRange(value, trueRanges) : false,
+    'CD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => !(falseSet.has(value) || matchRange(value, falseRanges)),
+
+    'ABC': (trueSet, trueRanges, falseSet, falseRanges) => (value) => (trueSet.has(value) || matchRange(value, trueRanges)) ? !falseSet.has(value) : false,
+    'ABD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => (trueSet.has(value) || matchRange(value, trueRanges)) ? !matchRange(value, falseRanges) : false,
+    'BCD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !(falseSet.has(value) || matchRange(value, falseRanges)) : false,
+
+    'ABCD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => (trueSet.has(value) || matchRange(value, trueRanges)) ? !(falseSet.has(value) || matchRange(value, falseRanges)) : false,
+};
+
 export class CharSet {
     #trueSet: Set<string> = emptySet;
-    #falseSet: Set<string> = emptySet;
     #trueRanges: CharRange[] = [];
+
+    #falseSet: Set<string> = emptySet;
     #falseRanges: CharRange[] = [];
+
+    #checker: (value: string) => boolean = () => false;
 
     constructor() { }
 
 
-    #union(trueSet: Set<string>, falseSet: Set<string>, trueRanges: CharRange[], falseRanges: CharRange[]): CharSet {
+    // TODO: Optimize with overlapping or reducing
+    #union(trueSet: Set<string>, trueRanges: CharRange[], falseSet: Set<string>, falseRanges: CharRange[]): CharSet {
         const charset = new CharSet();
 
         charset.#trueSet = this.#trueSet.union(trueSet);
 
-        charset.#falseSet = this.#falseSet.union(falseSet);
-
         charset.#trueRanges = [...this.#trueRanges, ...trueRanges];
 
+
+        charset.#falseSet = this.#falseSet.union(falseSet);
+
         charset.#falseRanges = [...this.#falseRanges, ...falseRanges];
+
+
+        const checkerType = (charset.#trueSet.size ? 'A' : '') +
+            (charset.#trueRanges.length ? 'B' : '') +
+            (charset.#falseSet.size ? 'C' : '') +
+            (charset.#falseRanges.length ? 'D' : '');
+
+        this.#checker = checkers[checkerType](
+            charset.#trueSet, charset.#trueRanges,
+            charset.#falseSet, charset.#falseRanges
+        );
 
         return charset;
     }
 
     and(set: string | CharRange | CharSet): CharSet {
         if (set instanceof CharSet)
-            return this.#union(set.#trueSet, set.#falseSet, set.#trueRanges, set.#falseRanges);
+            return this.#union(set.#trueSet, set.#trueRanges, set.#falseSet, set.#falseRanges);
         else if (typeof set === 'string')
-            return this.#union(new Set<string>(set), emptySet, [], []);
+            return this.#union(new Set<string>(set), [], emptySet, []);
         else
-            return this.#union(emptySet, emptySet, [set], []);
+            return this.#union(emptySet, [set], emptySet, []);
     }
 
     andNot(set: string | CharRange | CharSet): CharSet {
         if (set instanceof CharSet)
-            return this.#union(set.#falseSet, set.#trueSet, set.#falseRanges, set.#trueRanges);
+            return this.#union(set.#falseSet, set.#falseRanges, set.#trueSet, set.#trueRanges,);
         else if (typeof set === 'string')
-            return this.#union(emptySet, new Set<string>(set), [], []);
+            return this.#union(emptySet, [], new Set<string>(set), [],);
         else
-            return this.#union(emptySet, emptySet, [], [set]);
+            return this.#union(emptySet, [], emptySet, [set]);
     }
 
     has(value: string): boolean {
-        let result = false;
-
-        if (this.#trueSet.has(value)) {
-            result = true;
-        }
-        else {
-            for (const range of this.#trueRanges) {
-                if (value >= range.min && value <= range.max) {
-                    result = true;
-                    break;
-                }
-            }
-        }
-
-        if (result) {
-            if (this.#falseSet.has(value)) {
-                result = false;
-            }
-            else {
-                for (const range of this.#falseRanges) {
-                    if (value >= range.min && value <= range.max) {
-                        result = false;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return result;
+        return this.#checker(value);
     }
 
     static #empty = new CharSet();

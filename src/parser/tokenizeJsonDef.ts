@@ -8,6 +8,7 @@ const regexCharSet = anySet.and('\t').andNot('/\\');
 const regexFlagsSet = CharSet.chars('igmsuy');
 const realSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
+
 const keywords = new Map<string, number>([
     ['null', JsonDefTypes.NullToken],
     ['any', JsonDefTypes.AnyToken],
@@ -46,7 +47,6 @@ export function* tokenizeJsonDef(data: string) {
 
         switch (scanner.peek()) {
             case '\0': scanner.consume(); id = JsonDefTypes.Eof; break;
-
             case '|': scanner.consume(); id = JsonDefTypes.Or; break;
             case '=': scanner.consume(); id = JsonDefTypes.Exactly; break;
             case '(': scanner.consume(); id = JsonDefTypes.Open; break;
@@ -151,6 +151,7 @@ export function* tokenizeJsonDef(data: string) {
         yield token;
     }
 }
+
 const scanNumber = (scanner: StringScanner, id: number): number => {
     scanner.consume();
 
@@ -179,6 +180,7 @@ const scanNumber = (scanner: StringScanner, id: number): number => {
         return id;
     }
 };
+
 const scanExponent = (scanner: StringScanner): number => {
     scanner.consume();
 
@@ -193,12 +195,14 @@ const scanExponent = (scanner: StringScanner): number => {
 
     return JsonDefTypes.Real;
 };
+
 const scanString = (scanner: StringScanner): number => {
     scanner.consume();
 
     let id: number = JsonDefTypes.Invalid;
 
     while (id === JsonDefTypes.Invalid) {
+        console.log(scanner.position);
         if (scanner.isIn(charSet)) {
             scanner.consume();
         }
@@ -238,6 +242,7 @@ const scanString = (scanner: StringScanner): number => {
 
     return id;
 };
+
 const scanRegex = (scanner: StringScanner): number => {
     scanner.consume();
 
