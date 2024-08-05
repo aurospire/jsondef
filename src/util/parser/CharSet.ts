@@ -29,7 +29,7 @@ export class CharSet {
         if (set instanceof CharSet)
             return this.#union(set.#trueSet, set.#falseSet, set.#trueRanges, set.#falseRanges);
         else if (typeof set === 'string')
-            return this.#union(new Set<string>(set), emptySet, [], []);
+            return this.#union(new Set<string>(set), emptySet, [], []);        
         else
             return this.#union(emptySet, emptySet, [set], []);
     }
@@ -77,10 +77,9 @@ export class CharSet {
 
     static #empty = new CharSet();
 
-    static char(value: string): CharSet { return this.#empty.and(value); }
+    static chars(value: string): CharSet { return this.#empty.and(value); }
 
     static range(value: { min: string; max: string; }): CharSet { return this.#empty.and(value); }
-
 
     static #upper = this.range({ min: 'A', max: 'Z' });
     static #lower = this.range({ min: 'a', max: 'z' });
@@ -89,10 +88,10 @@ export class CharSet {
     static #binary = this.range({ min: '0', max: '1' });
     static #hex = this.#digit.and({ min: 'A', max: 'F' }).and({ min: 'a', max: 'f' });
     static #letterOrDigit = this.#letter.and(this.#digit);
-    static #space = this.char(' ').and('\t');
-    static #newline = this.char('\n').and('\r');
+    static #space = this.chars(' \t');
+    static #newline = this.chars('\r\n');
     static #whitespace = this.#space.and(this.#newline);
-    static #null = this.char('\0');
+    static #null = this.chars('\0');
     static #ending = this.#newline.and(this.#null);
 
     static get Upper() { return this.#upper; }

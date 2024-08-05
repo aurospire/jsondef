@@ -58,10 +58,18 @@ describe('CharSet', () => {
     });
 
     describe('Static methods', () => {
-        test('char', () => {
-            const set = CharSet.char('x');
+        test('chars - single', () => {
+            const set = CharSet.chars('x');
             expect(set.has('x')).toBe(true);
             expect(set.has('y')).toBe(false);
+        });
+
+        test('chars - multiple', () => {
+            const set = CharSet.chars('xyz');
+            expect(set.has('x')).toBe(true);
+            expect(set.has('y')).toBe(true);
+            expect(set.has('z')).toBe(true);
+            expect(set.has('xyz')).toBe(false);
         });
 
         test('range', () => {

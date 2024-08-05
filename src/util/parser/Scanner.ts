@@ -1,3 +1,5 @@
+import { CharSet } from "./CharSet";
+
 export interface Indexable<T, S extends Indexable<T, S>> {
     length: number;
     slice(start?: number, end?: number): S;
@@ -11,7 +13,7 @@ export type Segment<S, M extends Mark> = {
     mark: M;
 };
 
-export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M extends Mark = Mark> {
+export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mark> {
     #data: S;
     #marks: M[];
 
@@ -19,8 +21,6 @@ export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M exten
         this.#data = data;
         this.#marks = [this.initialMark()];
     }
-
-    protected abstract get ending(): P;
 
     protected abstract initialMark(): M;
 
@@ -36,8 +36,8 @@ export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M exten
         return this.#marks.at(-1)!.position;
     }
 
-    peek(offset: number = 0): P {
-        return this.#data[this.position + offset] ?? this.ending;
+    peek(offset: number = 0): T | undefined {
+        return this.#data[this.position + offset];
     }
 
     consume(count: number = 1) {
@@ -76,6 +76,12 @@ export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M exten
             this.#marks.pop();
     }
 
+    captured(): S {
+        const start = this.#marks.at(-2)?.position ?? 0;
+
+        return this.#data.slice(start, this.position);
+    }
+
     extract(): Segment<S, M> {
         const start = this.#marks.at(-2)?.position ?? 0;
 
@@ -89,12 +95,12 @@ export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M exten
 
     // Should work, even if P isn't T
     isIn(set: { has: (value: T) => boolean; }, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
+
+    isIncluded(items: T[], offset: number = 0): boolean { return items.includes(this.peek(offset) as any); }
 }
 
-export class ArrayScanner<T> extends Scanner<T | undefined, T, Array<T>> {
+export class ArrayScanner<T> extends Scanner<T, Array<T>> {
     constructor(items: Array<T>) { super(items); }
-
-    protected override get ending() { return undefined; }
 
     protected override initialMark(): Mark { return { position: 0 }; }
 
@@ -105,15 +111,13 @@ export type Token = Segment<string, StringMark> & { id: number; };
 
 export type StringMark = Mark & { line: number, column: number; };
 
-export class StringScanner extends Scanner<string, string, string, StringMark> {
+export class StringScanner extends Scanner<string, string, StringMark> {
 
     constructor(value: string) { super(value); }
 
     protected get line() { return this.get('line'); }
 
     protected get column() { return this.get('column'); }
-
-    protected override get ending(): string { return ''; }
 
     protected override initialMark(): StringMark { return { position: 0, line: 0, column: 0 }; }
 
@@ -140,6 +144,19 @@ export class StringScanner extends Scanner<string, string, string, StringMark> {
     }
 
     token(id: number): Token { return { id, ...this.extract() }; }
+
+    isUpper(offset: number = 0) { return this.isIn(CharSet.Upper, offset); }
+    isLower(offset: number = 0) { return this.isIn(CharSet.Lower, offset); }
+    isLetter(offset: number = 0) { return this.isIn(CharSet.Letter, offset); }
+    isDigit(offset: number = 0) { return this.isIn(CharSet.Digit, offset); }
+    isBinary(offset: number = 0) { return this.isIn(CharSet.Binary, offset); }
+    isHex(offset: number = 0) { return this.isIn(CharSet.Hex, offset); }
+    isLetterOrDigit(offset: number = 0) { return this.isIn(CharSet.LetterOrDigit, offset); }
+    isSpace(offset: number = 0) { return this.isIn(CharSet.Space, offset); }
+    isNewLine(offset: number = 0) { return this.isIn(CharSet.NewLine, offset); }
+    isWhitespace(offset: number = 0) { return this.isIn(CharSet.Whitespace, offset); }
+    isNull(offset: number = 0) { return this.isIn(CharSet.Null, offset); }
+    isEnding(offset: number = 0) { return this.isIn(CharSet.Ending, offset); }
 }
 
 

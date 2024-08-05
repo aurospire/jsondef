@@ -2,7 +2,6 @@ import { makeEnum } from "../util";
 
 
 export const JsondefTypes = makeEnum(
-    'Invalid',
     'NullToken',
     'AnyToken',
     'BooleanToken',
@@ -22,14 +21,14 @@ export const JsondefTypes = makeEnum(
     'UuidToken',
     'Base64Token',
     'EmailToken',
-    'RequiredIs',
-    'OptionalIs',
-    'GreaterThanOrEqual',
-    'LessThanOrEqual',
-    ['GenericOpen', 'LessThan'],
-    ['GenericClose', 'GreaterThan'],
     'TrueToken',
     'FalseToken',
+    'RequiredIs',
+    'OptionalIs',
+    ['GenericOpen', 'LessThan'],
+    ['GenericClose', 'GreaterThan'],
+    'GreaterThanOrEqual',
+    'LessThanOrEqual',
     'Or',
     'Exactly',
     'Open',
@@ -45,9 +44,10 @@ export const JsondefTypes = makeEnum(
     'Integer',
     'Real',
     'String',
-    'Escape',
     'Regex',
-    'RegexBody',
-    'RegexEscape',
-    'Eof'
+    'Eof',
+    'Invalid',
+    'InvalidReal',
+    'InvalidString',
+    'InvalidRegex',
 );

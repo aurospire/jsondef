@@ -1,3 +1,7 @@
+import { inspect } from 'util';
+import { lexJsonDef } from './parser';
+import { JsondefTypes } from './parser/JsondefTypes';
+
 export * from './Schema';
 export * from './Infer';
 export * from './builder';
@@ -44,4 +48,19 @@ const combine_files = async (split: boolean) => {
     nodefs.writeFileSync(output, result);
 };
 
-combine_files(true);
+
+for (const token of lexJsonDef(`|=()[]{},. ..  ...
+    : ?:< <= >>= -12424 1242142 2121e23 123.233 21.31e+12 24.-12 32.1e-12 -
+        _aHASs _ _12312 root this model null
+`)) {
+    const { id, mark: { position: pos, line: ln, column: col }, value } = token;
+    const obj = {
+        id: id,
+        name: JsondefTypes.names(id).join('|'),
+        pos,
+        ln,
+        col,
+        value
+    };
+    console.log(inspect(obj, false, null, true).replaceAll(/^[ ]*/gm, '').replaceAll('\n', ' '));
+}

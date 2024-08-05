@@ -74,20 +74,17 @@ token TimeToken = 'time';
 token UuidToken = 'uuid';
 token Base64Token = 'base64';
 token EmailToken = 'email';
+token TrueToken = 'true';
+token FalseToken = 'false';
 
 token RequiredIs = ':';
 token OptionalIs = '?:';
 
-token GreaterThanOrEqual '>=';
 token LessThanOrEqual = '<=';
-
 token GenericOpen | LessThan = '<';
 
+token GreaterThanOrEqual '>=';
 token GenericClose | GreaterThan = '>';
-
-token TrueToken = 'true';
-token FalseToken = 'false';
-
 
 token Or = '|';
 token Exactly = '=';
@@ -105,10 +102,10 @@ token Number = Digit+;
 token Integer = ['-'] Digit+;
 token Real = Integer ['.' Number] ['e'|'E' ['+'|'-'] Number];
 token String = '\'' {Char | Escape} '\'';
-token Escape = '\\' ('x' HexDigit HexDigit | 'n' | 'r' | 't' | '\\' | '\'' | '"' | '0');
+subtoken Escape = '\\' ('x' HexDigit HexDigit | 'n' | 'r' | 't' | '\\' | '\'' | '"' | '0');
 token Regex = '/' RegexBody '/' {RegexFlag};
-token RegexBody = Char | RegexEscape {Char | RegexEscape};
-token RegexEscape = '\\' Any;
+subtoken RegexBody = Char | RegexEscape {Char | RegexEscape};
+subtoken RegexEscape = '\\' Any;
 
 token Eof = '\0';
 
