@@ -28,7 +28,7 @@ const checkers: Record<string, CheckerMaker> = {
     'AD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => trueSet.has(value) ? !matchRange(value, falseRanges) : false,
 
     'BC': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !falseSet.has(value) : false,
-    'BD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !matchRange(value, trueRanges) : false,
+    'BD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges) ? !matchRange(value, falseRanges) : false,
     'CD': (trueSet, trueRanges, falseSet, falseRanges) => (value) => !(falseSet.has(value) || matchRange(value, falseRanges)),
 
     'ABC': (trueSet, trueRanges, falseSet, falseRanges) => (value) => (trueSet.has(value) || matchRange(value, trueRanges)) ? !falseSet.has(value) : false,
@@ -69,7 +69,7 @@ export class CharSet {
             (charset.#falseSet.size ? 'C' : '') +
             (charset.#falseRanges.length ? 'D' : '');
 
-        this.#checker = checkers[checkerType](
+        charset.#checker = checkers[checkerType](
             charset.#trueSet, charset.#trueRanges,
             charset.#falseSet, charset.#falseRanges
         );
