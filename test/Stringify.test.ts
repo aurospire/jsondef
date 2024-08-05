@@ -1,5 +1,5 @@
 import { AnySchema, ArraySchema, BooleanSchema, GroupSchema, IntegerSchema, LiteralSchema, ModelSchema, NullSchema, NumberSchema, ObjectSchema, RecordSchema, RefSchema, RootSchema, Schema, StringSchema, ThisSchema, TupleSchema, UnionSchema } from '@/Schema';
-import { stringify } from '@/Stringify';
+import { stringify } from '@/stringify/stringify';
 
 type TestCase<S extends Schema> = [title: string, schema: S, pretty: string, condensed: string];
 

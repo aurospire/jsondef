@@ -1,44 +1,8 @@
-import {
-    ArraySchema, GroupSchema, IntegerSchema, LiteralSchema,
-    ModelSchema, NumberSchema, ObjectSchema, RecordSchema,
-    RefSchema, Schema, SchemaObject, SizedAttributes,
-    StringSchema, TupleSchema, UnionSchema
-} from "./Schema";
-
-// Types and constants
-export type StringifyFormat = {
-    indent: string;
-    newline: string;
-    spacing: string;
-};
-
-const condensedFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
-    indent: '',
-    spacing: '',
-    newline: '',
-    ...format
-});
-
-const prettifyFormat = (format: Partial<StringifyFormat>): StringifyFormat => ({
-    indent: '  ',
-    spacing: ' ',
-    newline: '\n',
-    ...format
-});
-
-// Main stringify function
-export const stringify = (
-    schema: Schema,
-    format: Partial<StringifyFormat> = {},
-    condensed: boolean = false
-): string => {
-    const stringifyFormat = condensed ? condensedFormat(format) : prettifyFormat(format);
-
-    return stringifySchema(schema, stringifyFormat);
-};
+import { Schema, RefSchema, IntegerSchema, NumberSchema, LiteralSchema, StringSchema, ArraySchema, TupleSchema, RecordSchema, UnionSchema, ObjectSchema, ModelSchema, GroupSchema, SizedAttributes, SchemaObject } from "../Schema";
+import { StringifyFormat } from "./StringifyFormat";
 
 // Main schema stringification function
-const stringifySchema = (schema: Schema, format: StringifyFormat, level: number = 0, enclosed: boolean = false): string => {
+export const stringifySchema = (schema: Schema, format: StringifyFormat, level: number = 0, enclosed: boolean = false): string => {
     switch (schema.kind) {
         case 'null': return 'null';
         case 'any': return 'any';
@@ -59,6 +23,7 @@ const stringifySchema = (schema: Schema, format: StringifyFormat, level: number 
         case 'group': return stringifyGroupSchema(schema as GroupSchema, format, level);
     }
 };
+
 
 // Helper functions
 const joiner = (format: StringifyFormat) => ',' + format.spacing;
@@ -85,6 +50,7 @@ const stringifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, forma
 
     return results.join(joiner(format));
 };
+
 
 // Schema-specific stringification functions
 const stringifyRefSchema = (schema: RefSchema, format: StringifyFormat): string => schema.of;

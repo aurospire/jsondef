@@ -18,7 +18,7 @@ import { ThisSchemaBuilder } from "./builder/ThisSchemaBuilder";
 import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
 import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 import { validate } from "./validate";
-import { stringify } from "./Stringify";
+import { stringify } from "./stringify/stringify";
 import { RegexString } from "./util";
 
 const nullSchema = () => new NullSchemaBuilder();
