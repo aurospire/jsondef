@@ -29,7 +29,7 @@ export class CharSet {
         if (set instanceof CharSet)
             return this.#union(set.#trueSet, set.#falseSet, set.#trueRanges, set.#falseRanges);
         else if (typeof set === 'string')
-            return this.#union(new Set<string>(set), emptySet, [], []);        
+            return this.#union(new Set<string>(set), emptySet, [], []);
         else
             return this.#union(emptySet, emptySet, [set], []);
     }
@@ -38,7 +38,7 @@ export class CharSet {
         if (set instanceof CharSet)
             return this.#union(set.#falseSet, set.#trueSet, set.#falseRanges, set.#trueRanges);
         else if (typeof set === 'string')
-            return this.#union(emptySet, new Set<string>([set]), [], []);
+            return this.#union(emptySet, new Set<string>(set), [], []);
         else
             return this.#union(emptySet, emptySet, [], [set]);
     }

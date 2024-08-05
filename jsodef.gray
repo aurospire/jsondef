@@ -118,4 +118,4 @@ charset LetterOrDigit = Letter + Digit;
 charset Digit = '0' to '9';
 charset HexDigit = Digit + 'A' to 'F' + 'a' to 'f';
 charset Any = ' ' to '\x7F';
-charset Char = Any + '\t' - '\\';
+charset Char = Any + '\t' - '\\' - '\'';

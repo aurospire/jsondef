@@ -3,12 +3,13 @@ import { JsondefTypes } from "./JsondefTypes";
 
 
 const anySet = CharSet.range({ min: ' ', max: '\x7F' });
-const charSet = anySet.and('\t').andNot('\\');
-const regexFlagsSet = CharSet.chars('igmsuy');
+const charSet = anySet.and('\t').andNot('\'\\');
 const charEscapeSet = CharSet.chars('nrt\\\'"0');
+const regexFlagsSet = CharSet.chars('igmsuy');
 const realSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
 
+console.log('HAS QUOTE', charSet.has('\''));
 const keywords = new Map<string, number>([
     ['null', JsondefTypes.NullToken],
     ['any', JsondefTypes.AnyToken],
@@ -133,7 +134,43 @@ export function* lexJsonDef(data: string) {
                 }
                 // String
                 else if (scanner.is('\'')) {
+                    scanner.consume();
 
+                    while (id === JsondefTypes.Invalid) {
+                        if (scanner.isIn(charSet)) {
+                            scanner.consume();
+                        }
+                        // Escapes
+                        else if (scanner.is('\\')) {
+                            scanner.consume();
+
+                            if (scanner.isIn(charEscapeSet)) {
+                                scanner.consume();
+                            }
+                            // \xXX
+                            else if (scanner.is('x')) {
+                                scanner.consume();
+
+                                for (let i = 0; i < 2; i++) {
+                                    if (scanner.isHex())
+                                        scanner.consume();
+                                    else {
+                                        id = JsondefTypes.InvalidString;
+                                    }
+                                }
+                            }
+                            else {
+                                id = JsondefTypes.InvalidString;
+                            }
+                        }
+                        else if (scanner.is('\'')) {
+                            scanner.consume();
+                            id = JsondefTypes.String;
+                        }
+                        else {
+                            id = JsondefTypes.InvalidString;
+                        }
+                    }
                 }
                 // Regex
                 else if (scanner.is('/')) {
