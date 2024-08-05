@@ -133,11 +133,34 @@ describe('tokenizeJsonDef', () => {
             expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
         });
 
-        it('should handle invalid strings', () => {
-            const input = "'unclosed string 'invalid escape \\z'";
+        it('should handle invalid escape', () => {
+            const input = "'Ab\\$Cd'";
+            const expected = [
+                { id: JsonDefTypes.InvalidString, value: "'Ab\\" },
+                { id: JsonDefTypes.Invalid, value: "$" },
+                { id: JsonDefTypes.Identifier, value: "Cd" },
+                { id: JsonDefTypes.InvalidString, value: "'" },
+                { id: JsonDefTypes.Eof, value: '\0' },
+            ];
+            const tokens = tokenize(input);
+            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+        });
+
+        it('should handle unclosed eof strings', () => {
+            const input = "'unclosed string ";
             const expected = [
                 { id: JsonDefTypes.InvalidString, value: "'unclosed string " },
-                { id: JsonDefTypes.InvalidString, value: "'invalid escape \\z'" },
+                { id: JsonDefTypes.Eof, value: '\0' },
+            ];
+            const tokens = tokenize(input);
+            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+        });
+
+        it('should handle unclosed eol strings', () => {
+            const input = "'unclosed string \n'";
+            const expected = [
+                { id: JsonDefTypes.InvalidString, value: "'unclosed string " },
+                { id: JsonDefTypes.InvalidString, value: "'" },
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
@@ -158,12 +181,21 @@ describe('tokenizeJsonDef', () => {
             expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
         });
 
-        it('should handle invalid regex', () => {
-            const input = '/ /[unclosed /invalid\\';
+        it('should handle unclosed eof regex', () => {
+            const input = "/abc";
             const expected = [
-                { id: JsonDefTypes.InvalidRegex, value: '/' },
-                { id: JsonDefTypes.InvalidRegex, value: '/[unclosed ' },
-                { id: JsonDefTypes.InvalidRegex, value: '/invalid\\' },
+                { id: JsonDefTypes.InvalidRegex, value: "/abc" },
+                { id: JsonDefTypes.Eof, value: '\0' },
+            ];
+            const tokens = tokenize(input);
+            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+        });
+
+        it('should handle unclosed eol regex', () => {
+            const input = "/abc \n/";
+            const expected = [
+                { id: JsonDefTypes.InvalidRegex, value: "/abc " },
+                { id: JsonDefTypes.InvalidRegex, value: "/" },
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
@@ -173,11 +205,11 @@ describe('tokenizeJsonDef', () => {
 
     describe('Whitespace Handling', () => {
         it('should ignore whitespace between tokens', () => {
-            const input = '  number  \t  42  \n  "string"  ';
+            const input = "  number  \t  42  \n  'string'  ";
             const expected = [
                 { id: JsonDefTypes.NumberToken, value: 'number' },
                 { id: JsonDefTypes.Number, value: '42' },
-                { id: JsonDefTypes.InvalidString, value: '"string"' },
+                { id: JsonDefTypes.String, value: "'string'" },
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
@@ -185,16 +217,16 @@ describe('tokenizeJsonDef', () => {
         });
     });
 
-    describe('Comptokenize Scenarios', () => {
-        it('should tokenize a comptokenize input correctly', () => {
+    describe('Complex tokenizing', () => {
+        it('should tokenize a complex tokenize input correctly', () => {
             const input = `
         model User {
-          id: integer
-          name?: string
-          email: /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/
-          age: number >= 18
-          roles: string[]
-          ...otherFields
+          id: integer(> -1),
+          name?: string,
+          email: /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/,
+          age: number(>= 18),
+          roles: string[],
+          otherFields: [null, any, ...boolean[= 5]],
         }
       `;
             const expected = [
@@ -204,24 +236,48 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Identifier, value: 'id' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.IntegerToken, value: 'integer' },
+                { id: JsonDefTypes.Open, value: '(' },
+                { id: JsonDefTypes.GreaterThan, value: '>' },
+                { id: JsonDefTypes.Integer, value: '-1' },
+                { id: JsonDefTypes.Close, value: ')' },
+                { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'name' },
                 { id: JsonDefTypes.OptionalIs, value: '?:' },
                 { id: JsonDefTypes.StringToken, value: 'string' },
-                { id: JsonDefTypes.Identifier, value: 'email' },
+                { id: JsonDefTypes.Comma, value: ',' },
+                { id: JsonDefTypes.EmailToken, value: 'email' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.Regex, value: '/^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/' },
+                { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'age' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.NumberToken, value: 'number' },
+                { id: JsonDefTypes.Open, value: '(' },
                 { id: JsonDefTypes.GreaterThanOrEqual, value: '>=' },
                 { id: JsonDefTypes.Number, value: '18' },
+                { id: JsonDefTypes.Close, value: ')' },
+                { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'roles' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.StringToken, value: 'string' },
                 { id: JsonDefTypes.ArrayOpen, value: '[' },
                 { id: JsonDefTypes.ArrayClose, value: ']' },
-                { id: JsonDefTypes.Rest, value: '...' },
+                { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'otherFields' },
+                { id: JsonDefTypes.RequiredIs, value: ':' },
+                { id: JsonDefTypes.ArrayOpen, value: '[' },
+                { id: JsonDefTypes.NullToken, value: 'null' },
+                { id: JsonDefTypes.Comma, value: ',' },
+                { id: JsonDefTypes.AnyToken, value: 'any' },
+                { id: JsonDefTypes.Comma, value: ',' },
+                { id: JsonDefTypes.Rest, value: '...' },
+                { id: JsonDefTypes.BooleanToken, value: 'boolean' },
+                { id: JsonDefTypes.ArrayOpen, value: '[' },
+                { id: JsonDefTypes.Exactly, value: '=' },
+                { id: JsonDefTypes.Number, value: '5' },
+                { id: JsonDefTypes.ArrayClose, value: ']' },
+                { id: JsonDefTypes.ArrayClose, value: ']' },
+                { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.ObjectClose, value: '}' },
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];

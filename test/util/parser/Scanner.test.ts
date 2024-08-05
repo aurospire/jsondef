@@ -101,7 +101,7 @@ describe('StringScanner', () => {
         const s = new StringScanner('');
         expect(s.isEnd).toBe(true);
         expect(s.position).toBe(0);
-        expect(s.peek()).toBe('');
+        expect(s.peek()).toBe(undefined);
     });
 
     it('should initialize correctly with non-empty string', () => {
@@ -116,8 +116,8 @@ describe('StringScanner', () => {
         expect(s.peek()).toBe('a');
         expect(s.peek(1)).toBe('b');
         expect(s.peek(2)).toBe('c');
-        expect(s.peek(3)).toBe('');
-        expect(s.peek(4)).toBe('');
+        expect(s.peek(3)).toBe(undefined);
+        expect(s.peek(4)).toBe(undefined);
     });
 
     it('should consume correctly', () => {

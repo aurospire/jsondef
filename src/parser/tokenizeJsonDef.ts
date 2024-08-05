@@ -1,10 +1,10 @@
 import { CharSet, makeScanner, StringScanner } from "../util/parser";
 import { JsonDefTypes } from "./JsonDefTypes";
 
-const anySet = CharSet.range({ min: ' ', max: '\x7E' });
-const charSet = anySet.and('\t').andNot('\'\\');
+const anySet = CharSet.range({ min: ' ', max: '\x7E' }).and('\t');
+const charSet = anySet.andNot('\'\\');
 const charEscapeSet = CharSet.chars('nrt\\\'"0');
-const regexCharSet = anySet.and('\t').andNot('/\\');
+const regexCharSet = anySet.andNot('/\\');
 const regexFlagsSet = CharSet.chars('igmsuy');
 const realSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
