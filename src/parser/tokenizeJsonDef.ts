@@ -1,4 +1,4 @@
-import { CharSet, makeScanner, StringScanner } from "../util/parser";
+import { CharSet, makeScanner, StringScanner } from "../util";
 import { JsonDefTypes } from "./JsonDefTypes";
 
 const anySet = CharSet.range({ min: ' ', max: '\x7E' }).and('\t');

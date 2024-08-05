@@ -1,4 +1,4 @@
-import { ArrayScanner, StringScanner, makeScanner } from '@/util/parser/Scanner';
+import { ArrayScanner, StringScanner, makeScanner } from '@/util/Scanner';
 
 describe('ArrayScanner', () => {
     it('should initialize correctly with empty array', () => {

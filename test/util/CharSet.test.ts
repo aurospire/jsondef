@@ -1,4 +1,4 @@
-import { CharSet } from '@/util/parser/CharSet';
+import { CharSet } from '@/util/CharSet';
 
 describe('CharSet', () => {
     describe('Constructor and basic methods', () => {
