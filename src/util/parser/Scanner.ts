@@ -6,10 +6,9 @@ export interface Indexable<T, S extends Indexable<T, S>> {
 
 export type Mark = { position: number; };
 
-export type Piece<S, M extends Mark> = {
-    id: number;
-    mark: M;
+export type Segment<S, M extends Mark> = {
     value: S;
+    mark: M;
 };
 
 export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M extends Mark = Mark> {
@@ -77,11 +76,10 @@ export abstract class Scanner<P, T extends P, S extends Indexable<T, S>, M exten
             this.#marks.pop();
     }
 
-    extract(id: number): Piece<S, M> {
+    extract(): Segment<S, M> {
         const start = this.#marks.at(-2)?.position ?? 0;
 
         return {
-            id,
             mark: this.getMark(1),
             value: this.#data.slice(start, this.position)
         };

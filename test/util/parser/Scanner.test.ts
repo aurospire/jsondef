@@ -78,9 +78,8 @@ describe('ArrayScanner', () => {
         const s = new ArrayScanner([1, 2, 3]);
         s.mark();
         s.consume(2);
-        const piece = s.extract(1);
-        expect(piece).toEqual({
-            id: 1,
+        const segment = s.extract();
+        expect(segment).toEqual({
             mark: { position: 0 },
             value: [1, 2],
         });
@@ -167,9 +166,8 @@ describe('StringScanner', () => {
         const s = new StringScanner('abc');
         s.mark();
         s.consume(2);
-        const piece = s.extract(1);
-        expect(piece).toEqual({
-            id: 1,
+        const segment = s.extract();
+        expect(segment).toEqual({
             mark: { position: 0, line: 0, column: 0 },
             value: 'ab',
         });
