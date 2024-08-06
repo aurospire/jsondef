@@ -1,3 +1,8 @@
+import { inspect } from 'util';
+import { JsonDefTypes } from './parser/JsonDefTypes';
+import { parseJsonDef } from './parser/parseJsonDef';
+import { tokenizeJsonDef } from './parser/tokenizeJsonDef';
+
 export * from './builder';
 export * as d from './helpers';
 export * from './Infer';
@@ -43,3 +48,31 @@ const combine_files = async (split: boolean) => {
 
     nodefs.writeFileSync(output, result);
 };
+
+
+const data = `
+| null 
+| any 
+| boolean
+| root 
+| this 
+| false 
+| true 
+| -12 
+| 10 
+| 1.234 
+| -123e+12 
+| -123e-12 
+| 'Hello' 
+| 'Hello\\n'
+| Identifier
+| ( 1 | 2 | 3 )
+`;
+
+const tokens = [...tokenizeJsonDef(data)];
+
+console.log(tokens.map(({ id, value }) => ({ name: JsonDefTypes.names(id), value })));
+
+const result = parseJsonDef(tokens);
+
+console.log(inspect(result, { depth: null, colors: true }));

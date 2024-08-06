@@ -1,7 +1,10 @@
 grammar Jsondef = SchemaUnion Eof;
 
 rule SchemaUnion = [Or] Schema { Or Schema };
-rule Schema = 
+
+rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
+
+rule SchemaItem = 
     | NullSchema
     | AnySchema
     | BooleanSchema
@@ -18,7 +21,11 @@ rule Schema =
     | ModelSchema
     | SelectSchema
     | GroupSchema
-    | RefSchema;
+    | RefSchema
+    | EnclosedSchema
+    ;
+
+rule EnclosedSchema = Open SchemaUnion Close;
 
 rule NullSchema = NullToken [Open Close];
 rule AnySchema = AnyToken [Open Close];
@@ -32,7 +39,6 @@ rule NumberSchema = NumberToken [Open [RealBounds] Close];
 
 rule StringSchema = StringKind [Open [Size] Close];
 
-rule ArraySchema = (Schema | Open SchemaUnion Close) ArrayOpen [Size] ArrayClose;
 rule TupleSchema = ArrayOpen [SchemaUnion {Comma SchemaUnion} [Elipses ArraySchema] [Comma]] ArrayClose;
 rule RecordSchema = RecordToken AngleOpen [StringSchema Comma] SchemaUnion AngleClose [Open [Size] Close];
 

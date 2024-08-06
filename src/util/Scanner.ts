@@ -11,6 +11,7 @@ export type Mark = { position: number; };
 export type Segment<S, M extends Mark> = {
     value: S;
     mark: M;
+    length: number;
 };
 
 export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mark> {
@@ -26,7 +27,7 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
 
     protected abstract onConsume(data: S, mark: M, count: number): void;
 
-    protected get<K extends keyof M>(key: K): M[K] { return this.#marks.at(-1)![key]; }
+    protected getOfMark<K extends keyof M>(key: K): M[K] { return this.#marks.at(-1)![key]; }
 
     get isEnd(): boolean {
         return this.position >= this.#data.length;
@@ -87,7 +88,8 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
 
         return {
             mark: this.getMark(1),
-            value: this.#data.slice(start, this.position)
+            value: this.#data.slice(start, this.position),
+            length: this.position - start + 1
         };
     }
 
@@ -105,7 +107,17 @@ export class ArrayScanner<T> extends Scanner<T, Array<T>> {
     protected override initialMark(): Mark { return { position: 0 }; }
 
     protected override onConsume(data: Array<T>, mark: Mark, count: number): void { mark.position += count; }
+
+
+    check<K extends keyof T>(key: K, value: T[K], offset: number = 0): boolean {
+        return this.peek(offset)?.[key] === value;
+    }
+
+    get<K extends keyof T>(key: K, offset: number = 0): T[K] | undefined {
+        return this.peek(offset)?.[key];
+    }
 };
+
 
 export type Token = Segment<string, StringMark> & { id: number; };
 
@@ -115,9 +127,9 @@ export class StringScanner extends Scanner<string, string, StringMark> {
 
     constructor(value: string) { super(value); }
 
-    protected get line() { return this.get('line'); }
+    protected get line() { return this.getOfMark('line'); }
 
-    protected get column() { return this.get('column'); }
+    protected get column() { return this.getOfMark('column'); }
 
     protected override initialMark(): StringMark { return { position: 0, line: 0, column: 0 }; }
 

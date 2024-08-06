@@ -94,6 +94,38 @@ describe('ArrayScanner', () => {
         s.consume(2);
         expect(s.isIn(set)).toBe(false);
     });
+
+    it('should test the get method', () => {
+        const s = new ArrayScanner([
+            { id: 1, even: false },
+            { id: 2, even: true },
+        ]);
+
+        expect(s.get('id')).toBe(1);
+        expect(s.get('even')).toBe(false);
+
+        expect(s.get('id', 1)).toBe(2);
+        expect(s.get('even', 1)).toBe(true);
+        
+        expect(s.get('id', 2)).toBe(undefined);
+        expect(s.get('even', 2)).toBe(undefined);
+    });
+    
+    it('should test the check method', () => {
+        const s = new ArrayScanner([
+            { id: 1, even: false },
+            { id: 2, even: true },
+        ]);
+
+        expect(s.check('id', 1)).toBe(true);
+        expect(s.check('even', false)).toBe(true);
+
+        expect(s.check('id', 2, 1)).toBe(true);
+        expect(s.check('even', true, 1)).toBe(true);
+        
+        expect(s.check('id', 2, 2)).toBe(false);
+        expect(s.check('even', true, 2)).toBe(false);
+    });
 });
 
 describe('StringScanner', () => {
