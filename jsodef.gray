@@ -11,41 +11,43 @@ rule SchemaItem =
     | ThisSchema
     | RootSchema    
     | LiteralSchema
+    | RefSchema
+
     | IntegerSchema
     | NumberSchema
     | StringSchema
-    | ArraySchema
+
     | TupleSchema
     | RecordSchema
     | ObjectSchema
     | ModelSchema
-    | SelectSchema
     | GroupSchema
-    | RefSchema
+    | SelectSchema
+
     | EnclosedSchema
     ;
 
 rule EnclosedSchema = Open SchemaUnion Close;
 
-rule NullSchema = NullToken [Open Close];
-rule AnySchema = AnyToken [Open Close];
-rule BooleanSchema = BooleanToken [Open Close];
-rule ThisSchema = ThisToken [Open Close];
-rule RootSchema = RootToken [Open Close];
+rule NullSchema = NullKeyword [Open Close];
+rule AnySchema = AnyKeyword [Open Close];
+rule BooleanSchema = BooleanKeyword [Open Close];
+rule ThisSchema = ThisKeyword [Open Close];
+rule RootSchema = RootKeyword [Open Close];
 
 rule LiteralSchema = Boolean | String | Number;
-rule IntegerSchema = IntegerToken [Open [IntegerBounds] Close];
-rule NumberSchema = NumberToken [Open [RealBounds] Close];
+rule IntegerSchema = IntegerKeyword [Open [IntegerBounds] Close];
+rule NumberSchema = NumberKeyword [Open [RealBounds] Close];
 
 rule StringSchema = StringKind [Open [Size] Close];
 
 rule TupleSchema = ArrayOpen [SchemaUnion {Comma SchemaUnion} [Elipses ArraySchema] [Comma]] ArrayClose;
-rule RecordSchema = RecordToken AngleOpen [StringSchema Comma] SchemaUnion AngleClose [Open [Size] Close];
+rule RecordSchema = RecordKeyword AngleOpen [StringSchema Comma] SchemaUnion AngleClose [Open [Size] Close];
 
 rule ObjectSchema = ObjectOpen ObjectItem { Comma ObjectItem } [Comma] ObjectClose;
-rule ModelSchema = ModelToken ObjectSchema;
-rule GroupSchema = GroupToken ObjectOpen GroupItem (Comma GroupItem) [Comma] ObjectClose;
-rule SelectSchema = SelectToken (Identifier | String) OfToken GroupSchema;
+rule ModelSchema = ModelKeyword ObjectSchema;
+rule GroupSchema = GroupKeyword ObjectOpen GroupItem (Comma GroupItem) [Comma] ObjectClose;
+rule SelectSchema = SelectKeyword (Identifier | String) OfKeyword GroupSchema;
 
 rule ObjectItem = (Identifier | String) (RequiredIs | OptionalIs) SchemaUnion;
 rule GroupItem = (Identifier | String) Required SchemaUnion;
@@ -57,31 +59,31 @@ rule IntegerBounds = Min Integer Comma Max Integer | Max Integer Comma Min Integ
 rule RealBounds = Min Real Comma Max Real | Max Real Comma Min Real | Min Real | Max Real;
 rule Size = Exactly Number | Min Number Comma Max Number | Max Number Comma Min Number | Min Number | Max Number;
 
-rule StringKind = StringToken | DatetimeToken | DateToken | TimeToken | UuidToken | Base64Token | EmailToken | Regex;
+rule StringKind = StringKeyword | DatetimeKeyword | DateKeyword | TimeKeyword | UuidKeyword | Base64Keyword | EmailKeyword | Regex;
 
-rule Boolean = TrueToken | FalseToken;
+rule Boolean = TrueKeyword | FalseKeyword;
 
-token NullToken = 'null';
-token AnyToken = 'any';
-token BooleanToken = 'boolean';
-token ThisToken = 'this';
-token RootToken = 'root';
-token IntegerToken = 'integer';
-token NumberToken = 'number';
-token RecordToken = 'record';
-token ModelToken = 'model';
-token GroupToken = 'group';
-token SelectToken = 'select';
-token OfToken = 'of';
-token StringToken = 'string';
-token DatetimeToken = 'datetime';
-token DateToken = 'date';
-token TimeToken = 'time';
-token UuidToken = 'uuid';
-token Base64Token = 'base64';
-token EmailToken = 'email';
-token TrueToken = 'true';
-token FalseToken = 'false';
+token NullKeyword = 'null';
+token AnyKeyword = 'any';
+token BooleanKeyword = 'boolean';
+token ThisKeyword = 'this';
+token RootKeyword = 'root';
+token IntegerKeyword = 'integer';
+token NumberKeyword = 'number';
+token RecordKeyword = 'record';
+token ModelKeyword = 'model';
+token GroupKeyword = 'group';
+token SelectKeyword = 'select';
+token OfKeyword = 'of';
+token StringKeyword = 'string';
+token DatetimeKeyword = 'datetime';
+token DateKeyword = 'date';
+token TimeKeyword = 'time';
+token UuidKeyword = 'uuid';
+token Base64Keyword = 'base64';
+token EmailKeyword = 'email';
+token TrueKeyword = 'true';
+token FalseKeyword = 'false';
 
 token RequiredIs = ':';
 token OptionalIs = '?:';

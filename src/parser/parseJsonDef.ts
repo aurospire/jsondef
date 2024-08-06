@@ -39,9 +39,7 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result => {
     while (true) {
         const result = parseSchema(scanner);
 
-        if (result === null)
-            break;
-        else if (result.success)
+        if (result.success)
             schemas.push(result.schema);
         else
             return result;
@@ -61,13 +59,10 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result => {
 };
 
 // rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
-export const parseSchema = (scanner: TokenScanner): Result | null => {
+export const parseSchema = (scanner: TokenScanner): Result => {
     const result = parseSchemaItem(scanner);
 
-    if (result === null) {
-        return null;
-    }
-    else if (result.success) {
+    if (result.success) {
         if (scanner.check('id', JsonDefTypes.ArrayOpen)) {
             return result;
         }
@@ -80,33 +75,33 @@ export const parseSchema = (scanner: TokenScanner): Result | null => {
     }
 };
 
-export const parseSchemaItem = (scanner: TokenScanner): Result | null => {
+export const parseSchemaItem = (scanner: TokenScanner): Result => {
     switch (scanner.get('id')) {
-        case JsonDefTypes.NullToken: {
+        case JsonDefTypes.NullKeyword: {
             scanner.consume();
             return Result.success({ kind: 'null' });
         }
-        case JsonDefTypes.AnyToken: {
+        case JsonDefTypes.AnyKeyword: {
             scanner.consume();
             return Result.success({ kind: 'any' });
         }
-        case JsonDefTypes.BooleanToken: {
+        case JsonDefTypes.BooleanKeyword: {
             scanner.consume();
             return Result.success({ kind: 'boolean' });
         }
-        case JsonDefTypes.ThisToken: {
+        case JsonDefTypes.ThisKeyword: {
             scanner.consume();
             return Result.success({ kind: 'this' });
         }
-        case JsonDefTypes.RootToken: {
+        case JsonDefTypes.RootKeyword: {
             scanner.consume();
             return Result.success({ kind: 'root' });
         }
-        case JsonDefTypes.TrueToken: {
+        case JsonDefTypes.TrueKeyword: {
             scanner.consume();
             return Result.success({ kind: 'literal', of: true });
         }
-        case JsonDefTypes.FalseToken: {
+        case JsonDefTypes.FalseKeyword: {
             scanner.consume();
             return Result.success({ kind: 'literal', of: false });
         }
@@ -127,6 +122,35 @@ export const parseSchemaItem = (scanner: TokenScanner): Result | null => {
             scanner.consume();
             return Result.success({ kind: 'ref', of: value });
         }
+
+        case JsonDefTypes.StringKeyword: {
+            return parseStringSchema(scanner);
+        }
+        case JsonDefTypes.IntegerKeyword: {
+            return parseIntegerSchema(scanner);
+        }
+        case JsonDefTypes.NumberKeyword: {
+            return parseNumberSchema(scanner);
+        }
+
+        case JsonDefTypes.ArrayOpen: {
+            return parseTupleSchema(scanner);
+        }
+        case JsonDefTypes.RecordKeyword: {
+            return parseRecordSchema(scanner);
+        }
+        case JsonDefTypes.ObjectOpen: {
+            return parseObjectSchema(scanner);
+        }
+        case JsonDefTypes.ModelKeyword: {
+            return parseModelSchema(scanner);
+        }
+        case JsonDefTypes.GroupKeyword: {
+            return parseGroupSchema(scanner);
+        }
+        case JsonDefTypes.SelectKeyword: {
+            return parseSelectSchema(scanner);
+        }
         case JsonDefTypes.Open: {
             scanner.consume();
             const result = parseSchemaUnion(scanner);
@@ -141,5 +165,15 @@ export const parseSchemaItem = (scanner: TokenScanner): Result | null => {
         }
     }
 
-    return null;
+    return Result.failure([{ token: scanner.peek()!, message: 'Schema not Found' }]);
 };
+
+const parseTupleSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseRecordSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseObjectSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseModelSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseSelectSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseGroupSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseIntegerSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseNumberSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseStringSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };

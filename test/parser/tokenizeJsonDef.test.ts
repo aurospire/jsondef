@@ -4,7 +4,7 @@ import { JsonDefTypes } from '@/parser/JsonDefTypes';
 describe('tokenizeJsonDef', () => {
     const tokenize = (input: string) => Array.from(tokenizeJsonDef(input));
 
-    describe('Basic Tokens', () => {
+    describe('Basic Keywords', () => {
         it('should tokenize simple tokens', () => {
             const input = '| = ( ) [ ] { } , < < > > <= >= : ?: ...';
             const expected = [
@@ -37,27 +37,27 @@ describe('tokenizeJsonDef', () => {
         it('should tokenize keywords correctly', () => {
             const input = 'null any boolean this root integer number record model group select of string datetime date time uuid base64 email true false';
             const expected = [
-                { id: JsonDefTypes.NullToken, value: 'null' },
-                { id: JsonDefTypes.AnyToken, value: 'any' },
-                { id: JsonDefTypes.BooleanToken, value: 'boolean' },
-                { id: JsonDefTypes.ThisToken, value: 'this' },
-                { id: JsonDefTypes.RootToken, value: 'root' },
-                { id: JsonDefTypes.IntegerToken, value: 'integer' },
-                { id: JsonDefTypes.NumberToken, value: 'number' },
-                { id: JsonDefTypes.RecordToken, value: 'record' },
-                { id: JsonDefTypes.ModelToken, value: 'model' },
-                { id: JsonDefTypes.GroupToken, value: 'group' },
-                { id: JsonDefTypes.SelectToken, value: 'select' },
-                { id: JsonDefTypes.OfToken, value: 'of' },
-                { id: JsonDefTypes.StringToken, value: 'string' },
-                { id: JsonDefTypes.DatetimeToken, value: 'datetime' },
-                { id: JsonDefTypes.DateToken, value: 'date' },
-                { id: JsonDefTypes.TimeToken, value: 'time' },
-                { id: JsonDefTypes.UuidToken, value: 'uuid' },
-                { id: JsonDefTypes.Base64Token, value: 'base64' },
-                { id: JsonDefTypes.EmailToken, value: 'email' },
-                { id: JsonDefTypes.TrueToken, value: 'true' },
-                { id: JsonDefTypes.FalseToken, value: 'false' },
+                { id: JsonDefTypes.NullKeyword, value: 'null' },
+                { id: JsonDefTypes.AnyKeyword, value: 'any' },
+                { id: JsonDefTypes.BooleanKeyword, value: 'boolean' },
+                { id: JsonDefTypes.ThisKeyword, value: 'this' },
+                { id: JsonDefTypes.RootKeyword, value: 'root' },
+                { id: JsonDefTypes.IntegerKeyword, value: 'integer' },
+                { id: JsonDefTypes.NumberKeyword, value: 'number' },
+                { id: JsonDefTypes.RecordKeyword, value: 'record' },
+                { id: JsonDefTypes.ModelKeyword, value: 'model' },
+                { id: JsonDefTypes.GroupKeyword, value: 'group' },
+                { id: JsonDefTypes.SelectKeyword, value: 'select' },
+                { id: JsonDefTypes.OfKeyword, value: 'of' },
+                { id: JsonDefTypes.StringKeyword, value: 'string' },
+                { id: JsonDefTypes.DatetimeKeyword, value: 'datetime' },
+                { id: JsonDefTypes.DateKeyword, value: 'date' },
+                { id: JsonDefTypes.TimeKeyword, value: 'time' },
+                { id: JsonDefTypes.UuidKeyword, value: 'uuid' },
+                { id: JsonDefTypes.Base64Keyword, value: 'base64' },
+                { id: JsonDefTypes.EmailKeyword, value: 'email' },
+                { id: JsonDefTypes.TrueKeyword, value: 'true' },
+                { id: JsonDefTypes.FalseKeyword, value: 'false' },
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
@@ -207,7 +207,7 @@ describe('tokenizeJsonDef', () => {
         it('should ignore whitespace between tokens', () => {
             const input = "  number  \t  42  \n  'string'  ";
             const expected = [
-                { id: JsonDefTypes.NumberToken, value: 'number' },
+                { id: JsonDefTypes.NumberKeyword, value: 'number' },
                 { id: JsonDefTypes.Number, value: '42' },
                 { id: JsonDefTypes.String, value: "'string'" },
                 { id: JsonDefTypes.Eof, value: '\0' },
@@ -230,12 +230,12 @@ describe('tokenizeJsonDef', () => {
         }
       `;
             const expected = [
-                { id: JsonDefTypes.ModelToken, value: 'model' },
+                { id: JsonDefTypes.ModelKeyword, value: 'model' },
                 { id: JsonDefTypes.Identifier, value: 'User' },
                 { id: JsonDefTypes.ObjectOpen, value: '{' },
                 { id: JsonDefTypes.Identifier, value: 'id' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
-                { id: JsonDefTypes.IntegerToken, value: 'integer' },
+                { id: JsonDefTypes.IntegerKeyword, value: 'integer' },
                 { id: JsonDefTypes.Open, value: '(' },
                 { id: JsonDefTypes.GreaterThan, value: '>' },
                 { id: JsonDefTypes.Integer, value: '-1' },
@@ -243,15 +243,15 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'name' },
                 { id: JsonDefTypes.OptionalIs, value: '?:' },
-                { id: JsonDefTypes.StringToken, value: 'string' },
+                { id: JsonDefTypes.StringKeyword, value: 'string' },
                 { id: JsonDefTypes.Comma, value: ',' },
-                { id: JsonDefTypes.EmailToken, value: 'email' },
+                { id: JsonDefTypes.EmailKeyword, value: 'email' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.Regex, value: '/^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/' },
                 { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'age' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
-                { id: JsonDefTypes.NumberToken, value: 'number' },
+                { id: JsonDefTypes.NumberKeyword, value: 'number' },
                 { id: JsonDefTypes.Open, value: '(' },
                 { id: JsonDefTypes.GreaterThanOrEqual, value: '>=' },
                 { id: JsonDefTypes.Number, value: '18' },
@@ -259,19 +259,19 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'roles' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
-                { id: JsonDefTypes.StringToken, value: 'string' },
+                { id: JsonDefTypes.StringKeyword, value: 'string' },
                 { id: JsonDefTypes.ArrayOpen, value: '[' },
                 { id: JsonDefTypes.ArrayClose, value: ']' },
                 { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Identifier, value: 'otherFields' },
                 { id: JsonDefTypes.RequiredIs, value: ':' },
                 { id: JsonDefTypes.ArrayOpen, value: '[' },
-                { id: JsonDefTypes.NullToken, value: 'null' },
+                { id: JsonDefTypes.NullKeyword, value: 'null' },
                 { id: JsonDefTypes.Comma, value: ',' },
-                { id: JsonDefTypes.AnyToken, value: 'any' },
+                { id: JsonDefTypes.AnyKeyword, value: 'any' },
                 { id: JsonDefTypes.Comma, value: ',' },
                 { id: JsonDefTypes.Rest, value: '...' },
-                { id: JsonDefTypes.BooleanToken, value: 'boolean' },
+                { id: JsonDefTypes.BooleanKeyword, value: 'boolean' },
                 { id: JsonDefTypes.ArrayOpen, value: '[' },
                 { id: JsonDefTypes.Exactly, value: '=' },
                 { id: JsonDefTypes.Number, value: '5' },

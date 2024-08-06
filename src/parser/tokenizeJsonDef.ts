@@ -10,27 +10,27 @@ const exponentSet = CharSet.chars('eE');
 const signsSet = CharSet.chars('-+');
 
 const keywords = new Map<string, number>([
-    ['null', JsonDefTypes.NullToken],
-    ['any', JsonDefTypes.AnyToken],
-    ['boolean', JsonDefTypes.BooleanToken],
-    ['this', JsonDefTypes.ThisToken],
-    ['root', JsonDefTypes.RootToken],
-    ['integer', JsonDefTypes.IntegerToken],
-    ['number', JsonDefTypes.NumberToken],
-    ['record', JsonDefTypes.RecordToken],
-    ['model', JsonDefTypes.ModelToken],
-    ['group', JsonDefTypes.GroupToken],
-    ['select', JsonDefTypes.SelectToken],
-    ['of', JsonDefTypes.OfToken],
-    ['string', JsonDefTypes.StringToken],
-    ['datetime', JsonDefTypes.DatetimeToken],
-    ['date', JsonDefTypes.DateToken],
-    ['time', JsonDefTypes.TimeToken],
-    ['uuid', JsonDefTypes.UuidToken],
-    ['base64', JsonDefTypes.Base64Token],
-    ['email', JsonDefTypes.EmailToken],
-    ['true', JsonDefTypes.TrueToken],
-    ['false', JsonDefTypes.FalseToken],
+    ['null', JsonDefTypes.NullKeyword],
+    ['any', JsonDefTypes.AnyKeyword],
+    ['boolean', JsonDefTypes.BooleanKeyword],
+    ['this', JsonDefTypes.ThisKeyword],
+    ['root', JsonDefTypes.RootKeyword],
+    ['integer', JsonDefTypes.IntegerKeyword],
+    ['number', JsonDefTypes.NumberKeyword],
+    ['record', JsonDefTypes.RecordKeyword],
+    ['model', JsonDefTypes.ModelKeyword],
+    ['group', JsonDefTypes.GroupKeyword],
+    ['select', JsonDefTypes.SelectKeyword],
+    ['of', JsonDefTypes.OfKeyword],
+    ['string', JsonDefTypes.StringKeyword],
+    ['datetime', JsonDefTypes.DatetimeKeyword],
+    ['date', JsonDefTypes.DateKeyword],
+    ['time', JsonDefTypes.TimeKeyword],
+    ['uuid', JsonDefTypes.UuidKeyword],
+    ['base64', JsonDefTypes.Base64Keyword],
+    ['email', JsonDefTypes.EmailKeyword],
+    ['true', JsonDefTypes.TrueKeyword],
+    ['false', JsonDefTypes.FalseKeyword],
 ]);
 
 export function* tokenizeJsonDef(data: string) {
@@ -140,7 +140,7 @@ export function* tokenizeJsonDef(data: string) {
                     id = scanRegex(scanner);
                 }
 
-                // Invalid Token
+                // Invalid Keyword
                 else {
                     scanner.consume();
                 }
