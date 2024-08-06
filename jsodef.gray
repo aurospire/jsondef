@@ -55,9 +55,9 @@ rule GroupItem = (Identifier | String) Required SchemaUnion;
 rule Min = GreaterThan | GreaterThanOrEqual;
 rule Max = LessThan | LessThanOrEqual;
 
-rule IntegerBounds = Min Integer Comma Max Integer | Max Integer Comma Min Integer | Min Integer | Max Integer;
-rule RealBounds = Min Real Comma Max Real | Max Real Comma Min Real | Min Real | Max Real;
-rule Size = Exactly Number | Min Number Comma Max Number | Max Number Comma Min Number | Min Number | Max Number;
+rule IntegerBounds = Min Integer [Comma Max Integer] | Max Integer [Comma Min Integer];
+rule RealBounds = Min Real [Comma Max Real] | Max Real [Comma Min Real];
+rule Size = Exactly Number | Min Number [Comma Max Number] | Max Number [Comma Min Number];
 
 rule StringKind = StringKeyword | DatetimeKeyword | DateKeyword | TimeKeyword | UuidKeyword | Base64Keyword | EmailKeyword | Regex;
 

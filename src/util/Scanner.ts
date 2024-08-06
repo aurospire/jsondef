@@ -109,12 +109,20 @@ export class ArrayScanner<T> extends Scanner<T, Array<T>> {
     protected override onConsume(data: Array<T>, mark: Mark, count: number): void { mark.position += count; }
 
 
+    get<K extends keyof T>(key: K, offset: number = 0): T[K] | undefined {
+        return this.peek(offset)?.[key];
+    }
+
     check<K extends keyof T>(key: K, value: T[K], offset: number = 0): boolean {
         return this.peek(offset)?.[key] === value;
     }
 
-    get<K extends keyof T>(key: K, offset: number = 0): T[K] | undefined {
-        return this.peek(offset)?.[key];
+    checkIn<K extends keyof T>(key: K, set: { has(value: T[K]): boolean; }, offset: number = 0): boolean {
+        return set.has(this.peek(offset)?.[key]!);
+    }
+
+    checkIncluded<K extends keyof T>(key: K, items: T[K][], offset: number = 0): boolean {
+        return items.includes(this.peek(offset)?.[key]!);
     }
 };
 

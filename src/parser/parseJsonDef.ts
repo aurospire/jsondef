@@ -1,5 +1,5 @@
 import { ArrayScanner, makeScanner, Token } from "../util";
-import { ArraySchema, Schema, SizedAttributes } from '../Schema';
+import { ArraySchema, BoundedAttributes, Schema, SizedAttributes } from '../Schema';
 import { JsonDefTypes } from "./JsonDefTypes";
 
 export type Issue = { token: Token, message: string; };
@@ -34,7 +34,7 @@ export const parseJsonDef = (data: Token[]): Result<Schema> => {
 };
 
 // rule SchemaUnion = [Or] Schema { Or Schema };
-export const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
+const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
     const schemas: Schema[] = [];
 
     if (scanner.check('id', JsonDefTypes.Or))
@@ -63,28 +63,38 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
 };
 
 // rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
-export const parseSchema = (scanner: TokenScanner): Result<Schema> => {
+const parseSchema = (scanner: TokenScanner): Result<Schema> => {
     const result = parseSchemaItem(scanner);
 
     if (result.success) {
         if (scanner.check('id', JsonDefTypes.ArrayOpen)) {
             scanner.consume();
 
-            const sizeResult = parseSize(scanner);
+            let size: SizedAttributes;
 
-            if (sizeResult.success) {
-                if (scanner.check('id', JsonDefTypes.ArrayClose))
-                    scanner.consume();
-                else
-                    return Result.issue(scanner, 'Missing close parenthesis');
-
-                const array: ArraySchema = { kind: 'array', of: result.value, ...sizeResult.value };
-
-                return Result.success(array);
+            if (scanner.check('id', JsonDefTypes.ArrayClose)) {
+                scanner.consume();
+                size = {};
             }
             else {
-                return sizeResult;
+                const sizeResult = parseSize(scanner);
+
+                if (sizeResult.success) {
+                    if (scanner.check('id', JsonDefTypes.ArrayClose)) {
+                        scanner.consume();
+                        size = sizeResult.value;
+                    }
+                    else
+                        return Result.issue(scanner, 'Missing close parenthesis');
+                }
+                else {
+                    return sizeResult;
+                }
             }
+
+            const array: ArraySchema = { kind: 'array', of: result.value, ...size };
+
+            return Result.success(array);
         }
         else {
             return result;
@@ -95,7 +105,7 @@ export const parseSchema = (scanner: TokenScanner): Result<Schema> => {
     }
 };
 
-export const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
+const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
     switch (scanner.get('id')) {
         case JsonDefTypes.NullKeyword: {
             scanner.consume();
@@ -198,6 +208,75 @@ const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => { return R
 const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseStringSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 
+
+
+const parseBound = (scanner: TokenScanner,
+    map: Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>,
+    valueType: number,
+    previous: SizedAttributes = {}
+): Result<Partial<Record<keyof SizedAttributes, number>>> | null => {
+    let info = map.get(scanner.get('id')!);
+
+    if (info) {
+        if (info.key in previous)
+            return Result.issue(scanner, `${info.key} already defined`);
+        if (info.other && info.other in previous)
+            return Result.issue(scanner, `${info.other} already defined`);
+
+        scanner.consume();
+
+        if (scanner.check('id', valueType)) {
+            const value = scanner.get('value')!;
+
+            scanner.consume();
+
+            return Result.success({ ...previous, [info.key]: Number.parseInt(value) });
+        }
+        else {
+            return Result.issue(scanner, `Missing ${info} size number`);
+        }
+    }
+
+    return null;
+};
+
+const exactMap = new Map<number, { key: keyof SizedAttributes; }>([[JsonDefTypes.Exactly, { key: 'exact' }]]);
+const boundsMap = new Map<number, { key: keyof SizedAttributes, other: keyof SizedAttributes; }>([
+    [JsonDefTypes.LessThan, { key: 'xmin', other: 'min' }],
+    [JsonDefTypes.LessThanOrEqual, { key: 'min', other: 'xmin' }],
+    [JsonDefTypes.GreaterThan, { key: 'xmax', other: 'max' }],
+    [JsonDefTypes.GreaterThanOrEqual, { key: 'max', other: 'xmax' }],
+]);
+
+
 const parseSize = (scanner: TokenScanner): Result<SizedAttributes> => {
-    return Result.success({});
+    let result = parseBound(scanner, exactMap, JsonDefTypes.Number);
+
+    if (result === null)
+        result = parseBounds(scanner, JsonDefTypes.Number);
+
+    return result === null ? Result.success({}) : result;
+};
+
+
+const parseBounds = (scanner: TokenScanner, type: number): Result<BoundedAttributes> => {
+    let previous: BoundedAttributes = {};
+
+    while (true) {
+        const result = parseBound(scanner, boundsMap, type, previous);
+
+        if (result === null)
+            break;
+        else if (!result.success)
+            return result;
+
+        previous = result.value;
+
+        if (scanner.check('id', JsonDefTypes.Comma))
+            scanner.consume();
+        else
+            break;
+    }
+
+    return Result.success(previous);
 };
