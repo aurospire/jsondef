@@ -77,13 +77,17 @@ const combine_files = async (split: boolean) => {
 // | uuid()
 // | datetime | time | base64 | /abc/i(>3)[=10]
 // | [] | [boolean] | [boolean, number] | [date, (1|2|3), ...string[]]
-const data = `
-| record<any> | record<date, any> | record</123/i, boolean>(>10)
-`;
+// | record<any> | record<date, any> | record</123/i, boolean>(>10)
+const data = `select 'a' of group {
+    a: number,
+    b: string(>10),
+    c: date[],
+    d: this | null
+}`;
 
 const tokens = [...tokenizeJsonDef(data)];
 
-console.log(inspect(tokens.map(({ id, value }) => ({ name: JsonDefTypes.names(id), value })), { depth: null, colors: true }));
+console.log(inspect(tokens.map(({ type: id, value }) => ({ name: JsonDefTypes.names(id), value })), { depth: null, colors: true }));
 
 const result = parseJsonDef(tokens);
 

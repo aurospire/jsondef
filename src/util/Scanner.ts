@@ -103,6 +103,13 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
     isIn(set: Contains<T>, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
 
     isIncluded(items: T[], offset: number = 0): boolean { return items.includes(this.peek(offset) as any); }
+
+
+    consumeIf(value: T): boolean { if (this.is(value)) { this.consume(); return true; } return false; }
+
+    consumeIfIn(set: Contains<T>): boolean { if (this.isIn(set)) { this.consume(); return true; } return false; }
+
+    consumeIfIncluded(items: T[]): boolean { if (this.isIncluded(items)) { this.consume(); return true; } return false; }
 }
 
 export class ArrayScanner<T> extends Scanner<T, Array<T>> {
@@ -117,15 +124,15 @@ export class ArrayScanner<T> extends Scanner<T, Array<T>> {
         return this.peek(offset)?.[key];
     }
 
-    check<K extends keyof T>(key: K, value: T[K], offset: number = 0): boolean {
+    getIs<K extends keyof T>(key: K, value: T[K], offset: number = 0): boolean {
         return this.peek(offset)?.[key] === value;
     }
 
-    checkIn<K extends keyof T>(key: K, set: Contains<T[K]>, offset: number = 0): boolean {
+    getIn<K extends keyof T>(key: K, set: Contains<T[K]>, offset: number = 0): boolean {
         return set.has(this.peek(offset)?.[key]!);
     }
 
-    checkIncluded<K extends keyof T>(key: K, items: T[K][], offset: number = 0): boolean {
+    getIncluded<K extends keyof T>(key: K, items: T[K][], offset: number = 0): boolean {
         return items.includes(this.peek(offset)?.[key]!);
     }
 };
@@ -136,25 +143,31 @@ export class TokenScanner extends ArrayScanner<Token> {
         return this.peek()?.value;
     }
 
-    id(offset: number = 0): number | undefined {
-        return this.peek()?.id;
+    type(offset: number = 0): number | undefined {
+        return this.peek()?.type;
     }
 
-    idIs(expected: number, offset: number = 0): boolean {
-        return this.id(offset) === expected;
+    typeIs(id: number, offset: number = 0): boolean {
+        return this.type(offset) === id;
     }
 
-    idIn(set: Contains<number>, offset: number = 0): boolean {
-        return set.has(this.id() as any);
+    typeIn(set: Contains<number>, offset: number = 0): boolean {
+        return set.has(this.type() as any);
     }
 
-    idInclude(items: number[], offset: number = 0): boolean {
-        return items.includes(this.id() as any);
+    typeIncluded(items: number[], offset: number = 0): boolean {
+        return items.includes(this.type() as any);
     }
+
+    consumeIfType(id: number): boolean { if (this.typeIs(id)) { this.consume(); return true; } return false; }
+    
+    consumeIfTypeIn(set: Contains<number>): boolean { if (this.typeIn(set)) { this.consume(); return true; } return false; }
+
+    consumeIfTypeIncluded(items: number[]): boolean { if (this.typeIncluded(items)) { this.consume(); return true; } return false; }
 }
 
 
-export type Token = Segment<string, StringMark> & { id: number; };
+export type Token = Segment<string, StringMark> & { type: number; };
 
 export type StringMark = Mark & { line: number, column: number; };
 
@@ -190,18 +203,31 @@ export class StringScanner extends Scanner<string, string, StringMark> {
         mark.column = column;
     }
 
-    token(id: number): Token { return { id, ...this.extract() }; }
+
+    token(id: number): Token { return { type: id, ...this.extract() }; }
+
 
     isUpper(offset: number = 0) { return this.isIn(CharSet.Upper, offset); }
+
     isLower(offset: number = 0) { return this.isIn(CharSet.Lower, offset); }
+
     isLetter(offset: number = 0) { return this.isIn(CharSet.Letter, offset); }
+
     isDigit(offset: number = 0) { return this.isIn(CharSet.Digit, offset); }
+
     isBinary(offset: number = 0) { return this.isIn(CharSet.Binary, offset); }
+
     isHex(offset: number = 0) { return this.isIn(CharSet.Hex, offset); }
+
     isLetterOrDigit(offset: number = 0) { return this.isIn(CharSet.LetterOrDigit, offset); }
+
     isSpace(offset: number = 0) { return this.isIn(CharSet.Space, offset); }
+
     isNewLine(offset: number = 0) { return this.isIn(CharSet.NewLine, offset); }
+
     isWhitespace(offset: number = 0) { return this.isIn(CharSet.Whitespace, offset); }
+
     isNull(offset: number = 0) { return this.isIn(CharSet.Null, offset); }
+
     isEnding(offset: number = 0) { return this.isIn(CharSet.Ending, offset); }
 }

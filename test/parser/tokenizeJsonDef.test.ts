@@ -29,7 +29,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -61,7 +61,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -76,7 +76,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -90,7 +90,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should tokenize real numbers', () => {
@@ -103,7 +103,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle invalid real numbers', () => {
@@ -115,7 +115,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -130,7 +130,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle invalid escape', () => {
@@ -143,7 +143,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle unclosed eof strings', () => {
@@ -153,7 +153,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle unclosed eol strings', () => {
@@ -164,7 +164,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -178,7 +178,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle unclosed eof regex', () => {
@@ -188,7 +188,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
 
         it('should handle unclosed eol regex', () => {
@@ -199,7 +199,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -213,7 +213,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 
@@ -282,7 +282,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefTypes.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
-            expect(tokens.map(t => ({ id: t.id, value: t.value }))).toEqual(expected);
+            expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
 });
