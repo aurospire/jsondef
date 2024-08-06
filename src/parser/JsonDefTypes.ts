@@ -29,6 +29,7 @@ export const JsonDefTypes = makeEnum(
     ['GenericClose', 'GreaterThan'],
     'GreaterThanOrEqual',
     'LessThanOrEqual',
+    'And',
     'Or',
     'Exactly',
     'Open',

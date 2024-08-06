@@ -57,9 +57,9 @@ rule GroupItem = (Identifier | String) Required SchemaUnion;
 rule Min = GreaterThan | GreaterThanOrEqual;
 rule Max = LessThan | LessThanOrEqual;
 
-rule IntegerBounds = Min Integer [Comma Max Integer] | Max Integer [Comma Min Integer];
-rule RealBounds = Min Real [Comma Max Real] | Max Real [Comma Min Real];
-rule Size = Exactly Number | Min Number [Comma Max Number] | Max Number [Comma Min Number];
+rule IntegerBounds = Min Integer [And Max Integer] | Max Integer [And Min Integer];
+rule RealBounds = Min Real [And Max Real] | Max Real [And Min Real];
+rule Size = Exactly Number | Min Number [And Max Number] | Max Number [And Min Number];
 
 rule StringKind = StringKeyword | DatetimeKeyword | DateKeyword | TimeKeyword | UuidKeyword | Base64Keyword | EmailKeyword | Regex;
 
@@ -96,6 +96,7 @@ token GenericOpen | LessThan = '<';
 token GreaterThanOrEqual '>=';
 token GenericClose | GreaterThan = '>';
 
+token And = '&&';
 token Or = '|';
 token Exactly = '=';
 token Open = '(';

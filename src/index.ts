@@ -67,11 +67,11 @@ const data = `
 | 'Hello' 
 | 'Hello\\n'
 | Identifier
-| ( 1 | 2 | 3 )[>= 100, <= 10]
+| ( 1 | 2 | 3 )[>= 100 && <= 10]
 | number(<1.02)
 | number
 | integer()
-| integer(>= -10, < 22)
+| integer(>= -10 && < 22)
 | string
 | date()
 | email(=20)

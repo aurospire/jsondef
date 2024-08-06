@@ -56,6 +56,15 @@ export function* tokenizeJsonDef(data: string) {
             case '{': scanner.consume(); id = JsonDefTypes.ObjectOpen; break;
             case '}': scanner.consume(); id = JsonDefTypes.ObjectClose; break;
             case ',': scanner.consume(); id = JsonDefTypes.Comma; break;
+            case '&': {
+                scanner.consume();
+
+                if (scanner.is('&')) {
+                    scanner.consume();
+                    id = JsonDefTypes.And;
+                }
+                break;
+            }
             case '<': {
                 scanner.consume();
 

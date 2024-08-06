@@ -26,12 +26,12 @@ export const stringifySchema = (schema: Schema, format: StringifyFormat, level: 
 
 
 // Helper functions
-const joiner = (format: StringifyFormat) => ',' + format.spacing;
+const joiner = (format: StringifyFormat, connector: string) => connector + format.spacing;
 
 const stringifyString = (value: string) => `'${JSON.stringify(value).slice(1, -1)}'`;
 
 // exact: =; min: > | >=, max; < | <=
-// (exact NUMBER) | (min NUMBER) | (max NUMBER) | (min NUMBER, max NUMBER)
+// (exact NUMBER) | (min NUMBER) | (max NUMBER) | (min NUMBER && max NUMBER)
 const stringifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, format: StringifyFormat): string => {
     if (exact !== undefined)
         return `=${format.spacing}${exact}`;
@@ -48,7 +48,7 @@ const stringifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, forma
     else if (max !== undefined)
         results.push(`<=${format.spacing}${max}`);
 
-    return results.join(joiner(format));
+    return results.join(joiner(format, '&&'));
 };
 
 
@@ -99,7 +99,7 @@ const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, le
 
     const params = key ? [key, of] : [of];
 
-    const head = `record<${params.join(joiner(format))}>`;
+    const head = `record<${params.join(joiner(format, ','))}>`;
 
     return bounds.length ? `${head}(${bounds})` : head;
 };
@@ -113,7 +113,7 @@ const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, leve
     if (rest)
         schemas.push(`...${rest}`);
 
-    return `[${schemas.join(joiner(format))}]`;
+    return `[${schemas.join(joiner(format, ','))}]`;
 };
 
 const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {

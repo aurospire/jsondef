@@ -400,20 +400,25 @@ const parseSize = (scanner: TokenScanner): Result<SizedAttributes> => {
 const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAttributes> => {
     let previous: BoundedAttributes = {};
 
-    while (true) {
-        const result = parseBound(scanner, boundsMap, type, previous);
+    let result = parseBound(scanner, boundsMap, type, previous);
 
-        if (result === null)
-            break;
-        else if (!result.success)
-            return result;
+    if (result !== null) {
+        if (!result.success) return result;
 
         previous = result.value;
 
-        if (scanner.check('id', JsonDefTypes.Comma))
+        if (scanner.check('id', JsonDefTypes.And)) {
             scanner.consume();
-        else
-            break;
+
+            let result = parseBound(scanner, boundsMap, type, previous);
+
+            if (result === null)
+                return Result.issue(scanner, 'Missing Bound');
+            else if (!result.success)
+                return result;
+            else
+                previous = { ...previous, ...result.value };
+        }
     }
 
     return Result.success(previous);
