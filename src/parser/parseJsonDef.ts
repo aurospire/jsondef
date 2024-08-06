@@ -1,5 +1,5 @@
-import { ArrayScanner, makeScanner, Token } from "../util";
-import { ArraySchema, BoundedAttributes, Schema, SizedAttributes } from '../Schema';
+import { ArrayScanner, makeScanner, RegexString, Token } from "../util";
+import { ArraySchema, BoundedAttributes, GroupSchema, IntegerSchema, ModelSchema, NumberSchema, ObjectSchema, RecordSchema, Schema, SizedAttributes, StringFormat, StringSchema, TupleSchema } from '../Schema';
 import { JsonDefTypes } from "./JsonDefTypes";
 
 export type Issue = { token: Token, message: string; };
@@ -209,7 +209,7 @@ const numberSet = new Set<number>([JsonDefTypes.Number]);
 const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
 const realSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer, JsonDefTypes.Real]);
 
-const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => {
+const parseIntegerSchema = (scanner: TokenScanner): Result<IntegerSchema> => {
     scanner.consume();
 
     let bounds: BoundedAttributes = {};
@@ -234,7 +234,7 @@ const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => {
     return Result.success({ kind: 'integer', ...bounds });
 };
 
-const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => {
+const parseNumberSchema = (scanner: TokenScanner): Result<NumberSchema> => {
     scanner.consume();
 
     let bounds: BoundedAttributes = {};
@@ -259,10 +259,10 @@ const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => {
     return Result.success({ kind: 'number', ...bounds });
 };
 
-const parseStringSchema = (scanner: TokenScanner): Result<Schema> => {
+const parseStringSchema = (scanner: TokenScanner): Result<StringSchema> => {
     const value = scanner.get('value')!;
 
-    const of = value === 'string' ? {} : { of: value };
+    const of = value === 'string' ? {} : { of: value as StringFormat | RegexString };
 
     scanner.consume();
 
@@ -288,7 +288,7 @@ const parseStringSchema = (scanner: TokenScanner): Result<Schema> => {
     return Result.success({ kind: 'string', ...size, ...of });
 };
 
-const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => {
+const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema> => {
     scanner.consume();
 
     let schemas: Schema[] = [];
@@ -336,15 +336,70 @@ const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => {
 
     scanner.consume();
 
-    return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest } : {}) });
+    return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) });
 };
 
 
-const parseRecordSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseObjectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseModelSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseSelectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseGroupSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema> => {
+    scanner.consume();
+
+    if (!scanner.check('id', JsonDefTypes.GenericOpen))
+        return Result.issue(scanner, `Expecting '<'`);
+
+    scanner.consume();
+
+    const first = parseSchemaUnion(scanner);
+    let last: Result<Schema> | undefined;
+    let size: SizedAttributes = {};
+
+    if (!first.success)
+        return first;
+
+    if (scanner.check('id', JsonDefTypes.Comma)) {
+        if (first.value.kind !== 'string')
+            return Result.issue(scanner, 'Record key must be a string schema');
+
+        scanner.consume();
+
+        last = parseSchemaUnion(scanner);
+
+        if (!last.success)
+            return last;
+    }
+
+    if (scanner.check('id', JsonDefTypes.GenericClose))
+        scanner.consume();
+    else
+        return Result.issue(scanner, `Expecting '>'`);
+
+
+    if (scanner.check('id', JsonDefTypes.Open)) {
+        scanner.consume();
+
+        const sizeResult = parseSize(scanner);
+
+        if (!sizeResult.success)
+            return sizeResult;
+
+        size = sizeResult.value;
+
+        if (scanner.check('id', JsonDefTypes.Close))
+            scanner.consume();
+        else
+            return Result.issue(scanner, `Expecting ')'`);
+
+    }
+
+
+    return Result.success(last && last.success
+        ? { kind: 'record', of: last.value, key: first.value as StringSchema, ...size }
+        : { kind: 'record', of: first.value, ...size });
+};
+
+const parseObjectSchema = (scanner: TokenScanner): Result<ObjectSchema> => { return Result.failure([]); };
+const parseModelSchema = (scanner: TokenScanner): Result<ModelSchema> => { return Result.failure([]); };
+const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema> => { return Result.failure([]); };
+const parseGroupSchema = (scanner: TokenScanner): Result<GroupSchema> => { return Result.failure([]); };
 
 
 

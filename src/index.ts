@@ -51,43 +51,44 @@ const combine_files = async (split: boolean) => {
 };
 
 
+// | null 
+// | any 
+// | boolean
+// | root 
+// | this 
+// | false 
+// | true 
+// | -12 
+// | 10[> 2]
+// | 1.234 
+// | -123e+12 
+// | -123e-12 
+// | 'Hello' 
+// | 'Hello\\n'
+// | Identifier
+// | ( 1 | 2 | 3 )[>= 100 && <= 10]
+// | number(<1.02)
+// | number
+// | integer()
+// | integer(>= -10 && < 22)
+// | string
+// | date()
+// | email(=20)
+// | uuid()
+// | datetime | time | base64 | /abc/i(>3)[=10]
+// | [] | [boolean] | [boolean, number] | [date, (1|2|3), ...string[]]
 const data = `
-| null 
-| any 
-| boolean
-| root 
-| this 
-| false 
-| true 
-| -12 
-| 10[> 2]
-| 1.234 
-| -123e+12 
-| -123e-12 
-| 'Hello' 
-| 'Hello\\n'
-| Identifier
-| ( 1 | 2 | 3 )[>= 100 && <= 10]
-| number(<1.02)
-| number
-| integer()
-| integer(>= -10 && < 22)
-| string
-| date()
-| email(=20)
-| uuid()
-| datetime | time | base64 | /abc/i(>3)[=10]
-| [] | [boolean] | [boolean, number] | [date, (1|2|3), ...string[]]
+| record<any> | record<date, any> | record</123/i, boolean>(>10)
 `;
 
 const tokens = [...tokenizeJsonDef(data)];
 
-console.log(tokens.map(({ id, value }) => ({ name: JsonDefTypes.names(id), value })));
+console.log(inspect(tokens.map(({ id, value }) => ({ name: JsonDefTypes.names(id), value })), { depth: null, colors: true }));
 
 const result = parseJsonDef(tokens);
 
 console.log(inspect(result, { depth: null, colors: true }));
 
 if (result.success) {
-    console.log(stringify(result.value))
+    console.log(stringify(result.value));
 }
