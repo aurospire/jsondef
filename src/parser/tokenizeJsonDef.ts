@@ -1,4 +1,4 @@
-import { CharSet, makeScanner, StringScanner } from "../util";
+import { CharSet, StringScanner } from "../util";
 import { JsonDefTypes } from "./JsonDefTypes";
 
 const anySet = CharSet.range({ min: ' ', max: '\x7E' }).and('\t');
@@ -34,7 +34,7 @@ const keywords = new Map<string, number>([
 ]);
 
 export function* tokenizeJsonDef(data: string) {
-    const scanner = makeScanner(data + '\0');
+    const scanner = new StringScanner(data + '\0');
 
     while (!scanner.isEnd) {
         while (scanner.isIn(CharSet.Whitespace)) {

@@ -1,4 +1,4 @@
-import { ArrayScanner, StringScanner, makeScanner } from '@/util/Scanner';
+import { ArrayScanner, StringScanner } from '@/util/Scanner';
 
 describe('ArrayScanner', () => {
     it('should initialize correctly with empty array', () => {
@@ -227,17 +227,5 @@ describe('StringScanner', () => {
         const s = new StringScanner(`a\n\r\n\rb\r\n\n`);
         s.consume(8);
         expect(s.getMark()).toEqual({ position: 8, line: 4, column: 0 });
-    });
-});
-
-describe('makeScanner factory function', () => {
-    it('should create ArrayScanner for arrays', () => {
-        const s = makeScanner([1, 2, 3]);
-        expect(s).toBeInstanceOf(ArrayScanner);
-    });
-
-    it('should create StringScanner for strings', () => {
-        const s = makeScanner('abc');
-        expect(s).toBeInstanceOf(StringScanner);
     });
 });

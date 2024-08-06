@@ -131,6 +131,29 @@ export class ArrayScanner<T> extends Scanner<T, Array<T>> {
 };
 
 
+export class TokenScanner extends ArrayScanner<Token> {
+    value(offset: number = 0): string | undefined {
+        return this.peek()?.value;
+    }
+
+    id(offset: number = 0): number | undefined {
+        return this.peek()?.id;
+    }
+
+    idIs(expected: number, offset: number = 0): boolean {
+        return this.id(offset) === expected;
+    }
+
+    idIn(set: Contains<number>, offset: number = 0): boolean {
+        return set.has(this.id() as any);
+    }
+
+    idInclude(items: number[], offset: number = 0): boolean {
+        return items.includes(this.id() as any);
+    }
+}
+
+
 export type Token = Segment<string, StringMark> & { id: number; };
 
 export type StringMark = Mark & { line: number, column: number; };
@@ -182,10 +205,3 @@ export class StringScanner extends Scanner<string, string, StringMark> {
     isNull(offset: number = 0) { return this.isIn(CharSet.Null, offset); }
     isEnding(offset: number = 0) { return this.isIn(CharSet.Ending, offset); }
 }
-
-
-type ScannerType<S extends string | unknown[]> = S extends Array<infer T> ? ArrayScanner<T> : StringScanner;
-
-export const makeScanner = <S extends string | unknown[]>(data: S): ScannerType<S> => {
-    return (typeof data === 'string' ? new StringScanner(data) : new ArrayScanner(data)) as ScannerType<S>;
-};
