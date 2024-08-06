@@ -19,7 +19,6 @@ const Result = {
 type TokenScanner = ArrayScanner<Token>;
 
 
-// grammar JsonDef = SchemaUnion Eof;
 export const parseJsonDef = (data: Token[]): Result<Schema> => {
     const scanner = makeScanner(data);
 
@@ -34,7 +33,6 @@ export const parseJsonDef = (data: Token[]): Result<Schema> => {
     return result;
 };
 
-// rule SchemaUnion = [Or] Schema { Or Schema };
 const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
     const schemas: Schema[] = [];
 
@@ -63,7 +61,6 @@ const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
         return Result.success({ kind: 'union', of: schemas });
 };
 
-// rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
 const parseSchema = (scanner: TokenScanner): Result<Schema> => {
     const result = parseSchemaItem(scanner);
 
@@ -205,9 +202,13 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
     return Result.issue(scanner, 'Schema not found');
 };
 
+
 const numberSet = new Set<number>([JsonDefTypes.Number]);
+
 const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
+
 const realSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer, JsonDefTypes.Real]);
+
 
 const parseIntegerSchema = (scanner: TokenScanner): Result<IntegerSchema> => {
     scanner.consume();
@@ -339,7 +340,6 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema> => {
     return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) });
 };
 
-
 const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema> => {
     scanner.consume();
 
@@ -396,15 +396,58 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema> => {
         : { kind: 'record', of: first.value, ...size });
 };
 
+const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key: string, schema: Schema; }> => {
+    let key: string;
+
+    if (scanner.check('id', JsonDefTypes.Identifier)) {
+        key = scanner.get('value')!;
+        scanner.consume();
+    }
+    else if (scanner.check('id', JsonDefTypes.String)) {
+        key = scanner.get('value')!.slice(1, -1);
+        scanner.consume();
+    }
+    else {
+        return Result.issue(scanner, 'Missing key');
+    }
+
+    let isOptional = {};
+
+    if (scanner.check('id', JsonDefTypes.RequiredIs)) {
+        scanner.consume();
+    }
+    else if (scanner.check('id', JsonDefTypes.OptionalIs)) {
+        if (!optional)
+            return Result.issue(scanner, 'Optional definitions not allowed');
+
+        isOptional = { isOptional: true };
+
+        scanner.consume();
+    }
+    else {
+        return Result.issue(scanner, `Expected ${optional ? `':' or '?:'` : `':`}`);
+    }
+
+    const schema = parseSchemaUnion(scanner);
+
+    if (schema.success)
+        return Result.success({ key, schema: { ...schema.value, ...isOptional } });
+    else
+        return schema;
+};
+
 const parseObjectSchema = (scanner: TokenScanner): Result<ObjectSchema> => { return Result.failure([]); };
+
 const parseModelSchema = (scanner: TokenScanner): Result<ModelSchema> => { return Result.failure([]); };
+
 const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema> => { return Result.failure([]); };
+
 const parseGroupSchema = (scanner: TokenScanner): Result<GroupSchema> => { return Result.failure([]); };
 
 
 
-
 const exactMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([[JsonDefTypes.Exactly, { key: 'exact' }]]);
+
 const boundsMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([
     [JsonDefTypes.GreaterThan, { key: 'xmin', other: 'min' }],
     [JsonDefTypes.GreaterThanOrEqual, { key: 'min', other: 'xmin' }],
