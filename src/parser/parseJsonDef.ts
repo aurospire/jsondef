@@ -85,7 +85,7 @@ const parseSchema = (scanner: TokenScanner): Result<Schema> => {
                         size = sizeResult.value;
                     }
                     else
-                        return Result.issue(scanner, 'Missing close parenthesis');
+                        return Result.issue(scanner, 'Missing array close');
                 }
                 else {
                     return sizeResult;
@@ -198,21 +198,83 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
     return Result.issue(scanner, 'Schema not found');
 };
 
+const numberSet = new Set<number>([JsonDefTypes.Number]);
+const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
+const realSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer, JsonDefTypes.Real]);
+
+const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => {
+    scanner.consume();
+
+    let bounds: BoundedAttributes = {};
+
+    if (scanner.check('id', JsonDefTypes.Open)) {
+        scanner.consume();
+
+        const boundsResult = parseBounds(scanner, integerSet);
+
+        if (boundsResult.success) {
+            bounds = boundsResult.value;
+
+            if (scanner.check('id', JsonDefTypes.Close))
+                scanner.consume();
+            else
+                return Result.issue(scanner, 'Missing bounds close');
+        }
+        else
+            return boundsResult;
+    }
+
+    return Result.success({ kind: 'integer', ...bounds });
+};
+
+const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => {
+    scanner.consume();
+
+    let bounds: BoundedAttributes = {};
+
+    if (scanner.check('id', JsonDefTypes.Open)) {
+        scanner.consume();
+
+        const boundsResult = parseBounds(scanner, realSet);
+
+        if (boundsResult.success) {
+            bounds = boundsResult.value;
+
+            if (scanner.check('id', JsonDefTypes.Close))
+                scanner.consume();
+            else
+                return Result.issue(scanner, 'Missing bounds close');
+        }
+        else
+            return boundsResult;
+    }
+
+    return Result.success({ kind: 'number', ...bounds });
+};
+
+const parseStringSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+
 const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseRecordSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseObjectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseModelSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseSelectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseGroupSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
-const parseStringSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 
 
+
+
+const exactMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([[JsonDefTypes.Exactly, { key: 'exact' }]]);
+const boundsMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([
+    [JsonDefTypes.GreaterThan, { key: 'xmin', other: 'min' }],
+    [JsonDefTypes.GreaterThanOrEqual, { key: 'min', other: 'xmin' }],
+    [JsonDefTypes.LessThan, { key: 'xmax', other: 'max' }],
+    [JsonDefTypes.LessThanOrEqual, { key: 'max', other: 'xmax' }],
+]);
 
 const parseBound = (scanner: TokenScanner,
     map: Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>,
-    valueType: number,
+    valueType: Set<number>,
     previous: SizedAttributes = {}
 ): Result<Partial<Record<keyof SizedAttributes, number>>> | null => {
     let info = map.get(scanner.get('id')!);
@@ -225,12 +287,12 @@ const parseBound = (scanner: TokenScanner,
 
         scanner.consume();
 
-        if (scanner.check('id', valueType)) {
+        if (scanner.checkIn('id', valueType)) {
             const value = scanner.get('value')!;
 
             scanner.consume();
 
-            return Result.success({ ...previous, [info.key]: Number.parseInt(value) });
+            return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
         }
         else {
             return Result.issue(scanner, `Missing ${info} size number`);
@@ -240,26 +302,17 @@ const parseBound = (scanner: TokenScanner,
     return null;
 };
 
-const exactMap = new Map<number, { key: keyof SizedAttributes; }>([[JsonDefTypes.Exactly, { key: 'exact' }]]);
-const boundsMap = new Map<number, { key: keyof SizedAttributes, other: keyof SizedAttributes; }>([
-    [JsonDefTypes.LessThan, { key: 'xmin', other: 'min' }],
-    [JsonDefTypes.LessThanOrEqual, { key: 'min', other: 'xmin' }],
-    [JsonDefTypes.GreaterThan, { key: 'xmax', other: 'max' }],
-    [JsonDefTypes.GreaterThanOrEqual, { key: 'max', other: 'xmax' }],
-]);
-
-
 const parseSize = (scanner: TokenScanner): Result<SizedAttributes> => {
-    let result = parseBound(scanner, exactMap, JsonDefTypes.Number);
+    let result = parseBound(scanner, exactMap, numberSet);
 
     if (result === null)
-        result = parseBounds(scanner, JsonDefTypes.Number);
+        result = parseBounds(scanner, numberSet);
 
     return result === null ? Result.success({}) : result;
 };
 
 
-const parseBounds = (scanner: TokenScanner, type: number): Result<BoundedAttributes> => {
+const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAttributes> => {
     let previous: BoundedAttributes = {};
 
     while (true) {

@@ -2,6 +2,7 @@ import { inspect } from 'util';
 import { JsonDefTypes } from './parser/JsonDefTypes';
 import { parseJsonDef } from './parser/parseJsonDef';
 import { tokenizeJsonDef } from './parser/tokenizeJsonDef';
+import { stringify } from './stringify';
 
 export * from './builder';
 export * as d from './helpers';
@@ -67,6 +68,10 @@ const data = `
 | 'Hello\\n'
 | Identifier
 | ( 1 | 2 | 3 )[>= 100, <= 10]
+| number(<1.02)
+| number
+| integer()
+| integer(>= -10, < 22)
 `;
 
 const tokens = [...tokenizeJsonDef(data)];
@@ -76,3 +81,7 @@ console.log(tokens.map(({ id, value }) => ({ name: JsonDefTypes.names(id), value
 const result = parseJsonDef(tokens);
 
 console.log(inspect(result, { depth: null, colors: true }));
+
+if (result.success) {
+    console.log(stringify(result.value))
+}

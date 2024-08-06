@@ -6,6 +6,10 @@ export interface Indexable<T, S extends Indexable<T, S>> {
     [index: number]: T | undefined;
 }
 
+export interface Contains<T> {
+    has(value: T): boolean;
+}
+
 export type Mark = { position: number; };
 
 export type Segment<S, M extends Mark> = {
@@ -96,7 +100,7 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
     is(value: T, offset: number = 0): boolean { return this.peek(offset) === value; }
 
     // Should work, even if P isn't T
-    isIn(set: { has: (value: T) => boolean; }, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
+    isIn(set: Contains<T>, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
 
     isIncluded(items: T[], offset: number = 0): boolean { return items.includes(this.peek(offset) as any); }
 }
@@ -117,7 +121,7 @@ export class ArrayScanner<T> extends Scanner<T, Array<T>> {
         return this.peek(offset)?.[key] === value;
     }
 
-    checkIn<K extends keyof T>(key: K, set: { has(value: T[K]): boolean; }, offset: number = 0): boolean {
+    checkIn<K extends keyof T>(key: K, set: Contains<T[K]>, offset: number = 0): boolean {
         return set.has(this.peek(offset)?.[key]!);
     }
 
