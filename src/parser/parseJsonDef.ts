@@ -152,7 +152,13 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
             scanner.consume();
             return Result.success({ kind: 'ref', of: value });
         }
-
+        case JsonDefTypes.DateKeyword:
+        case JsonDefTypes.TimeKeyword:
+        case JsonDefTypes.DatetimeKeyword:
+        case JsonDefTypes.UuidKeyword:
+        case JsonDefTypes.Base64Keyword:
+        case JsonDefTypes.EmailKeyword:
+        case JsonDefTypes.Regex:
         case JsonDefTypes.StringKeyword: {
             return parseStringSchema(scanner);
         }
@@ -252,7 +258,34 @@ const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => {
     return Result.success({ kind: 'number', ...bounds });
 };
 
-const parseStringSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseStringSchema = (scanner: TokenScanner): Result<Schema> => {
+    const value = scanner.get('value')!;
+
+    const of = value === 'string' ? {} : { of: value };
+
+    scanner.consume();
+
+    let size: SizedAttributes = {};
+
+    if (scanner.check('id', JsonDefTypes.Open)) {
+        scanner.consume();
+
+        const sizeResult = parseSize(scanner);
+
+        if (sizeResult.success) {
+            size = sizeResult.value;
+
+            if (scanner.check('id', JsonDefTypes.Close))
+                scanner.consume();
+            else
+                return Result.issue(scanner, 'Missing bounds close');
+        }
+        else
+            return sizeResult;
+    }
+
+    return Result.success({ kind: 'string', ...size, ...of });
+};
 
 const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseRecordSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };

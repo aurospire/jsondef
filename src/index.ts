@@ -72,6 +72,11 @@ const data = `
 | number
 | integer()
 | integer(>= -10, < 22)
+| string
+| date()
+| email(=20)
+| uuid()
+| datetime | time | base64 | /abc/i(>3)
 `;
 
 const tokens = [...tokenizeJsonDef(data)];
