@@ -12,7 +12,8 @@ export type ResultFailure = { success: false, issues: Issue[]; };
 const Result = {
     success: <T>(value: T): ResultSuccess<T> => ({ success: true, value }),
     failure: (issues: Issue[]): ResultFailure => ({ success: false, issues }),
-    issue: (scanner: TokenScanner, message: string) => Result.failure([{ token: scanner.peek()!, message }])
+    issue: (scanner: TokenScanner, message: string, issues?: Issue[]) =>
+        Result.failure([...(issues ?? []), { token: scanner.peek()!, message }])
 };
 
 type TokenScanner = ArrayScanner<Token>;
@@ -287,7 +288,58 @@ const parseStringSchema = (scanner: TokenScanner): Result<Schema> => {
     return Result.success({ kind: 'string', ...size, ...of });
 };
 
-const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => {
+    scanner.consume();
+
+    let schemas: Schema[] = [];
+    let rest: Schema | undefined;
+
+    while (true) {
+        if (scanner.check('id', JsonDefTypes.Rest)) {
+
+            scanner.consume();
+
+            const restResult = parseSchema(scanner);
+
+            if (restResult.success) {
+                if (restResult.value.kind !== 'array')
+                    return Result.issue(scanner, 'Rest Schema must be an array');
+
+                rest = restResult.value;
+
+                if (scanner.check('id', JsonDefTypes.Comma))
+                    scanner.consume();
+
+                break;
+            }
+            else {
+                return Result.issue(scanner, 'Missing rest schema', restResult.issues);
+            }
+        }
+        else if (scanner.check('id', JsonDefTypes.ArrayClose)) {
+            break;
+        }
+        else {
+            const schemaResult = parseSchema(scanner);
+
+            if (schemaResult.success) {
+                schemas.push(schemaResult.value);
+            }
+
+            if (scanner.check('id', JsonDefTypes.Comma))
+                scanner.consume();
+        }
+    }
+
+    if (!scanner.check('id', JsonDefTypes.ArrayClose))
+        return Result.issue(scanner, 'Missing tuple end');
+
+    scanner.consume();
+
+    return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest } : {}) });
+};
+
+
 const parseRecordSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseObjectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
 const parseModelSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };

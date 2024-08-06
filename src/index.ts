@@ -76,7 +76,8 @@ const data = `
 | date()
 | email(=20)
 | uuid()
-| datetime | time | base64 | /abc/i(>3)
+| datetime | time | base64 | /abc/i(>3)[=10]
+| [] | [boolean] | [boolean, number] | [date, (1|2|3), ...string[]]
 `;
 
 const tokens = [...tokenizeJsonDef(data)];

@@ -4,6 +4,8 @@ rule SchemaUnion = [Or] Schema { Or Schema };
 
 rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
 
+rule ArraySchema = SchemaItem ArrayOpen [Size] ArrayClose;
+
 rule SchemaItem = 
     | NullSchema
     | AnySchema
