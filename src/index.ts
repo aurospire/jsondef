@@ -59,14 +59,14 @@ const data = `
 | false 
 | true 
 | -12 
-| 10 
+| 10[]
 | 1.234 
 | -123e+12 
 | -123e-12 
 | 'Hello' 
 | 'Hello\\n'
 | Identifier
-| ( 1 | 2 | 3 )
+| ( 1 | 2 | 3 )[]
 `;
 
 const tokens = [...tokenizeJsonDef(data)];

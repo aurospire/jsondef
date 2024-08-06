@@ -1,36 +1,40 @@
 import { ArrayScanner, makeScanner, Token } from "../util";
-import { Schema } from '..';
+import { ArraySchema, Schema, SizedAttributes } from '../Schema';
 import { JsonDefTypes } from "./JsonDefTypes";
 
 export type Issue = { token: Token, message: string; };
 
-export type Result = { success: true, schema: Schema; } | { success: false, issues: Issue[]; };
+export type Result<T> = ResultSuccess<T> | ResultFailure;
+export type ResultSuccess<T> = { success: true, value: T; };
+
+export type ResultFailure = { success: false, issues: Issue[]; };
 
 const Result = {
-    success: (schema: Schema): Result => ({ success: true, schema }),
-    failure: (issues: Issue[]): Result => ({ success: false, issues })
+    success: <T>(value: T): ResultSuccess<T> => ({ success: true, value }),
+    failure: (issues: Issue[]): ResultFailure => ({ success: false, issues }),
+    issue: (scanner: TokenScanner, message: string) => Result.failure([{ token: scanner.peek()!, message }])
 };
 
 type TokenScanner = ArrayScanner<Token>;
 
 
 // grammar JsonDef = SchemaUnion Eof;
-export const parseJsonDef = (data: Token[]): Result => {
+export const parseJsonDef = (data: Token[]): Result<Schema> => {
     const scanner = makeScanner(data);
 
-    let result: Result;
+    const result = parseSchemaUnion(scanner);
 
-    if (!(result = parseSchemaUnion(scanner)).success)
+    if (!result.success)
         return result;
 
     if (!scanner.check('id', JsonDefTypes.Eof))
-        return Result.failure([{ token: scanner.peek()!, message: 'Missing End of File' }]);
+        return Result.issue(scanner, 'Missing end of file');
 
     return result;
 };
 
 // rule SchemaUnion = [Or] Schema { Or Schema };
-export const parseSchemaUnion = (scanner: TokenScanner): Result => {
+export const parseSchemaUnion = (scanner: TokenScanner): Result<Schema> => {
     const schemas: Schema[] = [];
 
     if (scanner.check('id', JsonDefTypes.Or))
@@ -40,7 +44,7 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result => {
         const result = parseSchema(scanner);
 
         if (result.success)
-            schemas.push(result.schema);
+            schemas.push(result.value);
         else
             return result;
 
@@ -51,7 +55,7 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result => {
     }
 
     if (schemas.length === 0)
-        return Result.failure([{ token: scanner.peek()!, message: 'Schema not Found' }]);
+        return Result.issue(scanner, 'Schema not found');
     else if (schemas.length === 1)
         return Result.success(schemas[0]);
     else
@@ -59,12 +63,28 @@ export const parseSchemaUnion = (scanner: TokenScanner): Result => {
 };
 
 // rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
-export const parseSchema = (scanner: TokenScanner): Result => {
+export const parseSchema = (scanner: TokenScanner): Result<Schema> => {
     const result = parseSchemaItem(scanner);
 
     if (result.success) {
         if (scanner.check('id', JsonDefTypes.ArrayOpen)) {
-            return result;
+            scanner.consume();
+
+            const sizeResult = parseSize(scanner);
+
+            if (sizeResult.success) {
+                if (scanner.check('id', JsonDefTypes.ArrayClose))
+                    scanner.consume();
+                else
+                    return Result.issue(scanner, 'Missing close parenthesis');
+
+                const array: ArraySchema = { kind: 'array', of: result.value, ...sizeResult.value };
+
+                return Result.success(array);
+            }
+            else {
+                return sizeResult;
+            }
         }
         else {
             return result;
@@ -75,7 +95,7 @@ export const parseSchema = (scanner: TokenScanner): Result => {
     }
 };
 
-export const parseSchemaItem = (scanner: TokenScanner): Result => {
+export const parseSchemaItem = (scanner: TokenScanner): Result<Schema> => {
     switch (scanner.get('id')) {
         case JsonDefTypes.NullKeyword: {
             scanner.consume();
@@ -160,20 +180,24 @@ export const parseSchemaItem = (scanner: TokenScanner): Result => {
                 return result;
             }
             else {
-                return Result.failure([{ token: scanner.peek()!, message: 'Missing Closing Parentheses' }]);
+                return Result.issue(scanner, 'Missing closing parenthesis');
             }
         }
     }
 
-    return Result.failure([{ token: scanner.peek()!, message: 'Schema not Found' }]);
+    return Result.issue(scanner, 'Schema not found');
 };
 
-const parseTupleSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseRecordSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseObjectSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseModelSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseSelectSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseGroupSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseIntegerSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseNumberSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
-const parseStringSchema = (scanner: TokenScanner): Result => { return Result.failure([]); };
+const parseTupleSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseRecordSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseObjectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseModelSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseSelectSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseGroupSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseIntegerSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseNumberSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+const parseStringSchema = (scanner: TokenScanner): Result<Schema> => { return Result.failure([]); };
+
+const parseSize = (scanner: TokenScanner): Result<SizedAttributes> => {
+    return Result.success({});
+};
