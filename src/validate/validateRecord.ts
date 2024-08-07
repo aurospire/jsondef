@@ -1,23 +1,23 @@
 import { RecordSchema } from "../Schema";
 import { isObject, RegexString } from "../util";
 import { Context, ValidationResult } from "./Context";
-import { Issue } from "./Result";
+import { Issue } from "../util/Result";
 import { SchemaValidator } from "./SchemaValidator";
 import { validateBounds } from "./validateBounds";
 import { validateString } from "./validateString";
 
 export const validateRecord = (value: any, schema: RecordSchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
-    if (!isObject(value)) return [{ path, issue: 'value must be an object' }];
+    if (!isObject(value)) return [{ on: path, message: 'value must be an object' }];
 
-    const issues: Issue[] = [];
+    const issues: Issue<string[]>[] = [];
 
     const entries = Object.entries(value);
 
 
     const boundsCheck = validateBounds(entries.length, schema, 'value length');
 
-    if (boundsCheck) issues.push({ path, issue: boundsCheck });
+    if (boundsCheck) issues.push({ on: path, message: boundsCheck });
 
 
     let regex: RegExp | undefined;

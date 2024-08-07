@@ -1,18 +1,18 @@
 import { ArraySchema } from "../Schema";
 import { Context, ValidationResult } from "./Context";
 import { SchemaValidator } from "./SchemaValidator";
-import { Issue } from "./Result";
+import { Issue } from "../util/Result";
 import { validateBounds } from "./validateBounds";
 
 export const validateArray = (value: any, array: ArraySchema, path: string[], context: Context, validate: SchemaValidator): ValidationResult => {
 
-    if (!Array.isArray(value)) return [{ path, issue: 'value must be an array' }];
+    if (!Array.isArray(value)) return [{ on: path, message: 'value must be an array' }];
 
     const boundsCheck = validateBounds(value.length, array, 'value length');
 
-    if (boundsCheck) return [{ path, issue: boundsCheck }];
+    if (boundsCheck) return [{ on: path, message: boundsCheck }];
 
-    const issues: Issue[] = [];
+    const issues: Issue<string[]>[] = [];
 
     for (let i = 0; i < value.length; i++) {
         const result = validate(value[i], array.of, [...path, i.toString()], context);

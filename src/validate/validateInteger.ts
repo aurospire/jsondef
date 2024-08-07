@@ -8,8 +8,8 @@ export const validateInteger = (value: any, schema: IntegerSchema, path: string[
 
         const boundsCheck = validateBounds(value, schema, 'value');
 
-        return boundsCheck ? [{ path, issue: boundsCheck }] : true;
+        return boundsCheck ? [{ on: path, message: boundsCheck }] : true;
     }
 
-    return [{ path, issue: 'value must be integer.' }];
+    return [{ on: path, message: 'value must be integer.' }];
 };

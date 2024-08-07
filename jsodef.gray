@@ -96,7 +96,6 @@ token GenericOpen | LessThan = '<';
 token GreaterThanOrEqual '>=';
 token GenericClose | GreaterThan = '>';
 
-//token And = '&&';
 token Or = '|';
 token Exactly = '=';
 token Open = '(';

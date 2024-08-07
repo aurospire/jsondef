@@ -37,15 +37,15 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
             break;
 
         case "null":
-            result = value === null ? true : [{ path, issue: 'value must be null' }];
+            result = value === null ? true : [{ on: path, message: 'value must be null' }];
             break;
 
         case "boolean":
-            result = typeof value === 'boolean' ? true : [{ path, issue: 'value must be boolean' }];
+            result = typeof value === 'boolean' ? true : [{ on: path, message: 'value must be boolean' }];
             break;
 
         case "literal":
-            result = value === (schema as LiteralSchema).of ? true : [{ path, issue: `value must be ${(schema as LiteralSchema).of}` }];
+            result = value === (schema as LiteralSchema).of ? true : [{ on: path, message: `value must be ${(schema as LiteralSchema).of}` }];
             break;
 
         case "integer":
@@ -91,11 +91,11 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
             break;
 
         case "this":
-            result = context.local ? validateSchema(value, context.local, path, context) : [{ path, issue: 'no local schema' }];
+            result = context.local ? validateSchema(value, context.local, path, context) : [{ on: path, message: 'no local schema' }];
             break;
 
         case "root":
-            result = context.root ? validateSchema(value, context.root, path, context) : [{ path, issue: 'no root schema' }];
+            result = context.root ? validateSchema(value, context.root, path, context) : [{ on: path, message: 'no root schema' }];
             break;
 
         case "ref":
@@ -104,7 +104,7 @@ export const validateSchema: SchemaValidator = (value: any, schema: Schema, path
 
         default:
             result = [{
-                path, issue: `invalid schema kind: '${(schema as Schema).kind}
+                on: path, message: `invalid schema kind: '${(schema as Schema).kind}
             '`
             }];
 

@@ -10,7 +10,7 @@ export const validateGroup = (value: any, group: GroupSchema, path: string[], co
 
         return selected
             ? validate(value, selected, path, makeContext(context.cache, group.of))
-            : [{ path, issue: `selection '${group.selected}' does not exist in group` }];
+            : [{ on: path, message: `selection '${group.selected}' does not exist in group` }];
     }
     else {
         return validateObject(value, group.of, path, makeContext(context.cache), validate, false);

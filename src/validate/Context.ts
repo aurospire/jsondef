@@ -1,7 +1,7 @@
 import { Schema, SchemaObject, ModelSchema, ObjectSchema } from "../Schema";
-import { Issue } from "./Result";
+import { Issue } from "../util/Result";
 
-export type ValidationResult = true | Issue[];
+export type ValidationResult = true | Issue<string[]>[];
 
 export type ResultCache = Map<any, ValidationResult>;
 

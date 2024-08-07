@@ -7,8 +7,8 @@ export const validateNumber = (value: any, schema: NumberSchema, path: string[])
 
         const boundsCheck = validateBounds(value, schema, 'value');
 
-        return boundsCheck ? [{ path, issue: boundsCheck }] : true;
+        return boundsCheck ? [{ on: path, message: boundsCheck }] : true;
     }
 
-    return [{ path, issue: 'value must be number.' }];
+    return [{ on: path, message: 'value must be number.' }];
 };

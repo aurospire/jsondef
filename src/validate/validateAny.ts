@@ -1,6 +1,6 @@
 import { ValidationResult } from "./Context";
 import { isObject } from "../util";
-import { Issue } from "./Result";
+import { Issue } from "../util/Result";
 
 export const validateAny = (value: any, path: string[]): ValidationResult => {
     if (value === null)
@@ -10,18 +10,18 @@ export const validateAny = (value: any, path: string[]): ValidationResult => {
     else if (typeof value === 'string')
         return true;
     else if (typeof value === 'number')
-        return Number.isFinite(value) ? true : [{ path, issue: 'not a valid number' }];
+        return Number.isFinite(value) ? true : [{ on: path, message: 'not a valid number' }];
     else if (Array.isArray(value))
         return validateArrayItems(value, path);
     else if (isObject(value))
         return validateObjectProperties(value, path);
 
     else
-        return [{ path, issue: 'not a valid type' }];
+        return [{ on: path, message: 'not a valid type' }];
 };
 
 const validateArrayItems = (value: any[], path: string[]): ValidationResult => {
-    const issues: Issue[] = [];
+    const issues: Issue<string[]>[] = [];
 
     for (let i = 0; i < value.length; i++) {
         const result = validateAny(value[i], [...path, i.toString()]);
@@ -33,7 +33,7 @@ const validateArrayItems = (value: any[], path: string[]): ValidationResult => {
 };
 
 const validateObjectProperties = (value: Object, path: string[]): ValidationResult => {
-    const issues: Issue[] = [];
+    const issues: Issue<string[]>[] = [];
 
     for (const [itemKey, itemValue] of Object.entries(value)) {
         const result = validateAny(itemValue, [...path, itemKey]);
