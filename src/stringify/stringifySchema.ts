@@ -26,8 +26,6 @@ export const stringifySchema = (schema: Schema, format: StringifyFormat, level: 
 
 
 // Helper functions
-const joiner = (format: StringifyFormat, connector: string) => connector + format.spacing;
-
 const stringifyString = (value: string) => `'${JSON.stringify(value).slice(1, -1)}'`;
 
 // exact: =; min: > | >=, max; < | <=
@@ -48,7 +46,8 @@ const stringifyBounds = ({ min, xmin, xmax, max, exact }: SizedAttributes, forma
     else if (max !== undefined)
         results.push(`<=${format.spacing}${max}`);
 
-    return results.join(joiner(format, '&&'));
+    // return results.join(`${format.spacing}&&${format.spacing}`);
+    return results.join(`,${format.spacing}`);
 };
 
 
@@ -99,7 +98,7 @@ const stringifyRecordSchema = (schema: RecordSchema, format: StringifyFormat, le
 
     const params = key ? [key, of] : [of];
 
-    const head = `record<${params.join(joiner(format, ','))}>`;
+    const head = `record<${params.join(`,${format.spacing}`)}>`;
 
     return bounds.length ? `${head}(${bounds})` : head;
 };
@@ -113,7 +112,7 @@ const stringifyTupleSchema = (schema: TupleSchema, format: StringifyFormat, leve
     if (rest)
         schemas.push(`...${rest}`);
 
-    return `[${schemas.join(joiner(format, ','))}]`;
+    return `[${schemas.join(`,${format.spacing}`)}]`;
 };
 
 const stringifyUnionSchema = (schema: UnionSchema, format: StringifyFormat, level: number, enclosed: boolean): string => {

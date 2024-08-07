@@ -586,7 +586,7 @@ const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAt
 
         previous = result.value;
 
-        if (scanner.is(JsonDefTypes.And)) {
+        if (scanner.is(JsonDefTypes.Comma)) {
             scanner.consume();
 
             let result = parseBound(scanner, boundsMap, type, previous);

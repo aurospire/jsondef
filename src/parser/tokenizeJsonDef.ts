@@ -73,8 +73,8 @@ export function* tokenizeJsonDef(data: string) {
         }
         else {
             switch (char) {
-                case '&':
-                    id = scanAnd(scanner); break;
+                // case '&':
+                //     id = scanAnd(scanner); break;
                 case '<':
                     id = scanLessThan(scanner); break;
                 case '>':
@@ -104,10 +104,10 @@ export function* tokenizeJsonDef(data: string) {
     }
 }
 
-function scanAnd(scanner: StringScanner): number {
-    scanner.consume();
-    return scanner.consumeIf('&') ? JsonDefTypes.And : JsonDefTypes.Invalid;
-}
+// function scanAnd(scanner: StringScanner): number {
+//     scanner.consume();
+//     return scanner.consumeIf('&') ? JsonDefTypes.And : JsonDefTypes.Invalid;
+// }
 
 function scanLessThan(scanner: StringScanner): number {
     scanner.consume();

@@ -100,30 +100,39 @@ export abstract class Scanner<T, S extends Indexable<T, S>, C, M extends Mark = 
         return {
             mark: this.getMark(1),
             value: this.#data.slice(start, this.position),
-            length: this.position - start + 1
+            length: this.position - start
         };
     }
 
-    is(value: C, offset: number = 0): boolean { return this.#comparable(offset) === value; }
+    is(value: C, offset: number = 0): boolean { return !this.isEnd && this.#comparable(offset) === value; }
 
     // Should work, even if P isn't T
-    isIn(set: Contains<C>, offset: number = 0): boolean { return set.has(this.#comparable(offset) as any); }
+    isIn(set: Contains<C>, offset: number = 0): boolean { return !this.isEnd && set.has(this.#comparable(offset) as any); }
 
-    isIncluded(items: C[], offset: number = 0): boolean { return items.includes(this.#comparable(offset) as any); }
-
-
-    consumeIf(value: C, count: number = 1): boolean { while (count-- && this.is(value)) { this.consume(); return true; } return false; }
-
-    consumeIfIn(set: Contains<C>, count: number = 1): boolean { while (count-- && this.isIn(set)) { this.consume(); return true; } return false; }
-
-    consumeIfIncluded(items: C[], count: number = 1): boolean { while (count-- && this.isIncluded(items)) { this.consume(); return true; } return false; }
+    isIncluded(items: C[], offset: number = 0): boolean { return !this.isEnd && items.includes(this.#comparable(offset) as any); }
 
 
-    consumeWhile(value: C, limit?: number): void { let i = 0; while (this.is(value) && (!limit || i < limit)) { this.consume(); i++; } }
+    consumeIf(value: C, count: number = 1): boolean {
+        while (count-- > 0) if (this.is(value)) this.consume(); else return false;
+        return true;
+    }
 
-    consumeWhileIn(set: Contains<C>, limit?: number): void { let i = 0; while (this.isIn(set) && (!limit || i < limit)) { this.consume(); i++; } }
+    consumeIfIn(set: Contains<C>, count: number = 1): boolean {
+        while (count-- > 0) if (this.isIn(set)) this.consume(); else return false;
+        return true;
+    }
 
-    consumeWhileIncluded(items: C[], limit?: number): void { let i = 0; while (this.isIncluded(items) && (!limit || i < limit)) { this.consume(); i++; } }
+    consumeIfIncluded(items: C[], count: number = 1): boolean {
+        while (count-- > 0) if (this.isIncluded(items)) this.consume(); else return false;
+        return true;
+    }
+
+
+    consumeWhile(value: C, limit: number = Infinity): void { while (limit-- && this.is(value)) { this.consume(); } }
+
+    consumeWhileIn(set: Contains<C>, limit: number = Infinity): void { while (limit-- && this.isIn(set)) { this.consume(); } }
+
+    consumeWhileIncluded(items: C[], limit: number = Infinity): void { while (limit-- && this.isIncluded(items)) { this.consume(); } }
 }
 
 
@@ -182,11 +191,11 @@ export class TokenScanner extends Scanner<Token, Token[], number> {
 
 
     value(offset: number = 0): string | undefined {
-        return this.peek()?.value;
+        return this.peek(offset)?.value;
     }
 
     type(offset: number = 0): number | undefined {
-        return this.peek()?.type;
+        return this.peek(offset)?.type;
     }
 }
 
