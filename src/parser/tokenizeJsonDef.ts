@@ -1,14 +1,20 @@
 import { CharSet, StringScanner } from "../util";
 import { JsonDefTypes } from "./JsonDefTypes";
 
-const anySet = CharSet.range({ min: ' ', max: '\x7E' }).and('\t');
-const charSet = anySet.andNot('\'\\');
-const charEscapeSet = CharSet.chars('nrt\\\'"0');
-const regexCharSet = anySet.andNot('/\\');
-const regexFlagsSet = CharSet.chars('igmsuy');
-const exponentSet = CharSet.chars('eE');
-const signsSet = CharSet.chars('-+');
+// Character sets
+const charSets = {
+    any: CharSet.range({ min: ' ', max: '\x7E' }).and('\t'),
+    char: CharSet.range({ min: ' ', max: '\x7E' }).and('\t').andNot('\'\\'),
+    charEscape: CharSet.chars('nrt\\\'"0'),
+    regexChar: CharSet.range({ min: ' ', max: '\x7E' }).and('\t').andNot('/\\'),
+    regexFlags: CharSet.chars('igmsuy'),
+    exponent: CharSet.chars('eE'),
+    signs: CharSet.chars('-+'),
+    hex: CharSet.Digit.and(CharSet.range({ min: 'a', max: 'f' })).and(CharSet.range({ min: 'A', max: 'F' })),
+    identifier: CharSet.LetterOrDigit.and('_')
+};
 
+// Keywords map
 const keywords = new Map<string, number>([
     ['null', JsonDefTypes.NullKeyword],
     ['any', JsonDefTypes.AnyKeyword],
@@ -33,266 +39,203 @@ const keywords = new Map<string, number>([
     ['false', JsonDefTypes.FalseKeyword],
 ]);
 
+// Single-character tokens
+const singleCharTokens = new Map<string, number>([
+    ['\0', JsonDefTypes.Eof],
+    ['|', JsonDefTypes.Or],
+    ['=', JsonDefTypes.Exactly],
+    ['(', JsonDefTypes.Open],
+    [')', JsonDefTypes.Close],
+    ['[', JsonDefTypes.ArrayOpen],
+    [']', JsonDefTypes.ArrayClose],
+    ['{', JsonDefTypes.ObjectOpen],
+    ['}', JsonDefTypes.ObjectClose],
+    [',', JsonDefTypes.Comma],
+    [':', JsonDefTypes.RequiredIs],
+]);
+
 export function* tokenizeJsonDef(data: string) {
     const scanner = new StringScanner(data + '\0');
 
     while (!scanner.isEnd) {
-        while (scanner.isIn(CharSet.Whitespace)) {
-            scanner.consume();
-        }
+        scanner.consumeWhileIn(CharSet.Whitespace);
 
         scanner.mark();
 
-        let id: number = JsonDefTypes.Invalid;
+        const char = scanner.peek()!;
 
-        switch (scanner.peek()) {
-            case '\0': scanner.consume(); id = JsonDefTypes.Eof; break;
-            case '|': scanner.consume(); id = JsonDefTypes.Or; break;
-            case '=': scanner.consume(); id = JsonDefTypes.Exactly; break;
-            case '(': scanner.consume(); id = JsonDefTypes.Open; break;
-            case ')': scanner.consume(); id = JsonDefTypes.Close; break;
-            case '[': scanner.consume(); id = JsonDefTypes.ArrayOpen; break;
-            case ']': scanner.consume(); id = JsonDefTypes.ArrayClose; break;
-            case '{': scanner.consume(); id = JsonDefTypes.ObjectOpen; break;
-            case '}': scanner.consume(); id = JsonDefTypes.ObjectClose; break;
-            case ',': scanner.consume(); id = JsonDefTypes.Comma; break;
-            case '&': {
-                scanner.consume();
+        let id = JsonDefTypes.Invalid;
 
-                if (scanner.is('&')) {
-                    scanner.consume();
-                    id = JsonDefTypes.And;
-                }
-                break;
-            }
-            case '<': {
-                scanner.consume();
+        if (singleCharTokens.has(char)) {
+            id = singleCharTokens.get(char)!;
 
-                if (scanner.is('=')) {
-                    scanner.consume();
-                    id = JsonDefTypes.LessThanOrEqual;
-                }
-                else {
-                    id = JsonDefTypes.LessThan;
-                }
-
-                break;
-            }
-            case '>': {
-                scanner.consume();
-
-                if (scanner.is('=')) {
-                    scanner.consume();
-                    id = JsonDefTypes.GreaterThanOrEqual;
-                }
-                else {
-                    id = JsonDefTypes.GreaterThan;
-                }
-
-                break;
-            }
-            case ':': scanner.consume(); id = JsonDefTypes.RequiredIs; break;
-            case '?': {
-                scanner.consume();
-
-                if (scanner.is(':')) {
-                    scanner.consume();
-                    id = JsonDefTypes.OptionalIs;
-                }
-                break;
-            }
-            case '.': {
-                scanner.consume();
-
-                if (scanner.is('.')) scanner.consume();
-
-                if (scanner.is('.')) {
-                    scanner.consume();
-                    id = JsonDefTypes.Rest;
-                }
-
-                break;
-            }
-
-            default: {
-                // Keyword | Identifier
-                if (scanner.is('_') || scanner.isLetter()) {
-                    scanner.consume();
-
-                    while (scanner.is('_') || scanner.isLetterOrDigit())
+            scanner.consume();
+        }
+        else {
+            switch (char) {
+                case '&':
+                    id = scanAnd(scanner); break;
+                case '<':
+                    id = scanLessThan(scanner); break;
+                case '>':
+                    id = scanGreaterThan(scanner); break;
+                case '?':
+                    id = scanOptionalIs(scanner); break;
+                case '.':
+                    id = scanRest(scanner); break;
+                default:
+                    if (scanner.is('_') || scanner.isIn(CharSet.Letter))
+                        id = scanIdentifierOrKeyword(scanner);
+                    else if (scanner.isIn(CharSet.Digit) || scanner.is('-'))
+                        id = scanNumber(scanner);
+                    else if (scanner.is('\''))
+                        id = scanString(scanner);
+                    else if (scanner.is('/'))
+                        id = scanRegex(scanner);
+                    // Invalid character
+                    else
                         scanner.consume();
-
-                    id = keywords.get(scanner.captured()) ?? JsonDefTypes.Identifier;
-                }
-
-
-                // Number|Integer|Real
-                else if (scanner.isDigit()) {
-                    id = scanNumber(scanner, JsonDefTypes.Number);
-                }
-                else if (scanner.is('-')) {
-                    scanner.consume();
-
-                    if (scanner.isDigit())
-                        id = scanNumber(scanner, JsonDefTypes.Integer);
-                }
-
-
-                // String
-                else if (scanner.is('\'')) {
-                    id = scanString(scanner);
-                }
-
-
-                // Regex
-                else if (scanner.is('/')) {
-                    id = scanRegex(scanner);
-                }
-
-                // Invalid Keyword
-                else {
-                    scanner.consume();
-                }
-
-                break;
             }
         }
 
-        const token = scanner.token(id);
+        yield scanner.token(id);
 
         scanner.commit();
-
-        yield token;
     }
 }
 
-const scanNumber = (scanner: StringScanner, id: number): number => {
+function scanAnd(scanner: StringScanner): number {
     scanner.consume();
+    return scanner.consumeIf('&') ? JsonDefTypes.And : JsonDefTypes.Invalid;
+}
 
-    while (scanner.isDigit())
-        scanner.consume();
+function scanLessThan(scanner: StringScanner): number {
+    scanner.consume();
+    return scanner.consumeIf('=') ? JsonDefTypes.LessThanOrEqual : JsonDefTypes.LessThan;
+}
 
-    if (scanner.is('.')) {
-        scanner.consume();
+function scanGreaterThan(scanner: StringScanner): number {
+    scanner.consume();
+    return scanner.consumeIf('=') ? JsonDefTypes.GreaterThanOrEqual : JsonDefTypes.GreaterThan;
+}
 
-        if (!scanner.isDigit())
+function scanOptionalIs(scanner: StringScanner): number {
+    scanner.consume();
+    return scanner.consumeIf(':') ? JsonDefTypes.OptionalIs : JsonDefTypes.Invalid;
+}
+
+function scanRest(scanner: StringScanner): number {
+    scanner.consume();
+    return scanner.consumeIf('.') && scanner.consumeIf('.') ? JsonDefTypes.Rest : JsonDefTypes.Invalid;
+}
+
+function scanIdentifierOrKeyword(scanner: StringScanner): number {
+    scanner.consume();
+    scanner.consumeWhileIn(charSets.identifier);
+    return keywords.get(scanner.captured()) ?? JsonDefTypes.Identifier;
+}
+
+function scanNumber(scanner: StringScanner): number {
+    const isNegative = scanner.consumeIf('-');
+
+    let id = isNegative ? JsonDefTypes.Integer : JsonDefTypes.Number;
+
+    scanner.consumeWhileIn(CharSet.Digit);
+
+    if (scanner.consumeIf('.')) {
+
+        if (!scanner.isIn(CharSet.Digit))
             return JsonDefTypes.InvalidReal;
 
-        while (scanner.isDigit())
-            scanner.consume();
+        scanner.consumeWhileIn(CharSet.Digit);
 
-        if (scanner.isIn(exponentSet))
-            return scanExponent(scanner);
-
-        else
-            return JsonDefTypes.Real;
+        id = JsonDefTypes.Real;
     }
-    else if (scanner.isIn(exponentSet)) {
-        return scanExponent(scanner);
+
+    if (scanner.consumeIfIn(charSets.exponent)) {
+
+        scanner.consumeIfIn(charSets.signs);
+
+        if (!scanner.isIn(CharSet.Digit)) return JsonDefTypes.InvalidReal;
+
+        scanner.consumeWhileIn(CharSet.Digit);
+
+        id = JsonDefTypes.Real;
     }
-    else {
-        return id;
-    }
-};
 
-const scanExponent = (scanner: StringScanner): number => {
-    scanner.consume();
+    return id;
+}
 
-    if (scanner.isIn(signsSet))
-        scanner.consume();
+function scanString(scanner: StringScanner): number {
+    scanner.consume(); // Opening quote
 
-    if (!scanner.isDigit())
-        return JsonDefTypes.InvalidReal;
-
-    while (scanner.isDigit())
-        scanner.consume();
-
-    return JsonDefTypes.Real;
-};
-
-const scanString = (scanner: StringScanner): number => {
-    scanner.consume();
-
-    while (true) {
-
-        // Valid Char
-        if (scanner.isIn(charSet)) {
+    while (!scanner.isEnd) {
+        if (scanner.isIn(charSets.char)) {
             scanner.consume();
         }
-
-        // Escapes
+        // Escape
         else if (scanner.is('\\')) {
             scanner.consume();
 
-            if (scanner.isIn(charEscapeSet)) {
+            if (scanner.isIn(charSets.charEscape)) {
                 scanner.consume();
             }
-
-            // \xXX
             else if (scanner.is('x')) {
                 scanner.consume();
 
-                for (let i = 0; i < 2; i++) {
-                    if (scanner.isHex())
-                        scanner.consume();
-                    else
-                        return JsonDefTypes.InvalidString;
-                }
+                if (!scanner.consumeIfIn(charSets.hex) || !scanner.consumeIfIn(charSets.hex))
+                    return JsonDefTypes.InvalidString;
             }
             else {
                 return JsonDefTypes.InvalidString;
             }
         }
-
         // End Quote
-        else if (scanner.is('\'')) {
-            scanner.consume();
+        else if (scanner.consumeIf('\'')) {
             return JsonDefTypes.String;
         }
-
-        // Error
         else {
             return JsonDefTypes.InvalidString;
         }
     }
-};
 
-const scanRegex = (scanner: StringScanner): number => {
-    scanner.consume();
+    return JsonDefTypes.InvalidString;
+}
+
+function scanRegex(scanner: StringScanner): number {
+    scanner.consume(); // Opening slash
 
     let started = false;
 
-    while (true) {
-        if (scanner.isIn(regexCharSet)) {
-            started = true;
-
+    while (!scanner.isEnd) {
+        if (scanner.isIn(charSets.regexChar)) {
             scanner.consume();
+
+            started = true;
         }
+        // Escape
         else if (scanner.is('\\')) {
-            started = true;
-
             scanner.consume();
 
-            if (scanner.isIn(anySet))
-                scanner.consume();
+            started = true;
+
+            if (!scanner.consumeIfIn(charSets.any))
+                return JsonDefTypes.InvalidRegex;
         }
+        // End
         else if (scanner.is('/')) {
             scanner.consume();
 
-            if (started)
-                break;
+            if (!started) break;
 
-            else
-                return JsonDefTypes.InvalidRegex;
+            scanner.consumeWhileIn(charSets.regexFlags);
 
+            return JsonDefTypes.Regex;
         }
         else {
-            return JsonDefTypes.InvalidRegex;
+            break;
         }
     }
 
-    while (scanner.isIn(regexFlagsSet))
-        scanner.consume();
-
-    return JsonDefTypes.Regex;
-};
+    return JsonDefTypes.InvalidRegex;
+}

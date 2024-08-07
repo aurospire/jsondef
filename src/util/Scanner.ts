@@ -18,7 +18,7 @@ export type Segment<S, M extends Mark> = {
     length: number;
 };
 
-export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mark> {
+export abstract class Scanner<T, S extends Indexable<T, S>, C, M extends Mark = Mark> {
     #data: S;
     #marks: M[];
 
@@ -31,7 +31,10 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
 
     protected abstract onConsume(data: S, mark: M, count: number): void;
 
+    protected abstract comparable(value: T | undefined): C;
+
     protected getOfMark<K extends keyof M>(key: K): M[K] { return this.#marks.at(-1)![key]; }
+
 
     get isEnd(): boolean {
         return this.position >= this.#data.length;
@@ -43,6 +46,10 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
 
     peek(offset: number = 0): T | undefined {
         return this.#data[this.position + offset];
+    }
+
+    #comparable(offset: number = 0): C {
+        return this.comparable(this.#data[this.position + offset]);
     }
 
     consume(count: number = 1) {
@@ -97,73 +104,26 @@ export abstract class Scanner<T, S extends Indexable<T, S>, M extends Mark = Mar
         };
     }
 
-    is(value: T, offset: number = 0): boolean { return this.peek(offset) === value; }
+    is(value: C, offset: number = 0): boolean { return this.#comparable(offset) === value; }
 
     // Should work, even if P isn't T
-    isIn(set: Contains<T>, offset: number = 0): boolean { return set.has(this.peek(offset) as any); }
+    isIn(set: Contains<C>, offset: number = 0): boolean { return set.has(this.#comparable(offset) as any); }
 
-    isIncluded(items: T[], offset: number = 0): boolean { return items.includes(this.peek(offset) as any); }
-
-
-    consumeIf(value: T): boolean { if (this.is(value)) { this.consume(); return true; } return false; }
-
-    consumeIfIn(set: Contains<T>): boolean { if (this.isIn(set)) { this.consume(); return true; } return false; }
-
-    consumeIfIncluded(items: T[]): boolean { if (this.isIncluded(items)) { this.consume(); return true; } return false; }
-}
-
-export class ArrayScanner<T> extends Scanner<T, Array<T>> {
-    constructor(items: Array<T>) { super(items); }
-
-    protected override initialMark(): Mark { return { position: 0 }; }
-
-    protected override onConsume(data: Array<T>, mark: Mark, count: number): void { mark.position += count; }
+    isIncluded(items: C[], offset: number = 0): boolean { return items.includes(this.#comparable(offset) as any); }
 
 
-    get<K extends keyof T>(key: K, offset: number = 0): T[K] | undefined {
-        return this.peek(offset)?.[key];
-    }
+    consumeIf(value: C, count: number = 1): boolean { while (count-- && this.is(value)) { this.consume(); return true; } return false; }
 
-    getIs<K extends keyof T>(key: K, value: T[K], offset: number = 0): boolean {
-        return this.peek(offset)?.[key] === value;
-    }
+    consumeIfIn(set: Contains<C>, count: number = 1): boolean { while (count-- && this.isIn(set)) { this.consume(); return true; } return false; }
 
-    getIn<K extends keyof T>(key: K, set: Contains<T[K]>, offset: number = 0): boolean {
-        return set.has(this.peek(offset)?.[key]!);
-    }
-
-    getIncluded<K extends keyof T>(key: K, items: T[K][], offset: number = 0): boolean {
-        return items.includes(this.peek(offset)?.[key]!);
-    }
-};
+    consumeIfIncluded(items: C[], count: number = 1): boolean { while (count-- && this.isIncluded(items)) { this.consume(); return true; } return false; }
 
 
-export class TokenScanner extends ArrayScanner<Token> {
-    value(offset: number = 0): string | undefined {
-        return this.peek()?.value;
-    }
+    consumeWhile(value: C, limit?: number): void { let i = 0; while (this.is(value) && (!limit || i < limit)) { this.consume(); i++; } }
 
-    type(offset: number = 0): number | undefined {
-        return this.peek()?.type;
-    }
+    consumeWhileIn(set: Contains<C>, limit?: number): void { let i = 0; while (this.isIn(set) && (!limit || i < limit)) { this.consume(); i++; } }
 
-    typeIs(id: number, offset: number = 0): boolean {
-        return this.type(offset) === id;
-    }
-
-    typeIn(set: Contains<number>, offset: number = 0): boolean {
-        return set.has(this.type() as any);
-    }
-
-    typeIncluded(items: number[], offset: number = 0): boolean {
-        return items.includes(this.type() as any);
-    }
-
-    consumeIfType(id: number): boolean { if (this.typeIs(id)) { this.consume(); return true; } return false; }
-    
-    consumeIfTypeIn(set: Contains<number>): boolean { if (this.typeIn(set)) { this.consume(); return true; } return false; }
-
-    consumeIfTypeIncluded(items: number[]): boolean { if (this.typeIncluded(items)) { this.consume(); return true; } return false; }
+    consumeWhileIncluded(items: C[], limit?: number): void { let i = 0; while (this.isIncluded(items) && (!limit || i < limit)) { this.consume(); i++; } }
 }
 
 
@@ -171,7 +131,7 @@ export type Token = Segment<string, StringMark> & { type: number; };
 
 export type StringMark = Mark & { line: number, column: number; };
 
-export class StringScanner extends Scanner<string, string, StringMark> {
+export class StringScanner extends Scanner<string, string, string, StringMark> {
 
     constructor(value: string) { super(value); }
 
@@ -180,6 +140,8 @@ export class StringScanner extends Scanner<string, string, StringMark> {
     protected get column() { return this.getOfMark('column'); }
 
     protected override initialMark(): StringMark { return { position: 0, line: 0, column: 0 }; }
+
+    protected override comparable(value: string | undefined): string { return value as string; }
 
     protected override onConsume(data: string, mark: StringMark, count: number): void {
         let { position, line, column } = mark;
@@ -205,29 +167,26 @@ export class StringScanner extends Scanner<string, string, StringMark> {
 
 
     token(id: number): Token { return { type: id, ...this.extract() }; }
-
-
-    isUpper(offset: number = 0) { return this.isIn(CharSet.Upper, offset); }
-
-    isLower(offset: number = 0) { return this.isIn(CharSet.Lower, offset); }
-
-    isLetter(offset: number = 0) { return this.isIn(CharSet.Letter, offset); }
-
-    isDigit(offset: number = 0) { return this.isIn(CharSet.Digit, offset); }
-
-    isBinary(offset: number = 0) { return this.isIn(CharSet.Binary, offset); }
-
-    isHex(offset: number = 0) { return this.isIn(CharSet.Hex, offset); }
-
-    isLetterOrDigit(offset: number = 0) { return this.isIn(CharSet.LetterOrDigit, offset); }
-
-    isSpace(offset: number = 0) { return this.isIn(CharSet.Space, offset); }
-
-    isNewLine(offset: number = 0) { return this.isIn(CharSet.NewLine, offset); }
-
-    isWhitespace(offset: number = 0) { return this.isIn(CharSet.Whitespace, offset); }
-
-    isNull(offset: number = 0) { return this.isIn(CharSet.Null, offset); }
-
-    isEnding(offset: number = 0) { return this.isIn(CharSet.Ending, offset); }
 }
+
+
+export class TokenScanner extends Scanner<Token, Token[], number> {
+
+    constructor(items: Token[]) { super(items); }
+
+    protected override initialMark(): Mark { return { position: 0 }; }
+
+    protected override comparable(value: Token | undefined) { return value?.type as number; }
+
+    protected override onConsume(data: Token[], mark: Mark, count: number): void { mark.position += count; }
+
+
+    value(offset: number = 0): string | undefined {
+        return this.peek()?.value;
+    }
+
+    type(offset: number = 0): number | undefined {
+        return this.peek()?.type;
+    }
+}
+
