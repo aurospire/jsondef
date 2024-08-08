@@ -2,21 +2,15 @@ import { Scanner, Mark, Contains, StringScanner, Token, TokenScanner } from '@/u
 
 describe('NumberScanner', () => {
     class NumberScanner extends Scanner<number, number[], number> {
-        constructor(data: number[]) {
-            super(data);
-        }
+        constructor(data: number[] | NumberScanner) { super(data); }
 
-        protected initialMark(): Mark {
-            return { position: 0 };
-        }
+        protected override initialMark(): Mark { return { position: 0 }; }
 
-        protected onConsume(data: number[], mark: Mark, count: number): void {
-            mark.position += count;
-        }
+        protected override onConsume(data: number[], mark: Mark, count: number): void { mark.position += count; }
 
-        protected comparable(value: number | undefined): number {
-            return value as number;
-        }
+        protected override comparable(value: number | undefined): number { return value as number; }
+
+        override clone(): NumberScanner { return new NumberScanner(this); }
     }
 
     describe('Basic Functionality', () => {
@@ -241,6 +235,18 @@ describe('NumberScanner', () => {
             scanner.consumeWhileIn({ has: () => true });
             scanner.consumeWhileIncluded([1]);
             expect(scanner.position).toBe(3);
+        });
+    });
+
+    describe('Cloning', () => {
+        it('should ensure each clone is different', () => {
+            const scanner = new NumberScanner([1, 2, 3]);
+            const clone = scanner.clone();
+            expect(scanner).not.toBe(clone);
+            clone.consume();
+            expect(scanner.position).not.toBe(clone.position);
+            scanner.consume(3);
+            expect(scanner.isEnd).not.toBe(clone.isEnd);
         });
     });
 });
@@ -664,7 +670,7 @@ describe('TokenScanner', () => {
             const set = new Set([1, 2]);
             scanner.consumeWhileIn(set); // [1, 2, 1]
             expect(scanner.position).toBe(3);
-            scanner.consume() // [3]
+            scanner.consume(); // [3]
             scanner.consumeWhileIn(set, 2); // [1, 2]
             expect(scanner.position).toBe(6);
         });

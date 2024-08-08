@@ -22,9 +22,15 @@ export abstract class Scanner<T, S extends Indexable<T, S>, C, M extends Mark = 
     #data: S;
     #marks: M[];
 
-    constructor(data: S) {
-        this.#data = data;
-        this.#marks = [this.initialMark()];
+    constructor(from: S | Scanner<T, S, C, M>) {
+        if (from instanceof Scanner) {
+            this.#data = from.#data;
+            this.#marks = from.#marks.map(mark => ({ ...mark }));
+        }
+        else {
+            this.#data = from;
+            this.#marks = [this.initialMark()];
+        }
     }
 
     protected abstract initialMark(): M;
@@ -34,6 +40,8 @@ export abstract class Scanner<T, S extends Indexable<T, S>, C, M extends Mark = 
     protected abstract comparable(value: T | undefined): C;
 
     protected getOfMark<K extends keyof M>(key: K): M[K] { return this.#marks.at(-1)![key]; }
+
+    abstract clone(): Scanner<T, S, C, M>;
 
 
     get isEnd(): boolean {
@@ -142,7 +150,7 @@ export type StringMark = Mark & { line: number, column: number; };
 
 export class StringScanner extends Scanner<string, string, string, StringMark> {
 
-    constructor(value: string) { super(value); }
+    constructor(from: string | StringScanner) { super(from); }
 
     protected get line() { return this.getOfMark('line'); }
 
@@ -175,13 +183,15 @@ export class StringScanner extends Scanner<string, string, string, StringMark> {
     }
 
 
+    override clone(): StringScanner { return new StringScanner(this); }
+
     token(id: number): Token { return { type: id, ...this.extract() }; }
 }
 
 
 export class TokenScanner extends Scanner<Token, Token[], number> {
 
-    constructor(items: Token[]) { super(items); }
+    constructor(from: Token[] | TokenScanner) { super(from); }
 
     protected override initialMark(): Mark { return { position: 0 }; }
 
@@ -189,13 +199,10 @@ export class TokenScanner extends Scanner<Token, Token[], number> {
 
     protected override onConsume(data: Token[], mark: Mark, count: number): void { mark.position += count; }
 
+    override clone(): TokenScanner { return new TokenScanner(this); }
 
-    value(offset: number = 0): string | undefined {
-        return this.peek(offset)?.value;
-    }
+    value(offset: number = 0): string | undefined { return this.peek(offset)?.value; }
 
-    type(offset: number = 0): number | undefined {
-        return this.peek(offset)?.type;
-    }
+    type(offset: number = 0): number | undefined { return this.peek(offset)?.type; }
 }
 

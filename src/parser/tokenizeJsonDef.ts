@@ -73,8 +73,6 @@ export function* tokenizeJsonDef(data: string) {
         }
         else {
             switch (char) {
-                // case '&':
-                //     id = scanAnd(scanner); break;
                 case '<':
                     id = scanLessThan(scanner); break;
                 case '>':
@@ -102,40 +100,36 @@ export function* tokenizeJsonDef(data: string) {
 
         scanner.commit();
     }
-}
+};
 
-// function scanAnd(scanner: StringScanner): number {
-//     scanner.consume();
-//     return scanner.consumeIf('&') ? JsonDefTypes.And : JsonDefTypes.Invalid;
-// }
 
-function scanLessThan(scanner: StringScanner): number {
+const scanLessThan = (scanner: StringScanner): number => {
     scanner.consume();
     return scanner.consumeIf('=') ? JsonDefTypes.LessThanOrEqual : JsonDefTypes.LessThan;
-}
+};
 
-function scanGreaterThan(scanner: StringScanner): number {
+const scanGreaterThan = (scanner: StringScanner): number => {
     scanner.consume();
     return scanner.consumeIf('=') ? JsonDefTypes.GreaterThanOrEqual : JsonDefTypes.GreaterThan;
-}
+};
 
-function scanOptionalIs(scanner: StringScanner): number {
+const scanOptionalIs = (scanner: StringScanner): number => {
     scanner.consume();
     return scanner.consumeIf(':') ? JsonDefTypes.OptionalIs : JsonDefTypes.Invalid;
-}
+};
 
-function scanRest(scanner: StringScanner): number {
+const scanRest = (scanner: StringScanner): number => {
     scanner.consume();
     return scanner.consumeIf('.') && scanner.consumeIf('.') ? JsonDefTypes.Rest : JsonDefTypes.Invalid;
-}
+};
 
-function scanIdentifierOrKeyword(scanner: StringScanner): number {
+const scanIdentifierOrKeyword = (scanner: StringScanner): number => {
     scanner.consume();
     scanner.consumeWhileIn(charSets.identifier);
     return keywords.get(scanner.captured()) ?? JsonDefTypes.Identifier;
-}
+};
 
-function scanNumber(scanner: StringScanner): number {
+const scanNumber = (scanner: StringScanner): number => {
     const isNegative = scanner.consumeIf('-');
 
     let id = isNegative ? JsonDefTypes.Integer : JsonDefTypes.Number;
@@ -164,9 +158,9 @@ function scanNumber(scanner: StringScanner): number {
     }
 
     return id;
-}
+};
 
-function scanString(scanner: StringScanner): number {
+const scanString = (scanner: StringScanner): number => {
     scanner.consume(); // Opening quote
 
     while (!scanner.isEnd) {
@@ -200,9 +194,9 @@ function scanString(scanner: StringScanner): number {
     }
 
     return JsonDefTypes.InvalidString;
-}
+};
 
-function scanRegex(scanner: StringScanner): number {
+const scanRegex = (scanner: StringScanner): number => {
     scanner.consume(); // Opening slash
 
     let started = false;
@@ -238,4 +232,4 @@ function scanRegex(scanner: StringScanner): number {
     }
 
     return JsonDefTypes.InvalidRegex;
-}
+};
