@@ -5,7 +5,7 @@ import {
     StringSchema, TupleSchema
 } from '../Schema';
 import { RegexString, Token, TokenScanner } from "../util";
-import { Issue, Result, ResultFailure } from '../util/Result';
+import { Result, ResultFailure, ResultSuccess } from '../util/Result';
 import { JsonDefTypes } from "./JsonDefTypes";
 
 const issue = (scanner: TokenScanner, message: string) =>
@@ -21,8 +21,8 @@ const issue = (scanner: TokenScanner, message: string) =>
 
 export const IssueType = (scanner: TokenScanner) => ({
     UNEXPECTED_EOF: (): ResultFailure<Token> => issue(scanner, 'Unexpected end of input'),
-    EXPECTED: (expected: string): ResultFailure<Token> => issue(scanner, `Expected ${expected}`),
-    EXPECTED_SYMBOL: (expected: string): ResultFailure<Token> => issue(scanner, `Expected '${expected}'`),
+    EXPECTED: (...expected: (string | undefined)[]): ResultFailure<Token> => issue(scanner, `Expected ${expected.filter(Boolean).join(' or ')}`),
+    EXPECTED_SYMBOL: (...expected: (string | undefined)[]): ResultFailure<Token> => issue(scanner, `Expected ${expected.filter(Boolean).map(i => `'${i}'`).join(' or ')}`),
     MUST_BE: (name: string, type: string): ResultFailure<Token> => issue(scanner, `${name} must be ${type}`),
     SELECTED_NOT_FOUND: (name: string): ResultFailure<Token> => issue(scanner, `Selected '${name}' is not in a schema in group`),
     DUPLICATE_FIELD: (field: string): ResultFailure<Token> => issue(scanner, `Duplicate field: ${field}`),
@@ -57,9 +57,7 @@ const parseSchemaUnion = (scanner: TokenScanner): Result<Schema, Token> => {
         else
             return result;
 
-        if (scanner.is(JsonDefTypes.Or))
-            scanner.consume();
-        else
+        if (scanner.consumeIf(JsonDefTypes.Or))
             break;
     }
 
@@ -75,23 +73,19 @@ const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
     const result = parseSchemaItem(scanner);
 
     if (result.success) {
-        if (scanner.is(JsonDefTypes.ArrayOpen)) {
-            scanner.consume();
+        if (scanner.consumeIf(JsonDefTypes.ArrayOpen)) {
 
             let size: SizedAttributes;
 
-            if (scanner.is(JsonDefTypes.ArrayClose)) {
-                scanner.consume();
+            if (scanner.consumeIf(JsonDefTypes.ArrayClose)) {
                 size = {};
             }
             else {
                 const sizeResult = parseSize(scanner);
 
                 if (sizeResult.success) {
-                    if (scanner.is(JsonDefTypes.ArrayClose)) {
-                        scanner.consume();
+                    if (scanner.consumeIf(JsonDefTypes.ArrayClose))
                         size = sizeResult.value;
-                    }
                     else
                         return IssueType(scanner).EXPECTED_SYMBOL(')');
                 }
@@ -113,53 +107,30 @@ const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
     }
 };
 
+const simpleSchema = (scanner: TokenScanner, kind: Schema['kind'], of?: any): ResultSuccess<Schema> => {
+    scanner.consume(); return Result.success({ kind, ...(of ? { of } : {}) });
+};
+
 const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
     switch (scanner.type()) {
-        case JsonDefTypes.NullKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'null' });
-        }
-        case JsonDefTypes.AnyKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'any' });
-        }
-        case JsonDefTypes.BooleanKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'boolean' });
-        }
-        case JsonDefTypes.ThisKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'this' });
-        }
-        case JsonDefTypes.RootKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'root' });
-        }
-        case JsonDefTypes.TrueKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'literal', of: true });
-        }
-        case JsonDefTypes.FalseKeyword: {
-            scanner.consume();
-            return Result.success({ kind: 'literal', of: false });
-        }
+        case JsonDefTypes.NullKeyword:
+        case JsonDefTypes.AnyKeyword:
+        case JsonDefTypes.BooleanKeyword:
+        case JsonDefTypes.ThisKeyword:
+        case JsonDefTypes.RootKeyword:
+            return simpleSchema(scanner, scanner.value()! as Schema['kind']);
+        case JsonDefTypes.TrueKeyword:
+            return simpleSchema(scanner, 'literal', true);
+        case JsonDefTypes.FalseKeyword:
+            return simpleSchema(scanner, 'literal', false);
         case JsonDefTypes.Number:
         case JsonDefTypes.Integer:
-        case JsonDefTypes.Real: {
-            const value = scanner.value()!;
-            scanner.consume();
-            return Result.success({ kind: 'literal', of: Number.parseFloat(value) });
-        }
-        case JsonDefTypes.String: {
-            const value = scanner.value()!;
-            scanner.consume();
-            return Result.success({ kind: 'literal', of: JSON.parse(`"${value.slice(1, -1)}"`) }); // HACK: Convert in lexe );
-        }
-        case JsonDefTypes.Identifier: {
-            const value = scanner.value()!;
-            scanner.consume();
-            return Result.success({ kind: 'ref', of: value });
-        }
+        case JsonDefTypes.Real:
+            return simpleSchema(scanner, 'literal', Number.parseFloat(scanner.value()!));
+        case JsonDefTypes.String: 
+            return simpleSchema(scanner, 'literal', JSON.parse(`"${scanner.value()!.slice(1, -1)}"`)); // Hack to convert escapes            
+        case JsonDefTypes.Identifier:
+            return simpleSchema(scanner, 'ref', scanner.value()!);
         case JsonDefTypes.DateKeyword:
         case JsonDefTypes.TimeKeyword:
         case JsonDefTypes.DatetimeKeyword:
@@ -167,45 +138,33 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
         case JsonDefTypes.Base64Keyword:
         case JsonDefTypes.EmailKeyword:
         case JsonDefTypes.Regex:
-        case JsonDefTypes.StringKeyword: {
+        case JsonDefTypes.StringKeyword:
             return parseStringSchema(scanner);
-        }
-        case JsonDefTypes.IntegerKeyword: {
-            return parseIntegerSchema(scanner);
-        }
-        case JsonDefTypes.NumberKeyword: {
-            return parseNumberSchema(scanner);
-        }
-
-        case JsonDefTypes.ArrayOpen: {
+        case JsonDefTypes.IntegerKeyword:
+        case JsonDefTypes.NumberKeyword:
+            return parseNumericSchema(scanner);
+        case JsonDefTypes.ArrayOpen:
             return parseTupleSchema(scanner);
-        }
-        case JsonDefTypes.RecordKeyword: {
+        case JsonDefTypes.RecordKeyword:
             return parseRecordSchema(scanner);
-        }
-        case JsonDefTypes.ObjectOpen: {
+        case JsonDefTypes.ObjectOpen:
             return parseObjectSchema(scanner);
-        }
-        case JsonDefTypes.ModelKeyword: {
+        case JsonDefTypes.ModelKeyword:
             return parseModelSchema(scanner);
-        }
-        case JsonDefTypes.GroupKeyword: {
+        case JsonDefTypes.GroupKeyword:
             return parseGroupSchema(scanner);
-        }
-        case JsonDefTypes.SelectKeyword: {
+        case JsonDefTypes.SelectKeyword:
             return parseSelectSchema(scanner);
-        }
         case JsonDefTypes.Open: {
             scanner.consume();
+
             const result = parseSchemaUnion(scanner);
+
             if (!result.success) return result;
-            if (scanner.is(JsonDefTypes.Close)) {
-                scanner.consume();
-                return result;
-            }
-            else {
-                return IssueType(scanner).EXPECTED_SYMBOL(')');
-            }
+
+            return scanner.consumeIf(JsonDefTypes.Close)
+                ? result
+                : IssueType(scanner).EXPECTED_SYMBOL(')');
         }
     }
 
@@ -220,54 +179,25 @@ const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
 const realSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer, JsonDefTypes.Real]);
 
 
-const parseIntegerSchema = (scanner: TokenScanner): Result<IntegerSchema, Token> => {
-    scanner.consume();
+const parseNumericSchema = (scanner: TokenScanner): Result<IntegerSchema | NumberSchema, Token> => {
+    const kind = scanner.value()! as 'number' | 'integer';
 
     let bounds: BoundedAttributes = {};
 
-    if (scanner.is(JsonDefTypes.Open)) {
-        scanner.consume();
-
-        const boundsResult = parseBounds(scanner, integerSet);
+    if (scanner.consumeIf(JsonDefTypes.Open)) {
+        const boundsResult = parseBounds(scanner, kind === 'integer' ? integerSet : realSet);
 
         if (boundsResult.success) {
             bounds = boundsResult.value;
 
-            if (scanner.is(JsonDefTypes.Close))
-                scanner.consume();
-            else
+            if (!scanner.consumeIf(JsonDefTypes.Close))
                 return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
             return boundsResult;
     }
 
-    return Result.success({ kind: 'integer', ...bounds });
-};
-
-const parseNumberSchema = (scanner: TokenScanner): Result<NumberSchema, Token> => {
-    scanner.consume();
-
-    let bounds: BoundedAttributes = {};
-
-    if (scanner.is(JsonDefTypes.Open)) {
-        scanner.consume();
-
-        const boundsResult = parseBounds(scanner, realSet);
-
-        if (boundsResult.success) {
-            bounds = boundsResult.value;
-
-            if (scanner.is(JsonDefTypes.Close))
-                scanner.consume();
-            else
-                return IssueType(scanner).EXPECTED_SYMBOL(')');
-        }
-        else
-            return boundsResult;
-    }
-
-    return Result.success({ kind: 'number', ...bounds });
+    return Result.success({ kind, ...bounds });
 };
 
 const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> => {
@@ -279,17 +209,13 @@ const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> =
 
     let size: SizedAttributes = {};
 
-    if (scanner.is(JsonDefTypes.Open)) {
-        scanner.consume();
-
+    if (scanner.consumeIf(JsonDefTypes.Open)) {
         const sizeResult = parseSize(scanner);
 
         if (sizeResult.success) {
             size = sizeResult.value;
 
-            if (scanner.is(JsonDefTypes.Close))
-                scanner.consume();
-            else
+            if (!scanner.consumeIf(JsonDefTypes.Close))
                 return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
@@ -306,10 +232,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
     let rest: Schema | undefined;
 
     while (true) {
-        if (scanner.is(JsonDefTypes.Rest)) {
-
-            scanner.consume();
-
+        if (scanner.consumeIf(JsonDefTypes.Rest)) {
             const restResult = parseSchema(scanner);
 
             if (restResult.success) {
@@ -318,8 +241,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
 
                 rest = restResult.value;
 
-                if (scanner.is(JsonDefTypes.Comma))
-                    scanner.consume();
+                scanner.consumeIf(JsonDefTypes.Comma);
 
                 break;
             }
@@ -333,19 +255,16 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
         else {
             const schemaResult = parseSchema(scanner);
 
-            if (schemaResult.success) {
+            if (schemaResult.success)
                 schemas.push(schemaResult.value);
-            }
 
-            if (scanner.is(JsonDefTypes.Comma))
-                scanner.consume();
+            scanner.consumeIf(JsonDefTypes.Comma);
         }
     }
 
-    if (!scanner.is(JsonDefTypes.ArrayClose))
+    if (!scanner.consumeIf(JsonDefTypes.ArrayClose))
         return IssueType(scanner).EXPECTED_SYMBOL(']');
 
-    scanner.consume();
 
     return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) });
 };
@@ -353,39 +272,31 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
 const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> => {
     scanner.consume();
 
-    if (!scanner.is(JsonDefTypes.GenericOpen))
+    if (!scanner.consumeIf(JsonDefTypes.GenericOpen))
         return IssueType(scanner).EXPECTED_SYMBOL('<');
 
-    scanner.consume();
-
-    const first = parseSchemaUnion(scanner);
-    let last: Result<Schema, Token> | undefined;
+    const keyOrValue = parseSchemaUnion(scanner);
+    let value: Result<Schema, Token> | undefined;
     let size: SizedAttributes = {};
 
-    if (!first.success)
-        return first;
+    if (!keyOrValue.success)
+        return keyOrValue;
 
-    if (scanner.is(JsonDefTypes.Comma)) {
-        if (first.value.kind !== 'string')
+    if (scanner.consumeIf(JsonDefTypes.Comma)) {
+        if (keyOrValue.value.kind !== 'string')
             return IssueType(scanner).MUST_BE('Record Key', 'String Schema');
 
-        scanner.consume();
+        value = parseSchemaUnion(scanner);
 
-        last = parseSchemaUnion(scanner);
-
-        if (!last.success)
-            return last;
+        if (!value.success)
+            return value;
     }
 
-    if (scanner.is(JsonDefTypes.GenericClose))
-        scanner.consume();
-    else
+    if (!scanner.consumeIf(JsonDefTypes.GenericClose))
         return IssueType(scanner).EXPECTED_SYMBOL('>');
 
 
-    if (scanner.is(JsonDefTypes.Open)) {
-        scanner.consume();
-
+    if (scanner.consumeIf(JsonDefTypes.Open)) {
         const sizeResult = parseSize(scanner);
 
         if (!sizeResult.success)
@@ -393,17 +304,14 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
 
         size = sizeResult.value;
 
-        if (scanner.is(JsonDefTypes.Close))
-            scanner.consume();
-        else
+        if (!scanner.consumeIf(JsonDefTypes.Close))
             return IssueType(scanner).EXPECTED_SYMBOL(')');
 
     }
 
-
-    return Result.success(last && last.success
-        ? { kind: 'record', of: last.value, key: first.value as StringSchema, ...size }
-        : { kind: 'record', of: first.value, ...size });
+    return Result.success(value && value.success
+        ? { kind: 'record', of: value.value, key: keyOrValue.value as StringSchema, ...size }
+        : { kind: 'record', of: keyOrValue.value, ...size });
 };
 
 const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key: string, schema: Schema; }, Token> | null => {
@@ -435,7 +343,7 @@ const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key
         scanner.consume();
     }
     else {
-        return IssueType(scanner).EXPECTED(optional ? `':' or '?:'` : `':`);
+        return IssueType(scanner).EXPECTED_SYMBOL(':', optional ? '?:' : undefined);
     }
 
     const schema = parseSchemaUnion(scanner);
@@ -488,21 +396,25 @@ const parseModelSchema = (scanner: TokenScanner): Result<ModelSchema, Token> => 
     return result.success ? Result.success({ kind: 'model', of: result.value }) : result;
 };
 
+const parseGroupSchema = (scanner: TokenScanner): Result<GroupSchema, Token> => {
+    // Consume GroupKeyword
+    scanner.consume();
+
+    const result = parseStruct(scanner, false);
+
+    return result.success ? Result.success({ kind: 'group', of: result.value }) : result;
+};
+
 const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> => {
     // Consume SelectKeyword
     scanner.consume();
 
-    let selected: string;
+    let selected: string = scanner.value()!;
 
-    if (scanner.is(JsonDefTypes.Identifier)) {
-        selected = scanner.value()!;
-        scanner.consume();
-    }
-    else if (scanner.is(JsonDefTypes.String)) {
-        selected = scanner.value()!.slice(1, -1);
-        scanner.consume();
-    }
-    else
+    // Get Selected Name
+    if (scanner.consumeIf(JsonDefTypes.String))
+        selected = selected.slice(1, -1);
+    else if (!scanner.consumeIf(JsonDefTypes.Identifier))
         return IssueType(scanner).EXPECTED('Selected name');
 
     if (!scanner.consumeIf(JsonDefTypes.OfKeyword))
@@ -514,7 +426,7 @@ const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> =>
     const result = parseStruct(scanner, false);
 
     if (result.success) {
-        if ((selected in result.value))
+        if (selected in result.value)
             return Result.success({ kind: 'group', of: result.value, selected });
         else
             return IssueType(scanner).SELECTED_NOT_FOUND(selected);
@@ -524,31 +436,21 @@ const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> =>
     }
 };
 
-const parseGroupSchema = (scanner: TokenScanner): Result<GroupSchema, Token> => {
-    // Consume GroupKeyword
-    scanner.consume();
 
-    const result = parseStruct(scanner, false);
+type BoundsMap = Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>;
 
-    return result.success ? Result.success({ kind: 'group', of: result.value }) : result;
-};
+const exactMap: BoundsMap = new Map([[JsonDefTypes.Exactly, { key: 'exact' }]]);
 
-
-
-const exactMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([[JsonDefTypes.Exactly, { key: 'exact' }]]);
-
-const boundsMap = new Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>([
+const boundsMap: BoundsMap = new Map([
     [JsonDefTypes.GreaterThan, { key: 'xmin', other: 'min' }],
     [JsonDefTypes.GreaterThanOrEqual, { key: 'min', other: 'xmin' }],
     [JsonDefTypes.LessThan, { key: 'xmax', other: 'max' }],
     [JsonDefTypes.LessThanOrEqual, { key: 'max', other: 'xmax' }],
 ]);
 
-const parseBound = (scanner: TokenScanner,
-    map: Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>,
-    valueType: Set<number>,
-    previous: SizedAttributes = {}
-): Result<Partial<Record<keyof SizedAttributes, number>>, Token> | null => {
+const parseBound = (scanner: TokenScanner, map: BoundsMap, valueType: Set<number>, previous: SizedAttributes = {})
+    : Result<SizedAttributes, Token> | null => {
+
     let info = map.get(scanner.type()!);
 
     if (info) {
@@ -567,7 +469,7 @@ const parseBound = (scanner: TokenScanner,
             return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
         }
         else {
-            return IssueType(scanner).EXPECTED([...valueType].map(JsonDefTypes.names).flat().join(' or '));
+            return IssueType(scanner).EXPECTED(...([...valueType].map(JsonDefTypes.names).flat()));
         }
     }
 
