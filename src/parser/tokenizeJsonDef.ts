@@ -164,19 +164,13 @@ const scanString = (scanner: StringScanner): number => {
     scanner.consume(); // Opening quote
 
     while (!scanner.isEnd) {
-        if (scanner.isIn(charSets.char)) {
-            scanner.consume();
-        }
+        if (scanner.consumeIfIn(charSets.char)) { }
+
         // Escape
-        else if (scanner.is('\\')) {
-            scanner.consume();
+        else if (scanner.consumeIf('\\')) {
 
-            if (scanner.isIn(charSets.charEscape)) {
-                scanner.consume();
-            }
-            else if (scanner.is('x')) {
-                scanner.consume();
-
+            if (scanner.consumeIfIn(charSets.charEscape)) { }
+            else if (scanner.consumeIf('x')) {
                 if (!scanner.consumeIfIn(charSets.hex) || !scanner.consumeIfIn(charSets.hex))
                     return JsonDefTypes.InvalidString;
             }
@@ -202,24 +196,18 @@ const scanRegex = (scanner: StringScanner): number => {
     let started = false;
 
     while (!scanner.isEnd) {
-        if (scanner.isIn(charSets.regexChar)) {
-            scanner.consume();
-
+        if (scanner.consumeIfIn(charSets.regexChar)) {
             started = true;
         }
         // Escape
-        else if (scanner.is('\\')) {
-            scanner.consume();
-
+        else if (scanner.consumeIf('\\')) {
             started = true;
 
             if (!scanner.consumeIfIn(charSets.any))
                 return JsonDefTypes.InvalidRegex;
         }
         // End
-        else if (scanner.is('/')) {
-            scanner.consume();
-
+        else if (scanner.consumeIf('/')) {
             if (!started) break;
 
             scanner.consumeWhileIn(charSets.regexFlags);

@@ -34,11 +34,9 @@ export const parseJsonDef = (data: Token[]): Result<Schema, Token> => {
 
     const result = parseSchemaUnion(scanner);
 
-    if (!result.success)
-        return result;
+    if (!result.success) return result;
 
-    if (!scanner.is(JsonDefTypes.Eof))
-        return IssueType(scanner).UNEXPECTED_EOF();
+    if (!scanner.is(JsonDefTypes.Eof)) return IssueType(scanner).UNEXPECTED_EOF();
 
     return result;
 };
@@ -46,8 +44,7 @@ export const parseJsonDef = (data: Token[]): Result<Schema, Token> => {
 const parseSchemaUnion = (scanner: TokenScanner): Result<Schema, Token> => {
     const schemas: Schema[] = [];
 
-    if (scanner.is(JsonDefTypes.Or))
-        scanner.consume();
+    scanner.consumeIf(JsonDefTypes.Or)        
 
     while (true) {
         const result = parseSchema(scanner);
@@ -127,7 +124,7 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
         case JsonDefTypes.Integer:
         case JsonDefTypes.Real:
             return simpleSchema(scanner, 'literal', Number.parseFloat(scanner.value()!));
-        case JsonDefTypes.String: 
+        case JsonDefTypes.String:
             return simpleSchema(scanner, 'literal', JSON.parse(`"${scanner.value()!.slice(1, -1)}"`)); // Hack to convert escapes            
         case JsonDefTypes.Identifier:
             return simpleSchema(scanner, 'ref', scanner.value()!);
@@ -157,14 +154,9 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
             return parseSelectSchema(scanner);
         case JsonDefTypes.Open: {
             scanner.consume();
-
             const result = parseSchemaUnion(scanner);
-
             if (!result.success) return result;
-
-            return scanner.consumeIf(JsonDefTypes.Close)
-                ? result
-                : IssueType(scanner).EXPECTED_SYMBOL(')');
+            return scanner.consumeIf(JsonDefTypes.Close) ? result : IssueType(scanner).EXPECTED_SYMBOL(')');
         }
     }
 
@@ -172,6 +164,7 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
 };
 
 
+/* BOUNDS */
 const numberSet = new Set<number>([JsonDefTypes.Number]);
 
 const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
@@ -179,26 +172,115 @@ const integerSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer]);
 const realSet = new Set<number>([JsonDefTypes.Number, JsonDefTypes.Integer, JsonDefTypes.Real]);
 
 
-const parseNumericSchema = (scanner: TokenScanner): Result<IntegerSchema | NumberSchema, Token> => {
-    const kind = scanner.value()! as 'number' | 'integer';
+type BoundsMap = Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>;
 
-    let bounds: BoundedAttributes = {};
+const exactMap: BoundsMap = new Map([[JsonDefTypes.Exactly, { key: 'exact' }]]);
+
+const boundsMap: BoundsMap = new Map([
+    [JsonDefTypes.GreaterThan, { key: 'xmin', other: 'min' }],
+    [JsonDefTypes.GreaterThanOrEqual, { key: 'min', other: 'xmin' }],
+    [JsonDefTypes.LessThan, { key: 'xmax', other: 'max' }],
+    [JsonDefTypes.LessThanOrEqual, { key: 'max', other: 'xmax' }],
+]);
+
+const parseEnclosedBounds = <A extends BoundedAttributes>(scanner: TokenScanner, parser: (scanner: TokenScanner) => Result<A, Token>)
+    : Result<A, Token> => {
+    let attributes: A = {} as A;
 
     if (scanner.consumeIf(JsonDefTypes.Open)) {
-        const boundsResult = parseBounds(scanner, kind === 'integer' ? integerSet : realSet);
+        const result = parser(scanner);
 
-        if (boundsResult.success) {
-            bounds = boundsResult.value;
+        if (result.success) {
+            attributes = result.value;
 
             if (!scanner.consumeIf(JsonDefTypes.Close))
                 return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
-            return boundsResult;
+            return result;
     }
 
-    return Result.success({ kind, ...bounds });
+    return Result.success(attributes);
 };
+
+const parseBound = (scanner: TokenScanner, map: BoundsMap, valueType: Set<number>, previous: SizedAttributes = {})
+    : Result<SizedAttributes, Token> | null => {
+
+    let info = map.get(scanner.type()!);
+
+    if (info) {
+        if (info.key in previous)
+            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.key);
+        if (info.other && info.other in previous)
+            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.other);
+
+        scanner.consume();
+
+        if (scanner.isIn(valueType)) {
+            const value = scanner.value()!;
+
+            scanner.consume();
+
+            return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
+        }
+        else {
+            return IssueType(scanner).EXPECTED(...([...valueType].map(JsonDefTypes.names).flat()));
+        }
+    }
+
+    return null;
+};
+
+const parseSize = (scanner: TokenScanner): Result<SizedAttributes, Token> => {
+    let result = parseBound(scanner, exactMap, numberSet);
+
+    if (result === null)
+        result = parseBounds(scanner, numberSet);
+
+    return result === null ? Result.success({}) : result;
+};
+
+const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAttributes, Token> => {
+    let previous: BoundedAttributes = {};
+
+    let result = parseBound(scanner, boundsMap, type, previous);
+
+    if (result !== null) {
+        if (!result.success) return result;
+
+        previous = result.value;
+
+        if (scanner.is(JsonDefTypes.Comma)) {
+            scanner.consume();
+
+            let result = parseBound(scanner, boundsMap, type, previous);
+
+            if (result === null)
+                return IssueType(scanner).EXPECTED('bound');
+            else if (!result.success)
+                return result;
+            else
+                previous = { ...previous, ...result.value };
+        }
+    }
+
+    return Result.success(previous);
+};
+
+const integerBoundsParser = (scanner: TokenScanner) => parseBounds(scanner, integerSet);
+
+const realBoundsParser = (scanner: TokenScanner) => parseBounds(scanner, realSet);
+
+
+/* SCHEMAS */
+const parseNumericSchema = (scanner: TokenScanner): Result<IntegerSchema | NumberSchema, Token> => {
+    const kind = scanner.value()! as 'number' | 'integer';
+
+    let boundsResult = parseEnclosedBounds(scanner, kind === 'integer' ? integerBoundsParser : realBoundsParser);
+
+    return boundsResult.success ? Result.success({ kind, ...boundsResult.value }) : boundsResult;
+};
+
 
 const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> => {
     const value = scanner.value()!;
@@ -207,22 +289,9 @@ const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> =
 
     scanner.consume();
 
-    let size: SizedAttributes = {};
+    const sizeResult = parseEnclosedBounds(scanner, parseSize);
 
-    if (scanner.consumeIf(JsonDefTypes.Open)) {
-        const sizeResult = parseSize(scanner);
-
-        if (sizeResult.success) {
-            size = sizeResult.value;
-
-            if (!scanner.consumeIf(JsonDefTypes.Close))
-                return IssueType(scanner).EXPECTED_SYMBOL(')');
-        }
-        else
-            return sizeResult;
-    }
-
-    return Result.success({ kind: 'string', ...size, ...of });
+    return sizeResult.success ? Result.success({ kind: 'string', ...sizeResult.value, ...of }) : sizeResult;
 };
 
 const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => {
@@ -277,7 +346,6 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
 
     const keyOrValue = parseSchemaUnion(scanner);
     let value: Result<Schema, Token> | undefined;
-    let size: SizedAttributes = {};
 
     if (!keyOrValue.success)
         return keyOrValue;
@@ -295,24 +363,15 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
     if (!scanner.consumeIf(JsonDefTypes.GenericClose))
         return IssueType(scanner).EXPECTED_SYMBOL('>');
 
+    const sizeResult = parseEnclosedBounds(scanner, parseSize);
 
-    if (scanner.consumeIf(JsonDefTypes.Open)) {
-        const sizeResult = parseSize(scanner);
-
-        if (!sizeResult.success)
-            return sizeResult;
-
-        size = sizeResult.value;
-
-        if (!scanner.consumeIf(JsonDefTypes.Close))
-            return IssueType(scanner).EXPECTED_SYMBOL(')');
-
-    }
-
-    return Result.success(value && value.success
-        ? { kind: 'record', of: value.value, key: keyOrValue.value as StringSchema, ...size }
-        : { kind: 'record', of: keyOrValue.value, ...size });
+    return !sizeResult.success
+        ? sizeResult
+        : Result.success(value && value.success
+            ? { kind: 'record', of: value.value, key: keyOrValue.value as StringSchema, ...sizeResult.value }
+            : { kind: 'record', of: keyOrValue.value, ...sizeResult.value });
 };
+
 
 const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key: string, schema: Schema; }, Token> | null => {
     let key: string;
@@ -434,81 +493,4 @@ const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> =>
     else {
         return result;
     }
-};
-
-
-type BoundsMap = Map<number, { key: keyof SizedAttributes, other?: keyof SizedAttributes; }>;
-
-const exactMap: BoundsMap = new Map([[JsonDefTypes.Exactly, { key: 'exact' }]]);
-
-const boundsMap: BoundsMap = new Map([
-    [JsonDefTypes.GreaterThan, { key: 'xmin', other: 'min' }],
-    [JsonDefTypes.GreaterThanOrEqual, { key: 'min', other: 'xmin' }],
-    [JsonDefTypes.LessThan, { key: 'xmax', other: 'max' }],
-    [JsonDefTypes.LessThanOrEqual, { key: 'max', other: 'xmax' }],
-]);
-
-const parseBound = (scanner: TokenScanner, map: BoundsMap, valueType: Set<number>, previous: SizedAttributes = {})
-    : Result<SizedAttributes, Token> | null => {
-
-    let info = map.get(scanner.type()!);
-
-    if (info) {
-        if (info.key in previous)
-            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.key);
-        if (info.other && info.other in previous)
-            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.other);
-
-        scanner.consume();
-
-        if (scanner.isIn(valueType)) {
-            const value = scanner.value()!;
-
-            scanner.consume();
-
-            return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
-        }
-        else {
-            return IssueType(scanner).EXPECTED(...([...valueType].map(JsonDefTypes.names).flat()));
-        }
-    }
-
-    return null;
-};
-
-const parseSize = (scanner: TokenScanner): Result<SizedAttributes, Token> => {
-    let result = parseBound(scanner, exactMap, numberSet);
-
-    if (result === null)
-        result = parseBounds(scanner, numberSet);
-
-    return result === null ? Result.success({}) : result;
-};
-
-
-const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAttributes, Token> => {
-    let previous: BoundedAttributes = {};
-
-    let result = parseBound(scanner, boundsMap, type, previous);
-
-    if (result !== null) {
-        if (!result.success) return result;
-
-        previous = result.value;
-
-        if (scanner.is(JsonDefTypes.Comma)) {
-            scanner.consume();
-
-            let result = parseBound(scanner, boundsMap, type, previous);
-
-            if (result === null)
-                return IssueType(scanner).EXPECTED('bound');
-            else if (!result.success)
-                return result;
-            else
-                previous = { ...previous, ...result.value };
-        }
-    }
-
-    return Result.success(previous);
 };
