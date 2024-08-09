@@ -5,12 +5,29 @@ import {
     StringSchema, TupleSchema
 } from '../Schema';
 import { RegexString, Token, TokenScanner } from "../util";
-import { Issue, Result } from '../util/Result';
+import { Issue, Result, ResultFailure } from '../util/Result';
 import { JsonDefTypes } from "./JsonDefTypes";
 
+const issue = (scanner: TokenScanner, message: string) =>
+    Result.failure<Token>([{
+        on: scanner.peek() ?? {
+            type: -1,
+            mark: scanner.peek(-1)?.mark ?? { position: 0, line: 0, column: 0 },
+            length: 0,
+            value: ''
+        },
+        message
+    }]);
 
-const issue = (scanner: TokenScanner, message: string, issues?: Issue<Token>[]) =>
-    Result.failure([...(issues ?? []), { on: scanner.peek()!, message }]);
+export const IssueType = (scanner: TokenScanner) => ({
+    UNEXPECTED_EOF: (): ResultFailure<Token> => issue(scanner, 'Unexpected end of input'),
+    EXPECTED: (expected: string): ResultFailure<Token> => issue(scanner, `Expected ${expected}`),
+    EXPECTED_SYMBOL: (expected: string): ResultFailure<Token> => issue(scanner, `Expected '${expected}'`),
+    MUST_BE: (name: string, type: string): ResultFailure<Token> => issue(scanner, `${name} must be ${type}`),
+    SELECTED_NOT_FOUND: (name: string): ResultFailure<Token> => issue(scanner, `Selected '${name}' is not in a schema in group`),
+    DUPLICATE_FIELD: (field: string): ResultFailure<Token> => issue(scanner, `Duplicate field: ${field}`),
+    BOUND_ALREADY_DEFINED: (bound: string) => issue(scanner, `Bound ${bound} already defined`),
+} as const);
 
 export const parseJsonDef = (data: Token[]): Result<Schema, Token> => {
     const scanner = new TokenScanner(data);
@@ -21,7 +38,7 @@ export const parseJsonDef = (data: Token[]): Result<Schema, Token> => {
         return result;
 
     if (!scanner.is(JsonDefTypes.Eof))
-        return issue(scanner, 'Missing end of file');
+        return IssueType(scanner).UNEXPECTED_EOF();
 
     return result;
 };
@@ -47,7 +64,7 @@ const parseSchemaUnion = (scanner: TokenScanner): Result<Schema, Token> => {
     }
 
     if (schemas.length === 0)
-        return issue(scanner, 'Schema not found');
+        return IssueType(scanner).EXPECTED('Schema');
     else if (schemas.length === 1)
         return Result.success(schemas[0]);
     else
@@ -76,7 +93,7 @@ const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
                         size = sizeResult.value;
                     }
                     else
-                        return issue(scanner, 'Missing array close');
+                        return IssueType(scanner).EXPECTED_SYMBOL(')');
                 }
                 else {
                     return sizeResult;
@@ -187,12 +204,12 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
                 return result;
             }
             else {
-                return issue(scanner, 'Missing closing parenthesis');
+                return IssueType(scanner).EXPECTED_SYMBOL(')');
             }
         }
     }
 
-    return issue(scanner, 'Schema not found');
+    return IssueType(scanner).EXPECTED('Schema');
 };
 
 
@@ -219,7 +236,7 @@ const parseIntegerSchema = (scanner: TokenScanner): Result<IntegerSchema, Token>
             if (scanner.is(JsonDefTypes.Close))
                 scanner.consume();
             else
-                return issue(scanner, 'Missing bounds close');
+                return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
             return boundsResult;
@@ -244,7 +261,7 @@ const parseNumberSchema = (scanner: TokenScanner): Result<NumberSchema, Token> =
             if (scanner.is(JsonDefTypes.Close))
                 scanner.consume();
             else
-                return issue(scanner, 'Missing bounds close');
+                return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
             return boundsResult;
@@ -273,7 +290,7 @@ const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> =
             if (scanner.is(JsonDefTypes.Close))
                 scanner.consume();
             else
-                return issue(scanner, 'Missing bounds close');
+                return IssueType(scanner).EXPECTED_SYMBOL(')');
         }
         else
             return sizeResult;
@@ -297,7 +314,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
 
             if (restResult.success) {
                 if (restResult.value.kind !== 'array')
-                    return issue(scanner, 'Rest Schema must be an array');
+                    return IssueType(scanner).MUST_BE('Rest Schema', 'an Array Schema');
 
                 rest = restResult.value;
 
@@ -307,7 +324,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
                 break;
             }
             else {
-                return issue(scanner, 'Missing rest schema', restResult.issues);
+                return IssueType(scanner).EXPECTED('Rest Schema');
             }
         }
         else if (scanner.is(JsonDefTypes.ArrayClose)) {
@@ -326,7 +343,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
     }
 
     if (!scanner.is(JsonDefTypes.ArrayClose))
-        return issue(scanner, 'Missing tuple end');
+        return IssueType(scanner).EXPECTED_SYMBOL(']');
 
     scanner.consume();
 
@@ -337,7 +354,7 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
     scanner.consume();
 
     if (!scanner.is(JsonDefTypes.GenericOpen))
-        return issue(scanner, `Expecting '<'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('<');
 
     scanner.consume();
 
@@ -350,7 +367,7 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
 
     if (scanner.is(JsonDefTypes.Comma)) {
         if (first.value.kind !== 'string')
-            return issue(scanner, 'Record key must be a string schema');
+            return IssueType(scanner).MUST_BE('Record Key', 'String Schema');
 
         scanner.consume();
 
@@ -363,7 +380,7 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
     if (scanner.is(JsonDefTypes.GenericClose))
         scanner.consume();
     else
-        return issue(scanner, `Expecting '>'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('>');
 
 
     if (scanner.is(JsonDefTypes.Open)) {
@@ -379,7 +396,7 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
         if (scanner.is(JsonDefTypes.Close))
             scanner.consume();
         else
-            return issue(scanner, `Expecting ')'`);
+            return IssueType(scanner).EXPECTED_SYMBOL(')');
 
     }
 
@@ -411,14 +428,14 @@ const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key
     }
     else if (scanner.is(JsonDefTypes.OptionalIs)) {
         if (!optional)
-            return issue(scanner, 'Optional definitions not allowed');
+            return IssueType(scanner).EXPECTED_SYMBOL(':');
 
         isOptional = { isOptional: true };
 
         scanner.consume();
     }
     else {
-        return issue(scanner, `Expected ${optional ? `':' or '?:'` : `':`}`);
+        return IssueType(scanner).EXPECTED(optional ? `':' or '?:'` : `':`);
     }
 
     const schema = parseSchemaUnion(scanner);
@@ -431,7 +448,8 @@ const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key
 
 const parseStruct = (scanner: TokenScanner, optional: boolean): Result<SchemaObject, Token> => {
     if (!scanner.consumeIf(JsonDefTypes.ObjectOpen))
-        return issue(scanner, `Expected '{'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('{');
+
 
     let result: SchemaObject = {};
 
@@ -450,7 +468,7 @@ const parseStruct = (scanner: TokenScanner, optional: boolean): Result<SchemaObj
     }
 
     if (!scanner.consumeIf(JsonDefTypes.ObjectClose))
-        return issue(scanner, `Expected '}'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('}');
 
     return Result.success(result);
 };
@@ -485,13 +503,13 @@ const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> =>
         scanner.consume();
     }
     else
-        return issue(scanner, 'Missing selected name');
+        return IssueType(scanner).EXPECTED('Selected name');
 
     if (!scanner.consumeIf(JsonDefTypes.OfKeyword))
-        return issue(scanner, `Expected 'of'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('of');
 
     if (!scanner.consumeIf(JsonDefTypes.GroupKeyword))
-        return issue(scanner, `Expected 'group'`);
+        return IssueType(scanner).EXPECTED_SYMBOL('group');
 
     const result = parseStruct(scanner, false);
 
@@ -499,7 +517,7 @@ const parseSelectSchema = (scanner: TokenScanner): Result<GroupSchema, Token> =>
         if ((selected in result.value))
             return Result.success({ kind: 'group', of: result.value, selected });
         else
-            return issue(scanner, `Group member '${selected}' does not exist`);
+            return IssueType(scanner).SELECTED_NOT_FOUND(selected);
     }
     else {
         return result;
@@ -535,9 +553,9 @@ const parseBound = (scanner: TokenScanner,
 
     if (info) {
         if (info.key in previous)
-            return issue(scanner, `${info.key} already defined`);
+            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.key);
         if (info.other && info.other in previous)
-            return issue(scanner, `${info.other} already defined`);
+            return IssueType(scanner).BOUND_ALREADY_DEFINED(info.other);
 
         scanner.consume();
 
@@ -549,7 +567,7 @@ const parseBound = (scanner: TokenScanner,
             return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
         }
         else {
-            return issue(scanner, `Missing ${info} size number`);
+            return IssueType(scanner).EXPECTED([...valueType].map(JsonDefTypes.names).flat().join(' or '));
         }
     }
 
@@ -582,7 +600,7 @@ const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAt
             let result = parseBound(scanner, boundsMap, type, previous);
 
             if (result === null)
-                return issue(scanner, 'Missing Bound');
+                return IssueType(scanner).EXPECTED('bound');
             else if (!result.success)
                 return result;
             else
