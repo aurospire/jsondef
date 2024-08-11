@@ -105,8 +105,11 @@ const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
     }
 };
 
+// HACK: convert escapes, TODO: add field to Token to translate when created
+const parseString = (value: string) => JSON.parse(`"${value.slice(1, -1).replaceAll('\\x', '\\u00').replaceAll('\\\'', '\'').replaceAll('\\0', '\\u0000')}"`);
+
 const simpleSchema = (scanner: TokenScanner, kind: Schema['kind'], of?: any): ResultSuccess<Schema> => {
-    scanner.consume(); return Result.success({ kind, ...(of ? { of } : {}) });
+    scanner.consume(); return Result.success({ kind, ...(of !== undefined ? { of } : {}) });
 };
 
 const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
@@ -126,7 +129,7 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
         case JsonDefType.Real:
             return simpleSchema(scanner, 'literal', Number.parseFloat(scanner.value()!));
         case JsonDefType.String:
-            return simpleSchema(scanner, 'literal', JSON.parse(`"${scanner.value()!.slice(1, -1)}"`)); // Hack to convert escapes            
+            return simpleSchema(scanner, 'literal', parseString(scanner.value()!))
         case JsonDefType.Identifier:
             return simpleSchema(scanner, 'ref', scanner.value()!);
         case JsonDefType.DateKeyword:

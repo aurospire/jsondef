@@ -1,5 +1,5 @@
 import { CharSet, StringScanner } from "../util";
-import { JsonDefTypes } from "./JsonDefTypes";
+import { JsonDefType } from "./JsonDefType";
 
 // Character sets
 const charSets = {
@@ -16,42 +16,42 @@ const charSets = {
 
 // Keywords map
 const keywords = new Map<string, number>([
-    ['null', JsonDefTypes.NullKeyword],
-    ['any', JsonDefTypes.AnyKeyword],
-    ['boolean', JsonDefTypes.BooleanKeyword],
-    ['this', JsonDefTypes.ThisKeyword],
-    ['root', JsonDefTypes.RootKeyword],
-    ['integer', JsonDefTypes.IntegerKeyword],
-    ['number', JsonDefTypes.NumberKeyword],
-    ['record', JsonDefTypes.RecordKeyword],
-    ['model', JsonDefTypes.ModelKeyword],
-    ['group', JsonDefTypes.GroupKeyword],
-    ['select', JsonDefTypes.SelectKeyword],
-    ['of', JsonDefTypes.OfKeyword],
-    ['string', JsonDefTypes.StringKeyword],
-    ['datetime', JsonDefTypes.DatetimeKeyword],
-    ['date', JsonDefTypes.DateKeyword],
-    ['time', JsonDefTypes.TimeKeyword],
-    ['uuid', JsonDefTypes.UuidKeyword],
-    ['base64', JsonDefTypes.Base64Keyword],
-    ['email', JsonDefTypes.EmailKeyword],
-    ['true', JsonDefTypes.TrueKeyword],
-    ['false', JsonDefTypes.FalseKeyword],
+    ['null', JsonDefType.NullKeyword],
+    ['any', JsonDefType.AnyKeyword],
+    ['boolean', JsonDefType.BooleanKeyword],
+    ['this', JsonDefType.ThisKeyword],
+    ['root', JsonDefType.RootKeyword],
+    ['integer', JsonDefType.IntegerKeyword],
+    ['number', JsonDefType.NumberKeyword],
+    ['record', JsonDefType.RecordKeyword],
+    ['model', JsonDefType.ModelKeyword],
+    ['group', JsonDefType.GroupKeyword],
+    ['select', JsonDefType.SelectKeyword],
+    ['of', JsonDefType.OfKeyword],
+    ['string', JsonDefType.StringKeyword],
+    ['datetime', JsonDefType.DatetimeKeyword],
+    ['date', JsonDefType.DateKeyword],
+    ['time', JsonDefType.TimeKeyword],
+    ['uuid', JsonDefType.UuidKeyword],
+    ['base64', JsonDefType.Base64Keyword],
+    ['email', JsonDefType.EmailKeyword],
+    ['true', JsonDefType.TrueKeyword],
+    ['false', JsonDefType.FalseKeyword],
 ]);
 
 // Single-character tokens
 const singleCharTokens = new Map<string, number>([
-    ['\0', JsonDefTypes.Eof],
-    ['|', JsonDefTypes.Or],
-    ['=', JsonDefTypes.Exactly],
-    ['(', JsonDefTypes.Open],
-    [')', JsonDefTypes.Close],
-    ['[', JsonDefTypes.ArrayOpen],
-    [']', JsonDefTypes.ArrayClose],
-    ['{', JsonDefTypes.ObjectOpen],
-    ['}', JsonDefTypes.ObjectClose],
-    [',', JsonDefTypes.Comma],
-    [':', JsonDefTypes.RequiredIs],
+    ['\0', JsonDefType.Eof],
+    ['|', JsonDefType.Or],
+    ['=', JsonDefType.Exactly],
+    ['(', JsonDefType.Open],
+    [')', JsonDefType.Close],
+    ['[', JsonDefType.ArrayOpen],
+    [']', JsonDefType.ArrayClose],
+    ['{', JsonDefType.ObjectOpen],
+    ['}', JsonDefType.ObjectClose],
+    [',', JsonDefType.Comma],
+    [':', JsonDefType.RequiredIs],
 ]);
 
 export function* tokenizeJsonDef(data: string) {
@@ -64,7 +64,7 @@ export function* tokenizeJsonDef(data: string) {
 
         const char = scanner.peek()!;
 
-        let id = JsonDefTypes.Invalid;
+        let id = JsonDefType.Invalid;
 
         if (singleCharTokens.has(char)) {
             id = singleCharTokens.get(char)!;
@@ -105,56 +105,56 @@ export function* tokenizeJsonDef(data: string) {
 
 const scanLessThan = (scanner: StringScanner): number => {
     scanner.consume();
-    return scanner.consumeIf('=') ? JsonDefTypes.LessThanOrEqual : JsonDefTypes.LessThan;
+    return scanner.consumeIf('=') ? JsonDefType.LessThanOrEqual : JsonDefType.LessThan;
 };
 
 const scanGreaterThan = (scanner: StringScanner): number => {
     scanner.consume();
-    return scanner.consumeIf('=') ? JsonDefTypes.GreaterThanOrEqual : JsonDefTypes.GreaterThan;
+    return scanner.consumeIf('=') ? JsonDefType.GreaterThanOrEqual : JsonDefType.GreaterThan;
 };
 
 const scanOptionalIs = (scanner: StringScanner): number => {
     scanner.consume();
-    return scanner.consumeIf(':') ? JsonDefTypes.OptionalIs : JsonDefTypes.Invalid;
+    return scanner.consumeIf(':') ? JsonDefType.OptionalIs : JsonDefType.Invalid;
 };
 
 const scanRest = (scanner: StringScanner): number => {
     scanner.consume();
-    return scanner.consumeIf('.') && scanner.consumeIf('.') ? JsonDefTypes.Rest : JsonDefTypes.Invalid;
+    return scanner.consumeIf('.') && scanner.consumeIf('.') ? JsonDefType.Rest : JsonDefType.Invalid;
 };
 
 const scanIdentifierOrKeyword = (scanner: StringScanner): number => {
     scanner.consume();
     scanner.consumeWhileIn(charSets.identifier);
-    return keywords.get(scanner.captured()) ?? JsonDefTypes.Identifier;
+    return keywords.get(scanner.captured()) ?? JsonDefType.Identifier;
 };
 
 const scanNumber = (scanner: StringScanner): number => {
     const isNegative = scanner.consumeIf('-');
 
-    let id = isNegative ? JsonDefTypes.Integer : JsonDefTypes.Number;
+    let id = isNegative ? JsonDefType.Integer : JsonDefType.Number;
 
     scanner.consumeWhileIn(CharSet.Digit);
 
     if (scanner.consumeIf('.')) {
 
         if (!scanner.isIn(CharSet.Digit))
-            return JsonDefTypes.InvalidReal;
+            return JsonDefType.InvalidReal;
 
         scanner.consumeWhileIn(CharSet.Digit);
 
-        id = JsonDefTypes.Real;
+        id = JsonDefType.Real;
     }
 
     if (scanner.consumeIfIn(charSets.exponent)) {
 
         scanner.consumeIfIn(charSets.signs);
 
-        if (!scanner.isIn(CharSet.Digit)) return JsonDefTypes.InvalidReal;
+        if (!scanner.isIn(CharSet.Digit)) return JsonDefType.InvalidReal;
 
         scanner.consumeWhileIn(CharSet.Digit);
 
-        id = JsonDefTypes.Real;
+        id = JsonDefType.Real;
     }
 
     return id;
@@ -172,22 +172,22 @@ const scanString = (scanner: StringScanner): number => {
             if (scanner.consumeIfIn(charSets.charEscape)) { }
             else if (scanner.consumeIf('x')) {
                 if (!scanner.consumeIfIn(charSets.hex) || !scanner.consumeIfIn(charSets.hex))
-                    return JsonDefTypes.InvalidString;
+                    return JsonDefType.InvalidString;
             }
             else {
-                return JsonDefTypes.InvalidString;
+                return JsonDefType.InvalidString;
             }
         }
         // End Quote
         else if (scanner.consumeIf('\'')) {
-            return JsonDefTypes.String;
+            return JsonDefType.String;
         }
         else {
-            return JsonDefTypes.InvalidString;
+            return JsonDefType.InvalidString;
         }
     }
 
-    return JsonDefTypes.InvalidString;
+    return JsonDefType.InvalidString;
 };
 
 const scanRegex = (scanner: StringScanner): number => {
@@ -204,7 +204,7 @@ const scanRegex = (scanner: StringScanner): number => {
             started = true;
 
             if (!scanner.consumeIfIn(charSets.any))
-                return JsonDefTypes.InvalidRegex;
+                return JsonDefType.InvalidRegex;
         }
         // End
         else if (scanner.consumeIf('/')) {
@@ -212,12 +212,12 @@ const scanRegex = (scanner: StringScanner): number => {
 
             scanner.consumeWhileIn(charSets.regexFlags);
 
-            return JsonDefTypes.Regex;
+            return JsonDefType.Regex;
         }
         else {
             break;
         }
     }
 
-    return JsonDefTypes.InvalidRegex;
+    return JsonDefType.InvalidRegex;
 };
