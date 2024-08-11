@@ -6,6 +6,7 @@ export type Flatten<Types extends Array<string | string[]>> = _Flatten<Types>[nu
 
 export type EnumNames<Types extends Array<string | string[]>> = Record<Flatten<Types> extends string ? Flatten<Types> : never, number>;
 
+//export type EnumIds<T extends readonly (string | string[])[]> = keyof T extends infer K ? K extends `${infer N extends number}` ? N : never : never;
 
 export class Enum<const Names extends Array<string | string[]>> {
     #ids = new Map<Flatten<Names>, number>;

@@ -1,7 +1,6 @@
 import { makeEnum } from "../util";
 
-
-export const JsonDefTypes = makeEnum(
+export const JsonDefType = makeEnum(
     'NullKeyword',
     'AnyKeyword',
     'BooleanKeyword',
