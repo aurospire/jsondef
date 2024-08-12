@@ -129,7 +129,7 @@ const parseSchemaItem = (scanner: TokenScanner): Result<Schema, Token> => {
         case JsonDefType.Real:
             return simpleSchema(scanner, 'literal', Number.parseFloat(scanner.value()!));
         case JsonDefType.String:
-            return simpleSchema(scanner, 'literal', parseString(scanner.value()!))
+            return simpleSchema(scanner, 'literal', parseString(scanner.value()!));
         case JsonDefType.Identifier:
             return simpleSchema(scanner, 'ref', scanner.value()!);
         case JsonDefType.DateKeyword:
@@ -228,7 +228,7 @@ const parseBound = (scanner: TokenScanner, map: BoundsMap, valueType: Set<number
             return Result.success({ ...previous, [info.key]: Number.parseFloat(value) });
         }
         else {
-            return IssueType(scanner).EXPECTED(...([...valueType].map(JsonDefType.names).flat()));
+            return IssueType(scanner).EXPECTED(...([...valueType].map(id => JsonDefType.names(id)).flat()));
         }
     }
 
@@ -259,8 +259,7 @@ const parseBounds = (scanner: TokenScanner, type: Set<number>): Result<BoundedAt
 
             let result = parseBound(scanner, boundsMap, type, previous);
 
-            if (result === null)
-                return IssueType(scanner).EXPECTED('bound');
+            if (result === null) { }
             else if (!result.success)
                 return result;
             else
@@ -279,6 +278,8 @@ const realBoundsParser = (scanner: TokenScanner) => parseBounds(scanner, realSet
 /* SCHEMAS */
 const parseNumericSchema = (scanner: TokenScanner): Result<IntegerSchema | NumberSchema, Token> => {
     const kind = scanner.value()! as 'number' | 'integer';
+
+    scanner.consume();
 
     let boundsResult = parseEnclosedBounds(scanner, kind === 'integer' ? integerBoundsParser : realBoundsParser);
 

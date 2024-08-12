@@ -1,20 +1,27 @@
 import { JsonDefType } from "@/parser/JsonDefType";
 import { IssueType, parseJsonDef } from "@/parser/parseJsonDef";
+import { tokenizeJsonDef } from "@/parser/tokenizeJsonDef";
 import { Schema } from '@/Schema';
 import { Token } from "@/util";
 import { Result } from "@/util/Result";
 
-const makeTokens = (data: [type: number, value: string][]): Token[] => {
+const parse = (...data: (string | [type: number, value: string])[]) => {
   let position = 0;
-  return data.map(([type, value]) => {
-    const result = { type, value, length: value.length, mark: { position, line: 0, column: position } };
-    position += value.length + 1;
-    return result;
-  });
-};
 
-const parse = (...data: [type: number, value: string][]) => {
-  const tokens = makeTokens(data);
+  const tokens: Token[] = data.flatMap(item => {
+    if (typeof item === 'string') {
+      const result = tokenizeJsonDef(item);
+      position += item.length;
+      return [...result];
+    }
+    else {
+      const [type, value] = item;
+      const result = { type, value, length: value.length, mark: { position, line: 0, column: position } };
+      position += value.length + 1;
+      return result;
+    }
+  });
+
   return parseJsonDef(tokens);
 };
 
@@ -120,6 +127,79 @@ describe('parseJsonDef', () => {
     });
   });
 
+  describe('RefSchema', () => {
+    it('should produce a RefSchema', () => {
+      const result = parse([JsonDefType.Identifier, 'Hello']);
+      expect(value(result)).toEqual({ kind: 'ref', of: 'Hello' });
+    });
+  });
+
+  describe('IntegerSchema', () => {
+    it('should produce an IntegerSchema', () => {
+      const result = parse([JsonDefType.IntegerKeyword, 'integer']);
+      expect(value(result)).toEqual({ kind: 'integer' });
+    });
+
+    it('should produce an IntegerSchema with bounds', () => {
+      expect(value(parse('integer', '(', ')'))).toEqual({ kind: 'integer' });
+
+      expect(value(parse('integer(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'integer', min: 10 });
+      expect(value(parse('integer(>=', [JsonDefType.Integer, '-10'], ')'))).toEqual({ kind: 'integer', min: -10 });
+
+      expect(value(parse('integer(>= 10)'))).toEqual({ kind: 'integer', min: 10 });
+      expect(value(parse('integer(<= 10)'))).toEqual({ kind: 'integer', max: 10 });
+      expect(value(parse('integer(>  10)'))).toEqual({ kind: 'integer', xmin: 10 });
+      expect(value(parse('integer(<  10)'))).toEqual({ kind: 'integer', xmax: 10 });
+
+      expect(value(parse('integer(>= -10, <= 20)'))).toEqual({ kind: 'integer', min: -10, max: 20 });
+      expect(value(parse('integer(>= -10, <  20)'))).toEqual({ kind: 'integer', min: -10, xmax: 20 });
+      expect(value(parse('integer(>  -10, <= 20)'))).toEqual({ kind: 'integer', xmin: -10, max: 20 });
+      expect(value(parse('integer(>  -10, <  20)'))).toEqual({ kind: 'integer', xmin: -10, xmax: 20 });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('integer('))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+
+      expect(message(parse('integer(>)'))).toEqual(message(IssueType(undefined).EXPECTED('Number', 'Integer')));
+
+      expect(message(parse('integer(> 0.1)'))).toEqual(message(IssueType(undefined).EXPECTED('Number', 'Integer')));
+
+      expect(message(parse('integer(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+    });
+  });
+
+  describe('NumberSchema', () => {
+    it('should produce an NumberSchema', () => {
+      const result = parse([JsonDefType.NumberKeyword, 'number']);
+      expect(value(result)).toEqual({ kind: 'number' });
+    });
+
+    it('should produce an NumberSchema with bounds', () => {
+      expect(value(parse('number', '(', ')'))).toEqual({ kind: 'number' });
+
+      expect(value(parse('number(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'number', min: 10 });
+      expect(value(parse('number(>=', [JsonDefType.Integer, '-10'], ')'))).toEqual({ kind: 'number', min: -10 });
+      expect(value(parse('number(>=', [JsonDefType.Real, '10.12'], ')'))).toEqual({ kind: 'number', min: 10.12 });
+
+      expect(value(parse('number(>= 10)'))).toEqual({ kind: 'number', min: 10 });
+      expect(value(parse('number(<= 10)'))).toEqual({ kind: 'number', max: 10 });
+      expect(value(parse('number(>  10)'))).toEqual({ kind: 'number', xmin: 10 });
+      expect(value(parse('number(<  10)'))).toEqual({ kind: 'number', xmax: 10 });
+
+      expect(value(parse('number(>= -10.34e-3, <= 20.2e12)'))).toEqual({ kind: 'number', min: -10.34e-3, max: 20.2e12 });
+      expect(value(parse('number(>= -10.34e-3, <  20.2e12)'))).toEqual({ kind: 'number', min: -10.34e-3, xmax: 20.2e12 });
+      expect(value(parse('number(>  -10.34e-3, <= 20.2e12)'))).toEqual({ kind: 'number', xmin: -10.34e-3, max: 20.2e12 });
+      expect(value(parse('number(>  -10.34e-3, <  20.2e12)'))).toEqual({ kind: 'number', xmin: -10.34e-3, xmax: 20.2e12 });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('number('))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+
+      expect(message(parse('number(>)'))).toEqual(message(IssueType(undefined).EXPECTED('Number', 'Integer', 'Real')));
+
+      expect(message(parse('number(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+    });
+  });
   describe('EoF', () => {
 
     it('should successfully parse with EoF Token', () => {
@@ -128,7 +208,6 @@ describe('parseJsonDef', () => {
         [JsonDefType.Eof, '\0'],
       );
 
-      expect(result.success).toBe(true);
       expect(value(result)).toEqual({ kind: 'null' });
     });
 
@@ -137,7 +216,6 @@ describe('parseJsonDef', () => {
         [JsonDefType.NullKeyword, 'null'],
       );
 
-      expect(result.success).toBe(true);
       expect(value(result)).toEqual({ kind: 'null' });
     });
 
@@ -147,7 +225,6 @@ describe('parseJsonDef', () => {
         [JsonDefType.NullKeyword, 'null'],
       );
 
-      expect(result.success).toBe(false);
       expect(message(result)).toEqual(message(IssueType(undefined).EXPECTED_EOF()));
     });
   });

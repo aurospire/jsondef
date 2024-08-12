@@ -16,7 +16,6 @@ export class Enum<const Names extends Array<string | string[]>> {
     #types: Record<string, number> = {};
 
     constructor(types: Names) {
-
         for (let i = 0; i < types.length; i++) {
             let type = types[i];
             if (typeof type === 'string')

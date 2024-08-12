@@ -1,5 +1,3 @@
-import { CharSet } from "./CharSet";
-
 export interface Indexable<T, S extends Indexable<T, S>> {
     length: number;
     slice(start?: number, end?: number): S;
@@ -144,7 +142,7 @@ export abstract class Scanner<T, S extends Indexable<T, S>, C, M extends Mark = 
 }
 
 
-export type Token = Segment<string, StringMark> & { type: number; };
+export type Token = Segment<string, StringMark> & { type: number; data?: any; };
 
 export type StringMark = Mark & { line: number, column: number; };
 
@@ -185,7 +183,7 @@ export class StringScanner extends Scanner<string, string, string, StringMark> {
 
     override clone(): StringScanner { return new StringScanner(this); }
 
-    token(id: number): Token { return { type: id, ...this.extract() }; }
+    token(id: number, data?: any): Token { return { type: id, ...this.extract(), data }; }
 }
 
 
