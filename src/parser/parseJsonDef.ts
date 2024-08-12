@@ -298,10 +298,7 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema | ArraySche
     let schemas: Schema[] = [];
     let rest: Schema | undefined;
 
-    while (true) {
-        if (scanner.is(JsonDefType.ArrayClose))
-            break;
-
+    while (!scanner.consumeIf(JsonDefType.ArrayClose)) {
         if (schemas.length)
             if (!scanner.consumeIf(JsonDefType.Comma))
                 return (IssueType(scanner).EXPECTED_SYMBOL(','));
@@ -315,10 +312,15 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema | ArraySche
 
                 rest = restResult.value;
 
+                scanner.consumeIf(JsonDefType.Comma);
+
+                if (!scanner.consumeIf(JsonDefType.ArrayClose))
+                    return IssueType(scanner).EXPECTED_SYMBOL(']');
+
                 break;
             }
             else {
-                return IssueType(scanner).EXPECTED('Rest Schema');
+                return IssueType(scanner).EXPECTED('Rest Schema'); // TODO: Multiple Issues
             }
         }
         else {
@@ -330,11 +332,6 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema | ArraySche
                 return schemaResult;
         }
     }
-
-    scanner.consumeIf(JsonDefType.Comma);
-
-    if (!scanner.consumeIf(JsonDefType.ArrayClose))
-        return IssueType(scanner).EXPECTED_SYMBOL(']');
 
     return schemas.length || !rest
         ? Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) })

@@ -301,7 +301,7 @@ describe('parseJsonDef', () => {
   });
 
   describe('TupleSchema', () => {
-    it('should parse an Empty TupleSchema', () => {      
+    it('should parse an Empty TupleSchema', () => {
       expect(value(parse('[]'))).toEqual({ kind: 'tuple', of: [] });
     });
 
@@ -335,6 +335,71 @@ describe('parseJsonDef', () => {
       expect(message(parse('[null,'))).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
 
       expect(message(parse('[...null[],'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(']')));
+
+      expect(message(parse('[...null,'))).toEqual(message(IssueType(undefined).MUST_BE('Rest Schema', 'an Array Schema')));
+
+      expect(message(parse('[...]'))).toEqual(message(IssueType(undefined).EXPECTED('Rest Schema')));
+    });
+  });
+
+  describe('RecordSchema', () => {
+    it('Should parse a default-keyed RecordSchema of any', () => {
+      expect(value(parse('record<any>'))).toEqual({ kind: 'record', of: { kind: 'any' } });
+    });
+
+    it('should produce a default-keyed RecordSchema with bounds', () => {
+      expect(value(parse('record<any>', '(', ')'))).toEqual({ kind: 'record', of: { kind: 'any' } });
+
+      expect(value(parse('record<any>(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'record', of: { kind: 'any' }, min: 10 });
+
+      expect(value(parse('record<any>(= 10)'))).toEqual({ kind: 'record', of: { kind: 'any' }, exact: 10 });
+
+      expect(value(parse('record<any>(>= 10)'))).toEqual({ kind: 'record', of: { kind: 'any' }, min: 10 });
+      expect(value(parse('record<any>(<= 10)'))).toEqual({ kind: 'record', of: { kind: 'any' }, max: 10 });
+      expect(value(parse('record<any>(>  10)'))).toEqual({ kind: 'record', of: { kind: 'any' }, xmin: 10 });
+      expect(value(parse('record<any>(<  10)'))).toEqual({ kind: 'record', of: { kind: 'any' }, xmax: 10 });
+
+      expect(value(parse('record<any>(>= 10, <= 20)'))).toEqual({ kind: 'record', of: { kind: 'any' }, min: 10, max: 20 });
+      expect(value(parse('record<any>(>= 10, <  20)'))).toEqual({ kind: 'record', of: { kind: 'any' }, min: 10, xmax: 20 });
+      expect(value(parse('record<any>(>  10, <= 20)'))).toEqual({ kind: 'record', of: { kind: 'any' }, xmin: 10, max: 20 });
+      expect(value(parse('record<any>(>  10, <  20)'))).toEqual({ kind: 'record', of: { kind: 'any' }, xmin: 10, xmax: 20 });
+    });
+
+    it('Should parse a custom-keyed RecordSchema of any', () => {
+      expect(value(parse('record<string, any>'))).toEqual({ kind: 'record', key: { kind: 'string' }, of: { kind: 'any' } });
+      expect(value(parse('record<string(=10), any>'))).toEqual({ kind: 'record', key: { kind: 'string', exact: 10 }, of: { kind: 'any' } });
+      expect(value(parse('record<date, any>'))).toEqual({ kind: 'record', key: { kind: 'string', of: 'date' }, of: { kind: 'any' } });
+      expect(value(parse('record</ABC/i, any>'))).toEqual({ kind: 'record', key: { kind: 'string', of: '/ABC/i' }, of: { kind: 'any' } });
+    });
+
+    it('Should parse a nested RecordSchema', () => {
+      expect(value(parse('record<uuid, record</ABC/i,any>>'))).toEqual({
+        kind: 'record', key: { kind: 'string', of: 'uuid' }, of: {
+          kind: 'record', key: { kind: 'string', of: '/ABC/i' }, of: { kind: 'any' }
+        }
+      });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('record'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('<')));
+
+      expect(message(parse('record<any'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('>')));
+      
+      expect(message(parse('record<string,'))).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
+      
+      expect(message(parse('record<string,any'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('>')));
+
+      expect(message(parse('record<any,any>'))).toEqual(message(IssueType(undefined).MUST_BE('Record Key', 'String Schema')));
+
+      expect(message(parse('record<any>('))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+
+      expect(message(parse('record<any>(>)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('record<any>(> -10)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('record<any>(> 0.1)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('record<any>(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
     });
   });
 
