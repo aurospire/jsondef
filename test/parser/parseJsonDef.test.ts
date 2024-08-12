@@ -4,6 +4,7 @@ import { tokenizeJsonDef } from "@/parser/tokenizeJsonDef";
 import { Schema } from '@/Schema';
 import { Token } from "@/util";
 import { Result } from "@/util/Result";
+import { inspect } from "util";
 
 const parse = (...data: (string | [type: number, value: string])[]) => {
   let position = 0;
@@ -169,12 +170,12 @@ describe('parseJsonDef', () => {
   });
 
   describe('NumberSchema', () => {
-    it('should produce an NumberSchema', () => {
+    it('should produce a nNumberSchema', () => {
       const result = parse([JsonDefType.NumberKeyword, 'number']);
       expect(value(result)).toEqual({ kind: 'number' });
     });
 
-    it('should produce an NumberSchema with bounds', () => {
+    it('should produce a NumberSchema with bounds', () => {
       expect(value(parse('number', '(', ')'))).toEqual({ kind: 'number' });
 
       expect(value(parse('number(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'number', min: 10 });
@@ -200,8 +201,144 @@ describe('parseJsonDef', () => {
       expect(message(parse('number(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
     });
   });
-  describe('EoF', () => {
 
+  describe('StringSchema', () => {
+    it('should produce an StringSchema', () => {
+      expect(value(parse('string'))).toEqual({ kind: 'string' });
+    });
+
+    it('should produce an Formatted StringSchema', () => {
+      expect(value(parse('date'))).toEqual({ kind: 'string', of: 'date' });
+      expect(value(parse('time'))).toEqual({ kind: 'string', of: 'time' });
+      expect(value(parse('datetime'))).toEqual({ kind: 'string', of: 'datetime' });
+      expect(value(parse('uuid'))).toEqual({ kind: 'string', of: 'uuid' });
+      expect(value(parse('base64'))).toEqual({ kind: 'string', of: 'base64' });
+      expect(value(parse('email'))).toEqual({ kind: 'string', of: 'email' });
+      expect(value(parse('/ABC/'))).toEqual({ kind: 'string', of: '/ABC/' });
+      expect(value(parse('/ABC/ig'))).toEqual({ kind: 'string', of: '/ABC/ig' });
+    });
+
+    it('should produce an StringSchema with bounds', () => {
+      expect(value(parse('string', '(', ')'))).toEqual({ kind: 'string' });
+
+      expect(value(parse('string(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'string', min: 10 });
+      expect(value(parse('date(>=', [JsonDefType.Number, '10'], ')'))).toEqual({ kind: 'string', of: 'date', min: 10 });
+
+      expect(value(parse('string(= 10)'))).toEqual({ kind: 'string', exact: 10 });
+
+      expect(value(parse('string(>= 10)'))).toEqual({ kind: 'string', min: 10 });
+      expect(value(parse('string(<= 10)'))).toEqual({ kind: 'string', max: 10 });
+      expect(value(parse('string(>  10)'))).toEqual({ kind: 'string', xmin: 10 });
+      expect(value(parse('string(<  10)'))).toEqual({ kind: 'string', xmax: 10 });
+
+      expect(value(parse('string(>= 10, <= 20)'))).toEqual({ kind: 'string', min: 10, max: 20 });
+      expect(value(parse('string(>= 10, <  20)'))).toEqual({ kind: 'string', min: 10, xmax: 20 });
+      expect(value(parse('string(>  10, <= 20)'))).toEqual({ kind: 'string', xmin: 10, max: 20 });
+      expect(value(parse('string(>  10, <  20)'))).toEqual({ kind: 'string', xmin: 10, xmax: 20 });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('string('))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+
+      expect(message(parse('string(>)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('string(> -10)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('string(> 0.1)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('string(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+    });
+  });
+
+  describe('ArraySchema', () => {
+    it('should parse an ArraySchema of any', () => {
+      expect(value(parse('any[]'))).toEqual({ kind: 'array', of: { kind: 'any' } });
+    });
+
+    it('should parse an ArraySchema of ArraySchema of any', () => {
+      expect(value(parse('any[][]'))).toEqual({ kind: 'array', of: { kind: 'array', of: { kind: 'any' } } });
+    });
+
+    it('should parse an ArraySchema of ArraySchema of ArraySchema of any', () => {
+      expect(value(parse('any[][][]'))).toEqual({ kind: 'array', of: { kind: 'array', of: { kind: 'array', of: { kind: 'any' } } } });
+    });
+
+    it('should produce an ArraySchema with bounds', () => {
+      expect(value(parse('any[>=', [JsonDefType.Number, '10'], ']'))).toEqual({ kind: 'array', of: { kind: 'any' }, min: 10 });
+
+      expect(value(parse('any[= 10]'))).toEqual({ kind: 'array', of: { kind: 'any' }, exact: 10 });
+
+      expect(value(parse('any[>= 10]'))).toEqual({ kind: 'array', of: { kind: 'any' }, min: 10 });
+      expect(value(parse('any[<= 10]'))).toEqual({ kind: 'array', of: { kind: 'any' }, max: 10 });
+      expect(value(parse('any[>  10]'))).toEqual({ kind: 'array', of: { kind: 'any' }, xmin: 10 });
+      expect(value(parse('any[<  10]'))).toEqual({ kind: 'array', of: { kind: 'any' }, xmax: 10 });
+
+      expect(value(parse('any[>= 10, <= 20]'))).toEqual({ kind: 'array', of: { kind: 'any' }, min: 10, max: 20 });
+      expect(value(parse('any[>= 10, <  20]'))).toEqual({ kind: 'array', of: { kind: 'any' }, min: 10, xmax: 20 });
+      expect(value(parse('any[>  10, <= 20]'))).toEqual({ kind: 'array', of: { kind: 'any' }, xmin: 10, max: 20 });
+      expect(value(parse('any[>  10, <  20]'))).toEqual({ kind: 'array', of: { kind: 'any' }, xmin: 10, xmax: 20 });
+    });
+
+    it('should produce an ArraySchema of ArraySchema with bounds', () => {
+      expect(value(parse('any[>=10][=3]'))).toEqual({ kind: 'array', of: { kind: 'array', of: { kind: 'any' }, min: 10 }, exact: 3 });
+    });
+
+    it('should produce an ArraySchema of bounded Schemas', () => {
+      expect(value(parse('integer(>3, <=7)[>= 4]'))).toEqual({ kind: 'array', of: { kind: 'integer', xmin: 3, max: 7 }, min: 4 });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('any['))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(']')));
+
+      expect(message(parse('any[>)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('any[> -10]'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('any[> 0.1]'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
+
+      expect(message(parse('any[#]'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(']')));
+    });
+  });
+
+  describe('TupleSchema', () => {
+    it('should parse an Empty TupleSchema', () => {      
+      expect(value(parse('[]'))).toEqual({ kind: 'tuple', of: [] });
+    });
+
+    it('should parse a 1-TupleSchema', () => {
+      expect(value(parse('[any]'))).toEqual({ kind: 'tuple', of: [{ kind: 'any' }] });
+    });
+
+    it('should parse a 2-TupleSchema', () => {
+      expect(value(parse('[any, integer(>10)]'))).toEqual({ kind: 'tuple', of: [{ kind: 'any' }, { kind: 'integer', xmin: 10 }] });
+    });
+
+    it('should parse a Rest 0-TupleSchema', () => {
+      expect(value(parse('[...any[]]'))).toEqual({ kind: 'array', of: { kind: 'any' } });
+    });
+
+    it('should parse a Rest 1-TupleSchema', () => {
+      expect(value(parse('[null, ...any[]]'))).toEqual({ kind: 'tuple', of: [{ kind: 'null' }], rest: { kind: 'array', of: { kind: 'any' } } });
+    });
+
+    it('should parse a Rest 2-TupleSchema', () => {
+      expect(value(parse('[null, boolean, ...any[]]'))).toEqual({ kind: 'tuple', of: [{ kind: 'null' }, { kind: 'boolean' }], rest: { kind: 'array', of: { kind: 'any' } } });
+    });
+
+    it('should parse a Bounded-Rest 1-TupleSchema', () => {
+      expect(value(parse('[null, ...any[=4]]'))).toEqual({ kind: 'tuple', of: [{ kind: 'null' }], rest: { kind: 'array', of: { kind: 'any' }, exact: 4 } });
+    });
+
+    it('should fail to parse', () => {
+      expect(message(parse('[null'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(',')));
+
+      expect(message(parse('[null,'))).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
+
+      expect(message(parse('[...null[],'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(']')));
+    });
+  });
+
+  describe('EoF', () => {
     it('should successfully parse with EoF Token', () => {
       const result = parse(
         [JsonDefType.NullKeyword, 'null'],
@@ -219,13 +356,18 @@ describe('parseJsonDef', () => {
       expect(value(result)).toEqual({ kind: 'null' });
     });
 
-    it('should fail parse without EoF', () => {
+    it('should fail parse without EoF Token', () => {
       const result = parse(
         [JsonDefType.NullKeyword, 'null'],
         [JsonDefType.NullKeyword, 'null'],
       );
 
       expect(message(result)).toEqual(message(IssueType(undefined).EXPECTED_EOF()));
+    });
+
+    it('should fail parse with Empty or Just Eof', () => {
+      expect(message(parse())).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
+      expect(message(parse('\0'))).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
     });
   });
 });

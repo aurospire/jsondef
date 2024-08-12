@@ -68,11 +68,10 @@ const parseSchemaUnion = (scanner: TokenScanner): Result<Schema, Token> => {
 };
 
 const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
-    const result = parseSchemaItem(scanner);
+    let result = parseSchemaItem(scanner);
 
     if (result.success) {
-        if (scanner.consumeIf(JsonDefType.ArrayOpen)) {
-
+        while (scanner.consumeIf(JsonDefType.ArrayOpen)) {
             let size: SizedAttributes;
 
             if (scanner.consumeIf(JsonDefType.ArrayClose)) {
@@ -85,24 +84,18 @@ const parseSchema = (scanner: TokenScanner): Result<Schema, Token> => {
                     if (scanner.consumeIf(JsonDefType.ArrayClose))
                         size = sizeResult.value;
                     else
-                        return IssueType(scanner).EXPECTED_SYMBOL(')');
+                        return IssueType(scanner).EXPECTED_SYMBOL(']');
                 }
                 else {
                     return sizeResult;
                 }
             }
 
-            const array: ArraySchema = { kind: 'array', of: result.value, ...size };
+            result = Result.success({ kind: 'array', of: result.value, ...size });
+        }
+    }
 
-            return Result.success(array);
-        }
-        else {
-            return result;
-        }
-    }
-    else {
-        return result;
-    }
+    return result;
 };
 
 // HACK: convert escapes, TODO: add field to Token to translate when created
@@ -299,13 +292,20 @@ const parseStringSchema = (scanner: TokenScanner): Result<StringSchema, Token> =
     return sizeResult.success ? Result.success({ kind: 'string', ...sizeResult.value, ...of }) : sizeResult;
 };
 
-const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => {
+const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema | ArraySchema, Token> => {
     scanner.consume();
 
     let schemas: Schema[] = [];
     let rest: Schema | undefined;
 
     while (true) {
+        if (scanner.is(JsonDefType.ArrayClose))
+            break;
+
+        if (schemas.length)
+            if (!scanner.consumeIf(JsonDefType.Comma))
+                return (IssueType(scanner).EXPECTED_SYMBOL(','));
+
         if (scanner.consumeIf(JsonDefType.Rest)) {
             const restResult = parseSchema(scanner);
 
@@ -315,32 +315,30 @@ const parseTupleSchema = (scanner: TokenScanner): Result<TupleSchema, Token> => 
 
                 rest = restResult.value;
 
-                scanner.consumeIf(JsonDefType.Comma);
-
                 break;
             }
             else {
                 return IssueType(scanner).EXPECTED('Rest Schema');
             }
         }
-        else if (scanner.is(JsonDefType.ArrayClose)) {
-            break;
-        }
         else {
             const schemaResult = parseSchema(scanner);
 
             if (schemaResult.success)
                 schemas.push(schemaResult.value);
-
-            scanner.consumeIf(JsonDefType.Comma);
+            else
+                return schemaResult;
         }
     }
+
+    scanner.consumeIf(JsonDefType.Comma);
 
     if (!scanner.consumeIf(JsonDefType.ArrayClose))
         return IssueType(scanner).EXPECTED_SYMBOL(']');
 
-
-    return Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) });
+    return schemas.length || !rest
+        ? Result.success({ kind: 'tuple', of: schemas, ...(rest ? { rest: rest as ArraySchema } : {}) })
+        : Result.success(rest as ArraySchema);
 };
 
 const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> => {
