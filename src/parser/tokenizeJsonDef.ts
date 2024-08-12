@@ -57,8 +57,10 @@ const singleCharTokens = new Map<string, number>([
 export function* tokenizeJsonDef(data: string) {
     const scanner = new StringScanner(data);
 
-    while (!scanner.isEnd) {
+    while (true) {
         scanner.consumeWhileIn(CharSet.Whitespace);
+
+        if (scanner.isEnd) return;
 
         scanner.mark();
 

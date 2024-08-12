@@ -6,7 +6,7 @@ describe('tokenizeJsonDef', () => {
 
     describe('Basic Keywords', () => {
         it('should tokenize simple tokens', () => {
-            const input = '| = ( ) [ ] { } , < < > > <= >= : ?: ...';
+            const input = '| = ( ) [ ] { } , < < > > <= >= : ?: ...\0';
             const expected = [
                 { id: JsonDefType.Or, value: '|' },
                 { id: JsonDefType.Exactly, value: '=' },
@@ -29,6 +29,7 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
+
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
         });
     });
@@ -58,7 +59,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.EmailKeyword, value: 'email' },
                 { id: JsonDefType.TrueKeyword, value: 'true' },
                 { id: JsonDefType.FalseKeyword, value: 'false' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -73,7 +73,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Identifier, value: '_private' },
                 { id: JsonDefType.Identifier, value: 'camelCase' },
                 { id: JsonDefType.Identifier, value: 'snake_case' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -87,7 +86,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Number, value: '0' },
                 { id: JsonDefType.Number, value: '42' },
                 { id: JsonDefType.Integer, value: '-17' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -100,7 +98,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Real, value: '-0.5' },
                 { id: JsonDefType.Real, value: '2.0e10' },
                 { id: JsonDefType.Real, value: '1.5E-5' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -112,7 +109,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.InvalidReal, value: '3.' },
                 { id: JsonDefType.InvalidReal, value: '1e' },
                 { id: JsonDefType.InvalidReal, value: '2.5e' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -127,7 +123,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.String, value: "'world'" },
                 { id: JsonDefType.String, value: "'escape \\' quote'" },
                 { id: JsonDefType.String, value: "'new\\nline'" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -140,7 +135,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Invalid, value: "$" },
                 { id: JsonDefType.Identifier, value: "Cd" },
                 { id: JsonDefType.InvalidString, value: "'" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -150,7 +144,6 @@ describe('tokenizeJsonDef', () => {
             const input = "'unclosed string ";
             const expected = [
                 { id: JsonDefType.InvalidString, value: "'unclosed string " },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -161,7 +154,6 @@ describe('tokenizeJsonDef', () => {
             const expected = [
                 { id: JsonDefType.InvalidString, value: "'unclosed string " },
                 { id: JsonDefType.InvalidString, value: "'" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -175,7 +167,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.Regex, value: '/abc/' },
                 { id: JsonDefType.Regex, value: '/[a-z]+/i' },
                 { id: JsonDefType.Regex, value: '/\\d{3}-\\d{2}-\\d{4}/' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -185,7 +176,6 @@ describe('tokenizeJsonDef', () => {
             const input = "/abc";
             const expected = [
                 { id: JsonDefType.InvalidRegex, value: "/abc" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -196,7 +186,6 @@ describe('tokenizeJsonDef', () => {
             const expected = [
                 { id: JsonDefType.InvalidRegex, value: "/abc " },
                 { id: JsonDefType.InvalidRegex, value: "/" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -210,7 +199,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.NumberKeyword, value: 'number' },
                 { id: JsonDefType.Number, value: '42' },
                 { id: JsonDefType.String, value: "'string'" },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
@@ -279,7 +267,6 @@ describe('tokenizeJsonDef', () => {
                 { id: JsonDefType.ArrayClose, value: ']' },
                 { id: JsonDefType.Comma, value: ',' },
                 { id: JsonDefType.ObjectClose, value: '}' },
-                { id: JsonDefType.Eof, value: '\0' },
             ];
             const tokens = tokenize(input);
             expect(tokens.map(t => ({ id: t.type, value: t.value }))).toEqual(expected);
