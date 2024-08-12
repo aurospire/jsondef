@@ -384,9 +384,9 @@ describe('parseJsonDef', () => {
       expect(message(parse('record'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('<')));
 
       expect(message(parse('record<any'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('>')));
-      
+
       expect(message(parse('record<string,'))).toEqual(message(IssueType(undefined).EXPECTED('Schema')));
-      
+
       expect(message(parse('record<string,any'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('>')));
 
       expect(message(parse('record<any,any>'))).toEqual(message(IssueType(undefined).MUST_BE('Record Key', 'String Schema')));
@@ -400,6 +400,77 @@ describe('parseJsonDef', () => {
       expect(message(parse('record<any>(> 0.1)'))).toEqual(message(IssueType(undefined).EXPECTED('Number')));
 
       expect(message(parse('record<any>(#)'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(')')));
+    });
+  });
+
+  describe('ObjectSchema', () => {
+    it('should parse an Empty ObjectSchema', () => {
+      expect(value(parse('{}'))).toEqual({ kind: 'object', of: {} });
+    });
+
+    it('should parse an ObjectSchema with required properties', () => {
+      expect(value(parse('{ a: null, b: any }'))).toEqual({ kind: 'object', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+      expect(value(parse('{ a: null, b: any, }'))).toEqual({ kind: 'object', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+    });
+
+    it('should parse an ObjectSchema with optional properties', () => {
+      expect(value(parse('{ a?: null, b?: any }'))).toEqual({ kind: 'object', of: { a: { kind: 'null', isOptional: true }, b: { kind: 'any', isOptional: true } } });
+      expect(value(parse('{ a?: null, b?: any, }'))).toEqual({ kind: 'object', of: { a: { kind: 'null', isOptional: true }, b: { kind: 'any', isOptional: true } } });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('{'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('}')));
+      expect(message(parse('{a null}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(':', '?:')));
+      expect(message(parse('{a:null,a:any}'))).toEqual(message(IssueType(undefined).DUPLICATE_IDENTIFIER('a')));
+    });
+  });
+
+  describe('ModelSchema', () => {
+    it('should parse an Empty ModelSchema', () => {
+      expect(value(parse('model {}'))).toEqual({ kind: 'model', of: {} });
+    });
+
+    it('should parse an ModelSchema with required properties', () => {
+      expect(value(parse('model { a: null, b: any }'))).toEqual({ kind: 'model', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+      expect(value(parse('model { a: null, b: any, }'))).toEqual({ kind: 'model', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+    });
+
+    it('should parse an ObjectSchema with optional properties', () => {
+      expect(value(parse('model{ a?: null, b?: any }'))).toEqual({ kind: 'model', of: { a: { kind: 'null', isOptional: true }, b: { kind: 'any', isOptional: true } } });
+      expect(value(parse('model{ a?: null, b?: any, }'))).toEqual({ kind: 'model', of: { a: { kind: 'null', isOptional: true }, b: { kind: 'any', isOptional: true } } });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('model{'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('}')));
+      expect(message(parse('model{a null}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(':', '?:')));
+      expect(message(parse('model{a:null,a:any}'))).toEqual(message(IssueType(undefined).DUPLICATE_IDENTIFIER('a')));
+    });
+  });
+
+  describe('GroupSchema', () => {
+    it('should parse an Empty GroupSchema', () => {
+      expect(value(parse('group {}'))).toEqual({ kind: 'group', of: {} });
+    });
+
+    it('should parse an GroupSchema', () => {
+      expect(value(parse('group { a: null, b: any }'))).toEqual({ kind: 'group', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+      expect(value(parse('group { a: null, b: any, }'))).toEqual({ kind: 'group', of: { a: { kind: 'null' }, b: { kind: 'any' } } });
+    });
+
+    it('should parse select of GroupSchema', () => {
+      expect(value(parse('select a of group { a: null, b: any }'))).toEqual({ kind: 'group', of: { a: { kind: 'null' }, b: { kind: 'any' } }, selected: 'a' });
+      expect(value(parse('select a of group { a: null, b: any, }'))).toEqual({ kind: 'group', of: { a: { kind: 'null' }, b: { kind: 'any' } }, selected: 'a' });
+    });
+
+    it('should match issues', () => {
+      expect(message(parse('group{'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('}')));
+      expect(message(parse('group{a null}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(':')));
+      expect(message(parse('group{a?:null}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL(':')));
+      expect(message(parse('group{a:null,a:any}'))).toEqual(message(IssueType(undefined).DUPLICATE_IDENTIFIER('a')));
+      expect(message(parse('select of group {a:null,b:any}'))).toEqual(message(IssueType(undefined).EXPECTED('Selected name')));
+      expect(message(parse('select a group {a:null,b:any}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('of')));
+      expect(message(parse('select a of {a:null,b:any}'))).toEqual(message(IssueType(undefined).EXPECTED_SYMBOL('group')));
+      expect(message(parse('select c of group {a:null,b:any}'))).toEqual(message(IssueType(undefined).SELECTED_NOT_FOUND('c')));
     });
   });
 

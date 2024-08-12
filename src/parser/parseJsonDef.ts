@@ -26,7 +26,7 @@ export const IssueType = (scanner: TokenScanner | undefined) => ({
     EXPECTED_SYMBOL: (...expected: (string | undefined)[]): ResultFailure<Token> => issue(scanner, `Expected ${expected.filter(Boolean).map(i => `'${i}'`).join(' or ')}`),
     MUST_BE: (name: string, type: string): ResultFailure<Token> => issue(scanner, `${name} must be ${type}`),
     SELECTED_NOT_FOUND: (name: string): ResultFailure<Token> => issue(scanner, `Selected '${name}' is not in a schema in group`),
-    DUPLICATE_FIELD: (field: string): ResultFailure<Token> => issue(scanner, `Duplicate field: ${field}`),
+    DUPLICATE_IDENTIFIER: (name: string): ResultFailure<Token> => issue(scanner, `Duplicate identifier: ${name}`),
     BOUND_ALREADY_DEFINED: (bound: string) => issue(scanner, `Bound ${bound} already defined`),
 } as const);
 
@@ -373,20 +373,20 @@ const parseRecordSchema = (scanner: TokenScanner): Result<RecordSchema, Token> =
 };
 
 
-const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key: string, schema: Schema; }, Token> | null => {
+const parseStructItem = (scanner: TokenScanner, previous: SchemaObject, optional: boolean): Result<SchemaObject, Token> | null => {
     let key: string;
 
-    if (scanner.is(JsonDefType.Identifier)) {
+    if (scanner.is(JsonDefType.Identifier))
         key = scanner.value()!;
-        scanner.consume();
-    }
-    else if (scanner.is(JsonDefType.String)) {
+    else if (scanner.is(JsonDefType.String))
         key = scanner.value()!.slice(1, -1);
-        scanner.consume();
-    }
-    else {
+    else
         return null;
-    }
+
+    if (previous[key])
+        return IssueType(scanner).DUPLICATE_IDENTIFIER(key);
+    else
+        scanner.consume();
 
     let isOptional = {};
 
@@ -408,7 +408,7 @@ const parseStructItem = (scanner: TokenScanner, optional: boolean): Result<{ key
     const schema = parseSchemaUnion(scanner);
 
     if (schema.success)
-        return Result.success({ key, schema: { ...schema.value, ...isOptional } });
+        return Result.success({ ...previous, [key]: { ...schema.value, ...isOptional } });
     else
         return schema;
 };
@@ -421,14 +421,14 @@ const parseStruct = (scanner: TokenScanner, optional: boolean): Result<SchemaObj
     let result: SchemaObject = {};
 
     while (true) {
-        const item = parseStructItem(scanner, optional);
+        const itemResult = parseStructItem(scanner, result, optional);
 
-        if (item === null)
+        if (itemResult === null)
             break;
-        else if (!item.success)
-            return item;
+        else if (!itemResult.success)
+            return itemResult;
 
-        result[item.value.key] = item.value.schema;
+        result = itemResult.value;
 
         if (!scanner.consumeIf(JsonDefType.Comma))
             break;
