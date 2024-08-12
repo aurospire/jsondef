@@ -1,4 +1,4 @@
-import { ArraySchema, LiteralSchema, ModelSchema, GroupSchema, ObjectSchema, RecordSchema, RefSchema, TupleSchema, UnionSchema, BoundedAttributes, SizedAttributes } from "./Schema";
+import { ArraySchema, LiteralSchema, ModelSchema, GroupSchema, ObjectSchema, RecordSchema, RefSchema, TupleSchema, UnionSchema, BoundedAttributes, SizedAttributes, Schema } from "./Schema";
 import { InferSchema } from "./Infer";
 import { AnySchemaBuilder } from "./builder/AnySchemaBuilder";
 import { ArraySchemaBuilder } from './builder/ArraySchemaBuilder';
@@ -19,7 +19,8 @@ import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
 import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 import { validate } from "./validate";
 import { stringify } from "./stringify/stringify";
-import { RegexString } from "./util";
+import { RegexString, Result, ResultError, Token } from "./util";
+import { parseJsonDef, tokenizeJsonDef } from "./parser";
 
 const nullSchema = () => new NullSchemaBuilder();
 const anySchema = () => new AnySchemaBuilder();
@@ -57,9 +58,26 @@ const unionSchema = <const Of extends UnionSchema['of']>(of: Of) => new UnionSch
 const refSchema = <const Of extends RefSchema['of']>(of: Of) => new RefSchemaBuilder<Of>(of);
 const groupSchema = <const Of extends GroupSchema['of']>(of: Of) => new GroupSchemaBuilder(of);
 
+
+const tryParse = (jsondef: string): Result<Schema, Token> => {
+    const tokens = tokenizeJsonDef(jsondef);
+
+    return parseJsonDef([...tokens]);
+};
+
+const parse = (jsondef: string): Schema => {
+    const result = tryParse(jsondef);
+
+    if (result.success)
+        return result.value;
+    else
+        throw new ResultError<Token>('Jsondef Parsing Error', result.issues);
+};
+
+
 const summary = () => {
     // TODO: Return a brief summary how jsondef works
-}
+};
 
 // import from this file as 'd' to use these methods
 // example: d.null();
@@ -92,5 +110,7 @@ export {
     InferSchema as infer,
     validate,
     stringify,
+    tryParse,
+    parse,
     summary
 };
