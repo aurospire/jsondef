@@ -2,22 +2,28 @@ export type CharRange = { min: string; max: string; };
 
 const emptySet = new Set<string>();
 
-type Checker = (value: string) => boolean;
+const emptyArray: CharRange[] = [];
 
-const matchRange = (value: string, ranges: CharRange[]) => {
+
+const matchRange = (value: string, ranges: ReadonlyArray<CharRange>) => {
     for (const range of ranges)
         if (value >= range.min && value <= range.max)
             return true;
 
     return false;
+
 };
 
+type Checker = (value: string) => boolean;
+
 type CheckerMaker = (
-    trueSet: Set<string>, trueRanges: CharRange[],
-    falseSet: Set<string>, falseRanges: CharRange[]
+    trueSet: ReadonlySet<string>, trueRanges: ReadonlyArray<CharRange>,
+    falseSet: ReadonlySet<string>, falseRanges: ReadonlyArray<CharRange>
 ) => Checker;
 
 const checkers: Record<string, CheckerMaker> = {
+    '': () => () => false,
+
     'A': (trueSet, trueRanges, falseSet, falseRanges) => (value) => trueSet.has(value),
     'B': (trueSet, trueRanges, falseSet, falseRanges) => (value) => matchRange(value, trueRanges),
     'C': (trueSet, trueRanges, falseSet, falseRanges) => (value) => !falseSet.has(value),
@@ -39,42 +45,46 @@ const checkers: Record<string, CheckerMaker> = {
 };
 
 export class CharSet {
-    #trueSet: Set<string> = emptySet;
-    #trueRanges: CharRange[] = [];
+    readonly #trueSet: ReadonlySet<string>;
+    readonly #trueRanges: ReadonlyArray<CharRange>;
+    readonly #falseSet: ReadonlySet<string>;
+    readonly #falseRanges: ReadonlyArray<CharRange>;
+    readonly #checker: (value: string) => boolean;
 
-    #falseSet: Set<string> = emptySet;
-    #falseRanges: CharRange[] = [];
+    constructor(
+        trueSet: Set<string>,
+        trueRanges: Array<CharRange>,
+        falseSet: Set<string>,
+        falseRanges: Array<CharRange>,
+    ) {
+        this.#trueSet = trueSet;
+        this.#trueRanges = trueRanges;
+        this.#falseSet = falseSet;
+        this.#falseRanges = falseRanges;
+        this.#checker = this.findChecker();
+    }
 
-    #checker: (value: string) => boolean = () => false;
+    findChecker() {
+        const checkerType = (this.#trueSet.size ? 'A' : '') +
+            (this.#trueRanges.length ? 'B' : '') +
+            (this.#falseSet.size ? 'C' : '') +
+            (this.#falseRanges.length ? 'D' : '');
 
-    constructor() { }
-
+        return checkers[checkerType](
+            this.#trueSet, this.#trueRanges,
+            this.#falseSet, this.#falseRanges
+        );
+    }
 
     // TODO: Optimize with overlapping or reducing 
-    #union(trueSet: Set<string>, trueRanges: CharRange[], falseSet: Set<string>, falseRanges: CharRange[]): CharSet {
-        const charset = new CharSet();
-
-        charset.#trueSet = this.#trueSet.union(trueSet);
-
-        charset.#trueRanges = [...this.#trueRanges, ...trueRanges];
-
-
-        charset.#falseSet = this.#falseSet.union(falseSet);
-
-        charset.#falseRanges = [...this.#falseRanges, ...falseRanges];
-
-
-        const checkerType = (charset.#trueSet.size ? 'A' : '') +
-            (charset.#trueRanges.length ? 'B' : '') +
-            (charset.#falseSet.size ? 'C' : '') +
-            (charset.#falseRanges.length ? 'D' : '');
-
-        charset.#checker = checkers[checkerType](
-            charset.#trueSet, charset.#trueRanges,
-            charset.#falseSet, charset.#falseRanges
+    #union(
+        trueSet: ReadonlySet<string>, trueRanges: ReadonlyArray<CharRange>,
+        falseSet: ReadonlySet<string>, falseRanges: ReadonlyArray<CharRange>
+    ): CharSet {
+        return new CharSet(
+            this.#trueSet.union(trueSet), [...this.#trueRanges, ...trueRanges],
+            this.#falseSet.union(falseSet), [...this.#falseRanges, ...falseRanges]
         );
-
-        return charset;
     }
 
     and(set: string | CharRange | CharSet): CharSet {
@@ -99,12 +109,12 @@ export class CharSet {
         return this.#checker(value);
     }
 
-    static #empty = new CharSet();
 
-    static chars(value: string): CharSet { return this.#empty.and(value); }
+    static chars(value: string): CharSet { return new CharSet(new Set(value), emptyArray, emptySet, emptyArray); }
 
-    static range(value: { min: string; max: string; }): CharSet { return this.#empty.and(value); }
+    static range(value: { min: string; max: string; }): CharSet { return new CharSet(emptySet, [value], emptySet, emptyArray); }
 
+    static #empty = new CharSet(emptySet, emptyArray, emptySet, emptyArray);
     static #upper = this.range({ min: 'A', max: 'Z' });
     static #lower = this.range({ min: 'a', max: 'z' });
     static #letter = this.#upper.and(this.#lower);
@@ -118,6 +128,7 @@ export class CharSet {
     static #null = this.chars('\0');
     static #ending = this.#newline.and(this.#null);
 
+    static get Empty() { return this.#empty; }
     static get Upper() { return this.#upper; }
     static get Lower() { return this.#lower; }
     static get Letter() { return this.#letter; }
@@ -131,3 +142,4 @@ export class CharSet {
     static get Null() { return this.#null; }
     static get Ending() { return this.#ending; }
 }
+
