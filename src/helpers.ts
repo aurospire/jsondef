@@ -76,7 +76,15 @@ const parse = (jsondef: string): Schema => {
 
 
 const summary = () => {
-    // TODO: Return a brief summary how jsondef works
+    // TODO: Return a brief summary how jsondef works for LLMs
+    return `
+jsondef is a ts-like subset JSON schema.
+model{...} sets a new root and local scope,
+{...} sets a new local scope (or root if top level).
+for recursion: 'root' references root, 'this' references local,
+group{...} sets a new namespace. identifiers refer to items in group.
+schemas can have bounds, integer,number,string,record are within parentheses,array bounds are in square brackets.
+`.trimStart();
 };
 
 // import from this file as 'd' to use these methods
