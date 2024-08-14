@@ -1,4 +1,4 @@
-import { Scanner, Mark, Contains, StringScanner, Token, TokenScanner } from '@/util/Scanner';
+import { Scanner, Mark, Contains, StringScanner, Token, TokenScanner } from '@/util/scanner';
 
 describe('NumberScanner', () => {
     class NumberScanner extends Scanner<number, number[], number> {
