@@ -9,6 +9,7 @@ export type BaseAttributes = {
     description?: string;
 };
 
+/** Base schema type with a specific kind. */
 export type BaseSchema<Kind extends string> = { /** The kind of schema. */ kind: Kind; } & BaseAttributes;
 
 /** Represents a schema for a `null` value. */
@@ -19,7 +20,6 @@ export type AnySchema = BaseSchema<'any'>;
 
 /** Represents a schema for a boolean value. */
 export type BooleanSchema = BaseSchema<'boolean'>;
-
 
 /** Attributes that define bounds for numeric schemas. */
 export type BoundedAttributes = {
@@ -38,7 +38,6 @@ export type IntegerSchema = BaseSchema<'integer'> & BoundedAttributes;
 
 /** Represents a schema for a number value with optional bounds. */
 export type NumberSchema = BaseSchema<'number'> & BoundedAttributes;
-
 
 /** Attributes that define size constraints for schemas. */
 export type SizedAttributes = BoundedAttributes & { /** Exact value. */ exact?: number; };
@@ -59,20 +58,17 @@ export type StringAttributes = { /** Defines the format or pattern of the string
 /** Represents a schema for a string value with optional size and format constraints. */
 export type StringSchema = BaseSchema<'string'> & SizedAttributes & StringAttributes;
 
-
 /** Attributes for a literal schema, defining a specific value. */
 export type LiteralAttributes = { /** The literal value that the schema represents. */ of: boolean | number | string; };
 
 /** Represents a schema for a literal value. */
 export type LiteralSchema = BaseSchema<'literal'> & LiteralAttributes;
 
-
 /** Attributes for an array schema, defining the type of elements it contains. */
 export type ArrayAttributes = { /** The schema of the elements in the array. */ of: Schema; };
 
-/** Attributes for an array schema, defining the type of elements it contains. */
+/** Represents a schema for an array with size constraints and element type. */
 export type ArraySchema = BaseSchema<'array'> & SizedAttributes & ArrayAttributes;
-
 
 /**  Attributes for a tuple schema, defining the types of elements and optional rest elements. */
 export type TupleAttributes = {
@@ -85,7 +81,6 @@ export type TupleAttributes = {
 /** Represents a schema for a tuple with fixed and optional additional elements. */
 export type TupleSchema = BaseSchema<'tuple'> & TupleAttributes;
 
-
 /** Attributes for a record schema, defining the key and value types. */
 export type RecordAttributes = {
     /** The schema of the values in the record. */
@@ -97,13 +92,11 @@ export type RecordAttributes = {
 /** Represents a schema for a record with optional size constraints and key/value types. */
 export type RecordSchema = BaseSchema<'record'> & SizedAttributes & RecordAttributes;
 
-
 /** Attributes for a union schema, defining the possible schemas it can be. */
 export type UnionAttributes = { /** An array of schemas representing the union types. */ of: Schema[]; };
 
 /** Represents a schema for a union of different schemas. */
 export type UnionSchema = BaseSchema<'union'> & UnionAttributes;
-
 
 /** Attributes for an object schema, defining the properties of the object. */
 export type ObjectAttributes = { /** The schema object defining the properties of the object. */ of: SchemaObject; };
@@ -123,7 +116,6 @@ export type ModelAttributes = { /** The schema object defining the properties of
  */
 export type ModelSchema = BaseSchema<'model'> & ModelAttributes;
 
-
 /** Attributes for a group schema, defining the properties of the group and the selected property. */
 export type GroupAttributes = {
     /** A Namespace of Schemas. */
@@ -137,7 +129,6 @@ export type GroupAttributes = {
  * Sets the `global` namespace.
 */
 export type GroupSchema = BaseSchema<'group'> & GroupAttributes;
-
 
 /** Attributes for a reference schema, defining the schema it refers to. */
 export type RefAttributes = { /** The name of the schema this reference refers to. */ of: string; };
