@@ -1,11 +1,20 @@
 import { SizedAttributes } from "../Schema";
 import { BaseSchemaBuilder } from "./BaseSchemaBuilder";
 
-export abstract class SizedSchemaBuilder<const Kind extends string, const  Optional extends boolean = false>
+/**
+ * Abstract base class for schema builders that include size constraints.
+ * @template Kind - The kind of schema being built.
+ * @template Optional - Whether the schema is optional or not.
+ */
+export abstract class SizedSchemaBuilder<const Kind extends string, const Optional extends boolean = false>
     extends BaseSchemaBuilder<Kind, Optional> {
 
     #bounds: SizedAttributes;
 
+    /**
+     * Creates a new SizedSchemaBuilder instance.
+     * @param from - Optional SizedSchemaBuilder to copy attributes from.
+     */
     constructor(from?: SizedSchemaBuilder<Kind, Optional>) {
         super(from);
 
@@ -14,12 +23,26 @@ export abstract class SizedSchemaBuilder<const Kind extends string, const  Optio
         this.#bounds = bounds;
     }
 
+    /** Gets the exact size constraint */
     get exact() { return this.#bounds.exact; }
+
+    /** Gets the inclusive minimum size constraint */
     get min() { return this.#bounds.min; }
+    
+    /** Gets the exclusive minimum size constraint */
     get xmin() { return this.#bounds.xmin; }
+    
+    /** Gets the inclusive maximum size constraint */
     get max() { return this.#bounds.max; }
+    
+    /** Gets the exclusive maximum size constraint */
     get xmax() { return this.#bounds.xmax; }
 
+    /**
+     * Sets the size constraints for the schema.
+     * @param size - The size constraints to set.
+     * @returns A new builder instance with the updated size constraints.
+     */
     size(size: SizedAttributes): SizedSchemaBuilder<Kind, Optional> {
         this.validateBounds(size);
 
@@ -30,6 +53,11 @@ export abstract class SizedSchemaBuilder<const Kind extends string, const  Optio
         return builder;
     }
 
+    /**
+     * Validates the provided size bounds.
+     * @param bounds - The size bounds to validate.
+     * @throws Error if the bounds are invalid.
+     */
     protected validateBounds(bounds: SizedAttributes): void {
         for (const [name, value] of Object.entries(bounds))
             if (value !== undefined && !Number.isInteger(value))
@@ -48,6 +76,9 @@ export abstract class SizedSchemaBuilder<const Kind extends string, const  Optio
         }
     }
 
+    /**
+     * Creates a clone of the current builder.
+     * @returns A new instance of the builder with the same attributes and bounds.
+     */
     protected abstract override clone(): SizedSchemaBuilder<Kind, Optional>;
 }
-
