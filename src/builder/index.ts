@@ -9,11 +9,11 @@ export * from './IntegerSchemaBuilder';
 
 export * from './SizedSchemaBuilder';
 export * from './StringSchemaBuilder';
+export * from './ArraySchemaBuilder';
+export * from './RecordSchemaBuilder';
 
 export * from './LiteralSchemaBuilder';
-export * from './ArraySchemaBuilder';
 export * from './TupleSchemaBuilder';
-export * from './RecordSchemaBuilder';
 export * from './ObjectSchemaBuilder';
 export * from './ModelSchemaBuilder';
 export * from './GroupSchemaBuilder';
