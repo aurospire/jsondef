@@ -1,6 +1,6 @@
 {
     "name": "jsondef",
-    "description": "Simple JSON Schema and Validation",
+    "description": "Simple TypeScript-ike JSON Schema and Validation",
     "author": "aurospire",
     "version": "0.0.0",
     "repository": {
