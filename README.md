@@ -12,6 +12,7 @@ A TypeScript-like JSON Schema definition library that simplifies the creation, v
   - [Parsing and Stringifying](#parsing-and-stringifying)
   - [Validation](#validation)
   - [Type Inference](#type-inference)
+  - [Other](#other)
 - [License](#license)
 
 ## Features
@@ -644,7 +645,17 @@ const schemaString = d.stringify(schema);
 
 #### `d.validate(value, schema)`
 
-Validates a value against a schema.
+Validate a value against a schema, returning the properly types value.
+
+**Usage:**
+
+```javascript
+const result = d.validate({ name: 'John', age: 30 }, personSchema);
+```
+
+#### `d.tryValidate(value, schema)`
+
+Attemptes to validate a value against a schema, returning a Result object
 
 **Usage:**
 
@@ -667,6 +678,10 @@ Infers the TypeScript type from a schema.
 ```typescript
 type Person = d.infer<typeof personSchema>;
 ```
+### Other
+#### `d.summary(): string`
+
+Provides a summary of how tsdoc works, possibly useful for LLMs.
 
 ## License
 

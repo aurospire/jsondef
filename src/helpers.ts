@@ -30,7 +30,7 @@ import {
 } from "./helperFunctions";
 import { InferSchema } from './Infer';
 import { stringify } from "./stringify";
-import { validate } from "./validate";
+import { validate, tryValidate } from "./validate";
 
 // import from this file as 'd' to use these methods
 // example: d.null();
@@ -61,6 +61,7 @@ export {
     groupSchema as group,
     refSchema as ref,
     InferSchema as infer,
+    tryValidate,
     validate,
     stringify,
     tryParse,

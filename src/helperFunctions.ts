@@ -1,5 +1,4 @@
 import { ArraySchema, LiteralSchema, ModelSchema, GroupSchema, ObjectSchema, RecordSchema, RefSchema, TupleSchema, UnionSchema, BoundedAttributes, SizedAttributes, Schema } from "./Schema";
-import { InferSchema } from "./Infer";
 import { AnySchemaBuilder } from "./builder/AnySchemaBuilder";
 import { ArraySchemaBuilder } from './builder/ArraySchemaBuilder';
 import { BooleanSchemaBuilder } from "./builder/BooleanSchemaBuilder";
@@ -18,7 +17,6 @@ import { ThisSchemaBuilder } from "./builder/ThisSchemaBuilder";
 import { TupleSchemaBuilder } from './builder/TupleSchemaBuilder';
 import { UnionSchemaBuilder } from './builder/UnionSchemaBuilder';
 import { validate } from "./validate";
-import { stringify } from "./stringify/stringify";
 import { RegexString, Result, ResultError, Token } from "./util";
 import { parseJsonDef, tokenizeJsonDef } from "./parser";
 
@@ -189,18 +187,6 @@ export const parse = (jsondef: string): Schema => {
     else
         throw new ResultError<Token>('Jsondef Parsing Error', result.issues);
 };
-
-// const summary = () => {
-//     // TODO: Return a brief summary how jsondef works for LLMs
-//     return `
-// jsondef is a ts-like subset JSON schema.
-// model{...} sets a new root and local scope,
-// {...} sets a new local scope (or root if top level).
-// for recursion: 'root' references root, 'this' references local,
-// group{...} sets a new namespace. identifiers refer to items in group.
-// schemas can have bounds, integer,number,string,record are within parentheses,array bounds are in square brackets.
-// `.trimStart();
-// };
 
 /**
  * Provides a concise summary of jsondef for use as a system prompt for LLMs.
