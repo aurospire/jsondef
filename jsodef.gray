@@ -1,0 +1,133 @@
+grammar Jsondef = SchemaUnion Eof;
+
+rule SchemaUnion = [Or] Schema { Or Schema };
+
+rule Schema = SchemaItem [ArrayOpen [Size] ArrayClose];
+
+rule ArraySchema = SchemaItem ArrayOpen [Size] ArrayClose;
+
+rule SchemaItem = 
+    | NullSchema
+    | AnySchema
+    | BooleanSchema
+    | ThisSchema
+    | RootSchema    
+    | LiteralSchema
+    | RefSchema
+
+    | IntegerSchema
+    | NumberSchema
+    | StringSchema
+
+    | TupleSchema
+    | RecordSchema
+    | ObjectSchema
+    | ModelSchema
+    | GroupSchema
+    | SelectSchema
+
+    | EnclosedSchema
+    ;
+
+rule EnclosedSchema = Open SchemaUnion Close;
+
+rule NullSchema = NullKeyword [Open Close];
+rule AnySchema = AnyKeyword [Open Close];
+rule BooleanSchema = BooleanKeyword [Open Close];
+rule ThisSchema = ThisKeyword [Open Close];
+rule RootSchema = RootKeyword [Open Close];
+
+rule LiteralSchema = Boolean | String | Number;
+rule IntegerSchema = IntegerKeyword [Open [IntegerBounds] Close];
+rule NumberSchema = NumberKeyword [Open [RealBounds] Close];
+
+rule StringSchema = StringKind [Open [Size] Close];
+
+rule TupleSchema = ArrayOpen [SchemaUnion {Comma SchemaUnion} [Elipses ArraySchema] [Comma]] ArrayClose;
+rule RecordSchema = RecordKeyword AngleOpen [StringSchema Comma] SchemaUnion AngleClose [Open [Size] Close];
+
+rule ObjectSchema = ObjectOpen ObjectItem { Comma ObjectItem } [Comma] ObjectClose;
+rule ModelSchema = ModelKeyword ObjectSchema;
+rule GroupSchema = GroupKeyword ObjectOpen GroupItem (Comma GroupItem) [Comma] ObjectClose;
+rule SelectSchema = SelectKeyword (Identifier | String) OfKeyword GroupSchema;
+
+rule ObjectItem = (Identifier | String) (RequiredIs | OptionalIs) SchemaUnion;
+rule GroupItem = (Identifier | String) Required SchemaUnion;
+
+rule Min = GreaterThan | GreaterThanOrEqual;
+rule Max = LessThan | LessThanOrEqual;
+
+rule IntegerBounds = Min Integer [Comma Max Integer] | Max Integer [Comma Min Integer];
+rule RealBounds = Min Real [Comma Max Real] | Max Real [Comma Min Real];
+rule Size = Exactly Number | Min Number [Comma Max Number] | Max Number [Comma Min Number];
+
+rule StringKind = StringKeyword | DatetimeKeyword | DateKeyword | TimeKeyword | UuidKeyword | Base64Keyword | EmailKeyword | Regex;
+
+rule Boolean = TrueKeyword | FalseKeyword;
+
+token NullKeyword = 'null';
+token AnyKeyword = 'any';
+token BooleanKeyword = 'boolean';
+token ThisKeyword = 'this';
+token RootKeyword = 'root';
+token IntegerKeyword = 'integer';
+token NumberKeyword = 'number';
+token RecordKeyword = 'record';
+token ModelKeyword = 'model';
+token GroupKeyword = 'group';
+token SelectKeyword = 'select';
+token OfKeyword = 'of';
+token StringKeyword = 'string';
+token DatetimeKeyword = 'datetime';
+token DateKeyword = 'date';
+token TimeKeyword = 'time';
+token UuidKeyword = 'uuid';
+token Base64Keyword = 'base64';
+token EmailKeyword = 'email';
+token TrueKeyword = 'true';
+token FalseKeyword = 'false';
+
+token RequiredIs = ':';
+token OptionalIs = '?:';
+
+token LessThanOrEqual = '<=';
+token GenericOpen | LessThan = '<';
+
+token GreaterThanOrEqual '>=';
+token GenericClose | GreaterThan = '>';
+
+token Or = '|';
+token Exactly = '=';
+token Open = '(';
+token Close = ')';
+token ArrayOpen = '[';
+token ArrayClose = ']';
+token ObjectOpen = '{';
+token ObjectClose = '}';
+token Comma = ',';
+token Rest = '...'
+
+token Identifier = ('_' | Letter) {'_' | LetterOrDigit};
+token Number = Digit+;
+token Integer = ['-'] Digit+;
+token Real = Integer ['.' Number] ['e'|'E' ['+'|'-'] Number];
+token String = '\'' {Char | Escape} '\'';
+subtoken Escape = '\\' ('x' HexDigit HexDigit | 'n' | 'r' | 't' | '\\' | '\'' | '"' | '0');
+
+token Regex = '/' RegexBody '/' {RegexFlag};
+subtoken RegexBody = RegexChar | RegexEscape {RegexChar | RegexEscape};
+subtoken RegexEscape = '\\' Any;
+
+token Eof = '\0';
+
+// Character Sets Definitions
+charset RegexFlag = 'i' + 'g' + 'm' + 's' + 'u' + 'y';
+charset Upper = 'A' to 'Z';
+charset Lower = 'a' to 'z';
+charset Letter = Upper + Lower;
+charset LetterOrDigit = Letter + Digit;
+charset Digit = '0' to '9';
+charset HexDigit = Digit + 'A' to 'F' + 'a' to 'f';
+charset Any = ' ' to '\x7F';
+charset Char = Any + '\t' - '\\' - '\'';
+charset RegexChar = Any + '\t' - '\\' - '/';
